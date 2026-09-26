@@ -15,7 +15,7 @@ Packages/CourtKit/            Shared Swift package (phone, Watch, widget)
   DesignSystem/               Palette, sport themes, press style, haptics, court art, sport switch
 PickleBall/                   iPhone app (Xcode synchronized folder)
   App/                        Entry point, root, tab bar
-  Model/                      SwiftData records, stores, player directory, legacy import
+  Model/                      SwiftData records, stores, player directory
   Scoring/                    MatchCenter, live scoreboard, match setup, Live Activity controller
   Connectivity/               WatchConnectivity (phone side)
   Features/                   Home, Stats, Profile (form line, head-to-head), Tournament, Watch stats, Settings

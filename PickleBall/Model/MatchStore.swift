@@ -106,9 +106,9 @@ final class MatchStore: ObservableObject {
         }
         let team = perspective.team
 
-        var served: Int? = record.legacyServePointsPlayed
-        var servedWon: Int? = record.legacyServePointsWon
-        if !record.isLegacyImport, let rules = record.rules, let lineup = record.lineup,
+        var served: Int?
+        var servedWon: Int?
+        if let rules = record.rules, let lineup = record.lineup,
            let index = lineup.teams[team].firstIndex(where: { $0.id == me }) {
             let scorer = MatchScorer(rules: rules, rallies: record.rallyLog)
             let stats = ServeStats.compute(scorer: scorer, team: team, index: index)

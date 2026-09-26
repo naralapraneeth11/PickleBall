@@ -169,9 +169,6 @@ enum RecentMatchCardBuilder {
             storedMatches.compactMap { match in match.matchID.map { ($0, match) } },
             uniquingKeysWith: { _, last in last }
         )
-        let sortedStored = storedMatches.sorted { $0.date < $1.date }
-        let storedDates = sortedStored.map { $0.date.timeIntervalSince1970 }
-
         var miss = 0
         let cards: [RecentMatchCardModel] = sessions.reversed().map { session in
             let total = max(0, session.totalShots)
@@ -179,7 +176,7 @@ enum RecentMatchCardBuilder {
             let bh = total > 0 ? Double(session.backhandCount) / Double(total) : 0
             let vo = total > 0 ? Double(session.volleyCount) / Double(total) : 0
 
-            let joined = resolve(session: session, byID: byID, sorted: sortedStored, dates: storedDates)
+            let joined = resolve(session: session, byID: byID)
             if joined.stored == nil { miss += 1 }
 
             let servePct: Int? = {
@@ -227,36 +224,13 @@ enum RecentMatchCardBuilder {
         return (cardsWithPB, miss)
     }
 
+    /// Sessions carry the ID of the match they were recorded with.
     private static func resolve(
         session: GameSession,
-        byID: [UUID: StoredMatch],
-        sorted: [StoredMatch],
-        dates: [Double]
+        byID: [UUID: StoredMatch]
     ) -> (stored: StoredMatch?, byMatchID: Bool) {
-        if let mid = session.matchID, let hit = byID[mid] {
-            return (hit, true)
-        }
-        let legacy = closest(for: session.date, in: sorted, dates: dates, window: 300)
-        return (legacy, false)
-    }
-
-    private static func closest(
-        for target: Date,
-        in sorted: [StoredMatch],
-        dates: [Double],
-        window: TimeInterval
-    ) -> StoredMatch? {
-        guard !sorted.isEmpty else { return nil }
-        let key = target.timeIntervalSince1970
-        var lo = 0, hi = dates.count
-        while lo < hi {
-            let mid = (lo + hi) / 2
-            if dates[mid] < key { lo = mid + 1 } else { hi = mid }
-        }
-        let candidates = [lo - 1, lo].filter { $0 >= 0 && $0 < dates.count }
-        guard let best = candidates.min(by: { abs(dates[$0] - key) < abs(dates[$1] - key) }),
-              abs(dates[best] - key) < window else { return nil }
-        return sorted[best]
+        guard let mid = session.matchID, let hit = byID[mid] else { return (nil, false) }
+        return (hit, true)
     }
 
     static func formatDuration(_ seconds: TimeInterval) -> String {

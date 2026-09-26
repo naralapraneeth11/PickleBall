@@ -69,13 +69,8 @@ final class MatchRecord {
     var matchScoreB: Int
     var pointsA: Int
     var pointsB: Int
-    /// `[CompletedUnit]` JSON. Authoritative only for legacy imports, which
-    /// have no rally log.
+    /// `[CompletedUnit]` JSON, cached from the rally log.
     var unitsData: Data?
-    var isLegacyImport: Bool
-    /// Serve points carried over from the pre-rally-log format.
-    var legacyServePointsPlayed: Int?
-    var legacyServePointsWon: Int?
 
     var tournamentID: UUID?
     var tournamentFixtureID: UUID?
@@ -99,7 +94,6 @@ final class MatchRecord {
         self.matchScoreB = 0
         self.pointsA = 0
         self.pointsB = 0
-        self.isLegacyImport = false
         self.tournamentFixtureID = setup.tournamentMatchID
     }
 
@@ -268,8 +262,6 @@ final class WorkoutSessionRecord {
     var matchID: UUID?
     var date: Date
     var summaryData: Data
-    /// Legacy fatigue fraction from pre-zone versions; kept for history only.
-    var legacyFatigueOnset: Double?
 
     init(id: UUID = UUID(), matchID: UUID?, date: Date, summary: WorkoutSummary) {
         self.id = id

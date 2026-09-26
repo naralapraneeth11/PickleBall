@@ -15,12 +15,10 @@ struct PickleBallApp: App {
     @State private var sportMode = SportMode()
 
     init() {
-        // Order matters: the local player must exist before the legacy
-        // import assigns imported matches to them, and the match centre
-        // must be listening before WatchConnectivity delivers anything
-        // queued while the phone was asleep.
+        // Order matters: the local player must exist before any match is
+        // recorded, and the match centre must be listening before
+        // WatchConnectivity delivers anything queued while the phone slept.
         _ = PlayerDirectory.shared
-        LegacyImporter.runIfNeeded()
         MatchStore.shared.reload()
         TournamentStore.shared.reload()
         WorkoutStore.shared.reload()

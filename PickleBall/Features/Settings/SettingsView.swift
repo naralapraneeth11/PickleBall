@@ -250,9 +250,6 @@ struct SettingsView: View {
         }
 
         let keysToRemove = [
-            "gameHistory",                       // legacy Watch session blob
-            "pickleball_stored_matches",         // legacy match blob
-            "pickleball_saved_tournaments",      // legacy tournament blob
             "profile_firstName",
             "profile_lastName",
             "profile_gender",
@@ -267,8 +264,6 @@ struct SettingsView: View {
             UserDefaults.standard.removeObject(forKey: key)
         }
 
-        // The legacy blobs are gone too, so don't import them again.
-        UserDefaults.standard.set(true, forKey: LegacyImporter.completedKey)
         PlayerDirectory.shared.ensureLocalUser()
         PlayerDirectory.shared.reload()
         MatchStore.shared.reload()
