@@ -138,8 +138,13 @@ struct PlayView: View {
                 Spacer()
 
                 SportSwitchBadge(sport: sport, showsHint: sportMode.showsHint) {
-                    sportMode.toggle()
-                    MatchCenter.shared.publishPreferences(sport: sportMode.sport)
+                    if let live = MatchCenter.shared.live, !live.isEnded {
+                        // Never switch mid-match: open it so it can be ended or parked.
+                        showScoreboard = true
+                    } else {
+                        sportMode.toggle()
+                        MatchCenter.shared.publishPreferences(sport: sportMode.sport)
+                    }
                 }
             }
             .padding(.horizontal, 18)

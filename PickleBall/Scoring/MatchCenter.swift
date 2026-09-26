@@ -225,7 +225,7 @@ final class MatchCenter {
 
     /// A match the phone isn't showing: mirror it (Watch-started) or store it.
     private func adoptRemote(_ snapshot: LogSnapshot) {
-        let setup = snapshot.setup
+        let setup = normalized(snapshot.setup)
         PlayerDirectory.shared.adopt(setup.lineup)
         let record = MatchStore.shared.record(id: setup.matchID) ?? {
             let record = MatchRecord(setup: setup, status: .live)
@@ -245,6 +245,18 @@ final class MatchCenter {
         let match = LiveMatch(setup: setup, role: .client, log: snapshot.rallies)
         live = match
         activities.start(for: match)
+    }
+
+    /// The device owner is the only user-kind player in an offline app. A
+    /// Watch that hasn't received the owner's ID yet labels them with a
+    /// Watch-local ID; map that back to the owner so the match is theirs.
+    private func normalized(_ setup: MatchSetup) -> MatchSetup {
+        let me = PlayerDirectory.shared.me
+        var normalized = setup
+        normalized.lineup.teams = setup.lineup.teams.map { roster in
+            roster.map { $0.kind == .user && $0.id != me.id ? me : $0 }
+        }
+        return normalized
     }
 
     // MARK: - Processing
