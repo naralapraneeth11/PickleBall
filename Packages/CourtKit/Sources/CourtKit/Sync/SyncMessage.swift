@@ -123,8 +123,10 @@ public enum SyncMessage: Hashable, Sendable {
     case log(LogSnapshot)
     case logRequest(matchID: UUID)
     case matchEnded(matchID: UUID, EndReason)
-    /// The phone's active sport, so the Watch follows the phone's mode.
-    case sportMode(Sport)
+    /// Phone → Watch: sport mode, identity and recent players.
+    case preferences(WatchPreferences)
+    /// Watch → phone: the workout recorded alongside a match.
+    case workout(matchID: UUID?, date: Date, WorkoutReport)
 
     public var matchID: UUID? {
         switch self {
@@ -132,7 +134,8 @@ public enum SyncMessage: Hashable, Sendable {
         case .intent(let id, _), .intentRejected(let id, _), .event(let id, _),
              .logRequest(let id), .matchEnded(let id, _):
             return id
-        case .sportMode: return nil
+        case .workout(let id, _, _): return id
+        case .preferences: return nil
         }
     }
 }
@@ -157,6 +160,34 @@ extension SyncMessage {
     }
 }
 
+extension SyncMessage {
+    /// Application-context slot for this message, or nil if it should not
+    /// be kept as "latest state". Logs and preferences each own one slot so
+    /// updating one never wipes the other.
+    public var contextKey: String? {
+        switch self {
+        case .matchStarted, .log: return "courtkit.v1.log"
+        case .preferences: return "courtkit.v1.preferences"
+        default: return nil
+        }
+    }
+
+    /// Every CourtKit message found in a WatchConnectivity dictionary,
+    /// including application-context slots.
+    public static func messages(in payload: [String: Any]) -> [SyncMessage] {
+        var result: [SyncMessage] = []
+        for (key, value) in payload where key.hasPrefix("courtkit.") {
+            guard let data = value as? Data,
+                  let message = try? JSONDecoder.courtKit.decode(SyncMessage.self, from: data) else { continue }
+            result.append(message)
+        }
+        return result
+    }
+
+    /// Encoded bytes for an application-context slot.
+    public var encoded: Data? { try? JSONEncoder.courtKit.encode(self) }
+}
+
 extension JSONEncoder {
     static var courtKit: JSONEncoder {
         let encoder = JSONEncoder()
@@ -177,11 +208,11 @@ extension JSONDecoder {
 
 extension SyncMessage: Codable {
     private enum CodingKeys: String, CodingKey {
-        case type, matchID, snapshot, intent, intentID, event, reason, sport
+        case type, matchID, snapshot, intent, intentID, event, reason, preferences, date, workout
     }
 
     private enum MessageType: String, Codable {
-        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, sportMode
+        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, preferences, workout
     }
 
     public init(from decoder: Decoder) throws {
@@ -203,8 +234,12 @@ extension SyncMessage: Codable {
         case .matchEnded:
             self = .matchEnded(matchID: try c.decode(UUID.self, forKey: .matchID),
                                try c.decode(EndReason.self, forKey: .reason))
-        case .sportMode:
-            self = .sportMode(try c.decode(Sport.self, forKey: .sport))
+        case .preferences:
+            self = .preferences(try c.decode(WatchPreferences.self, forKey: .preferences))
+        case .workout:
+            self = .workout(matchID: try c.decodeIfPresent(UUID.self, forKey: .matchID),
+                            date: try c.decode(Date.self, forKey: .date),
+                            try c.decode(WorkoutReport.self, forKey: .workout))
         }
     }
 
@@ -236,9 +271,14 @@ extension SyncMessage: Codable {
             try c.encode(MessageType.matchEnded, forKey: .type)
             try c.encode(matchID, forKey: .matchID)
             try c.encode(reason, forKey: .reason)
-        case .sportMode(let sport):
-            try c.encode(MessageType.sportMode, forKey: .type)
-            try c.encode(sport, forKey: .sport)
+        case .preferences(let preferences):
+            try c.encode(MessageType.preferences, forKey: .type)
+            try c.encode(preferences, forKey: .preferences)
+        case .workout(let matchID, let date, let report):
+            try c.encode(MessageType.workout, forKey: .type)
+            try c.encodeIfPresent(matchID, forKey: .matchID)
+            try c.encode(date, forKey: .date)
+            try c.encode(report, forKey: .workout)
         }
     }
 }

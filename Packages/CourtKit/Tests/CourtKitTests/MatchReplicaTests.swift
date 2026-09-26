@@ -156,9 +156,26 @@ final class MatchReplicaTests: XCTestCase {
         XCTAssertLessThan(data.count, 2_000)
     }
 
-    func testSportModeMessageRoundTrip() {
-        let message = SyncMessage.sportMode(.padel)
-        XCTAssertEqual(SyncMessage(wcPayload: message.wcPayload), message)
+    func testPreferencesAndWorkoutRoundTrip() {
+        let prefs = SyncMessage.preferences(WatchPreferences(sport: .padel, me: player("Me"), recentPlayers: [player("Sam")], age: 34))
+        XCTAssertEqual(SyncMessage(wcPayload: prefs.wcPayload), prefs)
+        let report = WorkoutReport(duration: 1800, averageHeartRate: 141, peakHeartRate: 176, calories: 410,
+                                   secondsInZone: [0, 60, 300, 900, 480, 60], maxHeartRate: 186,
+                                   shots: .init(forehand: 60, backhand: 30, volley: 12, serve: 20, longestRally: 14))
+        let workout = SyncMessage.workout(matchID: setup.matchID, date: t0, report)
+        XCTAssertEqual(SyncMessage(wcPayload: workout.wcPayload), workout)
+        XCTAssertEqual(report.dominantZone, .threshold)
+        XCTAssertEqual(report.hardShare, 540.0 / 1800.0, accuracy: 0.0001)
         XCTAssertNil(SyncMessage(wcPayload: ["type": "phoneMatchState"]), "legacy payloads are not CourtKit messages")
+    }
+
+    func testApplicationContextSlotsDecode() {
+        let prefs = SyncMessage.preferences(WatchPreferences(sport: .pickleball, me: nil))
+        let log = SyncMessage.log(phone.snapshot)
+        var context: [String: Any] = [:]
+        for message in [prefs, log] {
+            context[message.contextKey!] = message.encoded!
+        }
+        XCTAssertEqual(Set(SyncMessage.messages(in: context)), [prefs, log])
     }
 }
