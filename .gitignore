@@ -1,0 +1,22 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcuserdata
+*.xcuserdatad/
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# Secrets / signing — never commit
+*.p12
+*.mobileprovision
+*.cer
+AuthKey_*.p8
+Secrets.xcconfig
+
+# SPM / CocoaPods (if you add them later)
+.build/
+Pods/
