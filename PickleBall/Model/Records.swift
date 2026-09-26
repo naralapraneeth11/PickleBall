@@ -148,9 +148,8 @@ final class MatchRecord {
         }
         rallies.removeAll { $0.sequence > sharedPrefix }
         for (offset, rally) in log.enumerated().dropFirst(sharedPrefix) {
-            let record = RallyRecord(sequence: offset + 1, winner: rally.winner, at: rally.at)
-            record.match = self
-            rallies.append(record)
+            // Appending sets the inverse (`record.match`) too.
+            rallies.append(RallyRecord(sequence: offset + 1, winner: rally.winner, at: rally.at))
         }
 
         guard let rules else { return }

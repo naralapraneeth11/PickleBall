@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		E66DC3CF2F1EDD6A0028171A /* Pickleball watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E66DC3AF2F1EDD680028171A /* Pickleball watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		E6832A7D2F1578A900570BB4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E6832A7C2F1578A900570BB4 /* LaunchScreen.storyboard */; };
 		9F5C0903F95A070B1F1DBBBA /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = A0DB8025CF5D34C45562B11E /* CourtKit */; };
 		8CB0E9E3D0EE24EDC0416422 /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = 789D134B33176EC241B4DFDE /* CourtKit */; };
 		8C89A4D516E3020BC03C11CD /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = C891D954C00197F557F02EA8 /* CourtKit */; };
@@ -99,7 +98,6 @@
 		E6832A3C2F15744900570BB4 /* PickleBall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PickleBall.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6832A4B2F15744A00570BB4 /* PickleBallTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PickleBallTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6832A552F15744A00570BB4 /* PickleBallUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PickleBallUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E6832A7C2F1578A900570BB4 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		1D96365B012FCF38D3420EE1 /* ScoreActivityWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScoreActivityWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -200,7 +198,6 @@
 		E6832A332F15744900570BB4 = {
 			isa = PBXGroup;
 			children = (
-				E6832A7C2F1578A900570BB4 /* LaunchScreen.storyboard */,
 				E6832A3E2F15744900570BB4 /* PickleBall */,
 				E6832A4E2F15744A00570BB4 /* PickleBallTests */,
 				E6832A582F15744A00570BB4 /* PickleBallUITests */,
@@ -486,7 +483,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E6832A7D2F1578A900570BB4 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

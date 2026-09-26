@@ -173,7 +173,7 @@ enum RecentMatchCardBuilder {
         let storedDates = sortedStored.map { $0.date.timeIntervalSince1970 }
 
         var miss = 0
-        var cards: [RecentMatchCardModel] = sessions.reversed().map { session in
+        let cards: [RecentMatchCardModel] = sessions.reversed().map { session in
             let total = max(0, session.totalShots)
             let fh = total > 0 ? Double(session.forehandCount) / Double(total) : 0
             let bh = total > 0 ? Double(session.backhandCount) / Double(total) : 0
@@ -286,10 +286,15 @@ actor WatchStatsRepository: WatchStatsRepositoryProtocol {
             return WatchStatsFetchResult(hasPermission: true, snapshot: nil, joinMissCount: 0)
         }
 
-        let allTime = AllTimeWatchStats.compute(sessions: sessions)
-        let serveHold = ServeHoldStats.compute(from: stored)
-        let insight = WatchStatsInsight.make(allTime: allTime, serveHold: serveHold)
-        let built = RecentMatchCardBuilder.build(sessions: sessions, storedMatches: stored)
+        // The builders are cheap, pure and main-actor isolated by the app's
+        // default isolation; run them there rather than hopping per call.
+        let (allTime, serveHold, insight, built) = await MainActor.run {
+            let allTime = AllTimeWatchStats.compute(sessions: sessions)
+            let serveHold = ServeHoldStats.compute(from: stored)
+            let insight = WatchStatsInsight.make(allTime: allTime, serveHold: serveHold)
+            let built = RecentMatchCardBuilder.build(sessions: sessions, storedMatches: stored)
+            return (allTime, serveHold, insight, built)
+        }
 
         #if DEBUG
         if built.joinMissCount > 0 {

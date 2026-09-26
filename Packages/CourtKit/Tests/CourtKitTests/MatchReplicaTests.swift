@@ -134,6 +134,22 @@ final class MatchReplicaTests: XCTestCase {
         XCTAssertEqual(late.display, phone.display)
     }
 
+    /// Events can overtake the start snapshot (different WatchConnectivity
+    /// channels). A late client ignores what it can't place, then catches
+    /// up from the snapshot and keeps applying newer events.
+    func testEventsBeforeSnapshotConverge() {
+        var early: [SyncMessage] = []
+        for i in 0..<3 { early += phone.recordRally(wonBy: .a, at: at(Double(i))).outgoing }
+        var late = MatchReplica(setup: setup, role: .client)
+        let requests = deliver([early[1], early[2]], to: &late)
+        XCTAssertEqual(requests, [.logRequest(matchID: setup.matchID)])
+        deliver([.log(phone.snapshot)], to: &late)
+        deliver(early, to: &late)                      // stale duplicates
+        deliver(phone.recordRally(wonBy: .b, at: at(9)).outgoing, to: &late)
+        XCTAssertEqual(late.log, phone.log)
+        XCTAssertEqual(late.display, phone.display)
+    }
+
     func testMatchEndPropagates() {
         let end = phone.end(.completed)
         deliver(end.outgoing, to: &watch)

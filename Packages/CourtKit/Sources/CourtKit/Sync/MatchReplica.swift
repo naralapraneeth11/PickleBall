@@ -50,6 +50,9 @@ public struct MatchReplica: Equatable, Sendable {
 
     /// Host only: intents already applied, to drop duplicate deliveries.
     private var appliedIntentIDs: [UUID]
+    /// Client only: a log request is outstanding. The host republishes its
+    /// log on every change, so one request is enough.
+    private var awaitingLog = false
     private static let appliedIntentMemory = 64
 
     public init(setup: MatchSetup, role: Role, log: [Rally] = [], ended: EndReason? = nil) {
@@ -197,14 +200,12 @@ public struct MatchReplica: Equatable, Sendable {
         case .rally(let team, let at):
             if event.sequence <= log.count { return Outcome() }          // duplicate
             guard event.sequence == log.count + 1 else {                 // gap
-                return Outcome(outgoing: [.logRequest(matchID: matchID)])
+                return requestLog()
             }
             log.append(Rally(winner: team, at: at))
         case .undo:
             guard event.sequence == log.count else {
-                return event.sequence > log.count
-                    ? Outcome(outgoing: [.logRequest(matchID: matchID)])
-                    : Outcome()
+                return event.sequence > log.count ? requestLog() : Outcome()
             }
             log.removeLast()
         }
@@ -220,7 +221,14 @@ public struct MatchReplica: Equatable, Sendable {
         return rebuild(reportEventsFor: event)
     }
 
+    private mutating func requestLog() -> Outcome {
+        guard !awaitingLog else { return Outcome() }
+        awaitingLog = true
+        return Outcome(outgoing: [.logRequest(matchID: matchID)])
+    }
+
     private mutating func clientAdopt(_ snapshot: LogSnapshot) -> Outcome {
+        awaitingLog = false
         let acknowledged = Set(snapshot.appliedIntentIDs)
         log = snapshot.rallies
         pending.removeAll { acknowledged.contains($0.id) }

@@ -34,6 +34,8 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
 
     private let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
     private var contextSlots: [String: Data] = [:]
+    /// Messages sent before the session finished activating.
+    private var pendingMessages: [SyncMessage] = []
     private let healthStore = HKHealthStore()
 
     private override init() {
@@ -49,10 +51,19 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     }
 
     func send(_ message: SyncMessage) {
-        guard let session, session.activationState == .activated else { return }
+        guard let session else { return }
 
         if let key = message.contextKey, let data = message.encoded {
             contextSlots[key] = data
+        }
+        guard session.activationState == .activated else {
+            if message.contextKey == nil { pendingMessages.append(message) }
+            return
+        }
+        // No Watch app to talk to: nothing to send (the context stays cached).
+        guard session.isPaired, session.isWatchAppInstalled else { return }
+
+        if message.contextKey != nil {
             do {
                 try session.updateApplicationContext(contextSlots)
             } catch {
@@ -118,6 +129,17 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         for message in messages { onMessage?(message) }
     }
 
+    /// Pushes everything that was sent before activation completed.
+    fileprivate func flushPending() {
+        guard let session, session.activationState == .activated else { return }
+        if !contextSlots.isEmpty {
+            try? session.updateApplicationContext(contextSlots)
+        }
+        let queued = pendingMessages
+        pendingMessages.removeAll()
+        send(queued)
+    }
+
     fileprivate func refreshState() {
         guard let session else { return }
         isWatchPaired = session.isPaired
@@ -136,6 +158,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
         let pending = SyncMessage.messages(in: session.receivedApplicationContext)
         Task { @MainActor in
             self.refreshState()
+            self.flushPending()
             self.deliver(pending)
         }
     }

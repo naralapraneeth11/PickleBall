@@ -226,18 +226,16 @@ extension WorkoutManager: HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate
     nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
 
     nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
-        var bpm: Double = 0
-        var energy: Double?
         let heartRateType = HKQuantityType(.heartRate)
         let energyType = HKQuantityType(.activeEnergyBurned)
-        if collectedTypes.contains(heartRateType) {
-            bpm = workoutBuilder.statistics(for: heartRateType)?
+        let bpm: Double = collectedTypes.contains(heartRateType)
+            ? workoutBuilder.statistics(for: heartRateType)?
                 .mostRecentQuantity()?
                 .doubleValue(for: HKUnit.count().unitDivided(by: .minute())) ?? 0
-        }
-        if collectedTypes.contains(energyType) {
-            energy = workoutBuilder.statistics(for: energyType)?.sumQuantity()?.doubleValue(for: .kilocalorie())
-        }
+            : 0
+        let energy: Double? = collectedTypes.contains(energyType)
+            ? workoutBuilder.statistics(for: energyType)?.sumQuantity()?.doubleValue(for: .kilocalorie())
+            : nil
         Task { @MainActor in self.ingest(heartRate: bpm, calories: energy) }
     }
 }

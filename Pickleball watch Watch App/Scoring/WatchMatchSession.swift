@@ -31,6 +31,7 @@ final class WatchMatchSession: NSObject {
     @ObservationIgnored private let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private var contextSlots: [String: Data] = [:]
+    @ObservationIgnored private var pendingMessages: [SyncMessage] = []
 
     private enum Keys {
         static let preferences = "watch.preferences"
@@ -210,9 +211,15 @@ final class WatchMatchSession: NSObject {
     // MARK: - Transport
 
     private func send(_ message: SyncMessage) {
-        guard let session, session.activationState == .activated else { return }
+        guard let session else { return }
         if let key = message.contextKey, let data = message.encoded {
             contextSlots[key] = data
+        }
+        guard session.activationState == .activated else {
+            if message.contextKey == nil { pendingMessages.append(message) }
+            return
+        }
+        if message.contextKey != nil {
             try? session.updateApplicationContext(contextSlots)
             if case .matchStarted = message, session.isReachable {
                 session.sendMessage(message.wcPayload, replyHandler: nil, errorHandler: nil)
@@ -231,6 +238,14 @@ final class WatchMatchSession: NSObject {
 
     fileprivate func deliver(_ messages: [SyncMessage]) {
         for message in messages { handle(message) }
+    }
+
+    fileprivate func flushPending() {
+        guard let session, session.activationState == .activated else { return }
+        if !contextSlots.isEmpty { try? session.updateApplicationContext(contextSlots) }
+        let queued = pendingMessages
+        pendingMessages.removeAll()
+        for message in queued { send(message) }
     }
 
     fileprivate func refreshReachability() {
@@ -268,6 +283,7 @@ extension WatchMatchSession: WCSessionDelegate {
         let pending = SyncMessage.messages(in: session.receivedApplicationContext)
         Task { @MainActor in
             self.refreshReachability()
+            self.flushPending()
             self.deliver(pending)
         }
     }

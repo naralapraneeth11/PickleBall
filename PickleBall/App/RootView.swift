@@ -33,7 +33,7 @@ struct RootView: View {
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.88), value: hasCompletedOnboarding)
         
         // Accessibility: Announce screen change for VoiceOver users when onboarding completes
-        .onChange(of: hasCompletedOnboarding) { newValue in
+        .onChange(of: hasCompletedOnboarding) { _, newValue in
             if newValue {
                 // Slight delay ensures the transition has visually begun before VoiceOver speaks
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

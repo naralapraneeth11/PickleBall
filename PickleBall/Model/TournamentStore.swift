@@ -156,8 +156,7 @@ final class TournamentStore: ObservableObject {
                 fixture = existing
             } else {
                 fixture = TournamentFixtureRecord(id: match.id, order: order, player1: match.player1, player2: match.player2)
-                fixture.tournament = record
-                record.fixtures.append(fixture)
+                record.fixtures.append(fixture)   // also sets fixture.tournament
             }
             fixture.order = order
             fixture.player1 = match.player1
