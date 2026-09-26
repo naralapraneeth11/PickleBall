@@ -88,13 +88,13 @@ public struct SportSwitchBadge: View {
         .animation(DS.Motion.press, value: isPressing)
         .animation(DS.Motion.snappy, value: sport)
         .contentShape(Capsule())
-        .onLongPressGesture(minimumDuration: 0.45, pressing: { pressing in
-            isPressing = pressing
-            if pressing { Haptics.warm() }
-        }, perform: {
+        .onLongPressGesture(minimumDuration: 0.45) {
             Haptics.medium()
             withAnimation(DS.Motion.snappy) { onSwitch() }
-        })
+        } onPressingChanged: { pressing in
+            isPressing = pressing
+            if pressing { Haptics.warm() }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Sport: \(sport.displayName)")
         .accessibilityHint("Double-tap and hold to switch to \(sport.toggled.displayName)")

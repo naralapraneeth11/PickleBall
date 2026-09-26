@@ -61,6 +61,19 @@ jobs:
             2>&1 | tee watch-build.log | grep -E "error:|\*\* BUILD" || true
           grep -q "\*\* BUILD SUCCEEDED \*\*" watch-build.log
 
+      - name: Build summary
+        if: always()
+        run: |
+          for log in ios-build.log watch-build.log; do
+            [ -f "$log" ] || continue
+            echo "== $log =="
+            echo "Swift files compiled per target:"
+            grep -E "^SwiftCompile normal [a-z0-9_]+ .*\.swift" "$log" \
+              | sed -E 's/.*\(in target .([^)]*). from project.*/\1/' | sort | uniq -c || true
+            echo "Warnings in project sources:"
+            grep -E "^/Users/runner/work/PickleBall/PickleBall/.*: warning:" "$log" | sort -u | sed 's|/Users/runner/work/PickleBall/PickleBall/||' || true
+          done
+
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
