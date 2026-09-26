@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  courtkit:
+    name: CourtKit tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        run: swift test --package-path Packages/CourtKit
+
+  apps:
+    name: Build iOS + watchOS
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then XCODE=$(ls -d /Applications/Xcode*.app | sort -V | tail -1); fi
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -E "iphonesimulator|watchsimulator"
+
+      - name: Build iPhone app (includes Watch app and extensions)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project PickleBall.xcodeproj \
+            -scheme PickleBall \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ios-build.log | grep -E "error:|warning: unre|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" ios-build.log
+
+      - name: Build Watch app
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project PickleBall.xcodeproj \
+            -scheme "Pickleball watch Watch App" \
+            -destination 'generic/platform=watchOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee watch-build.log | grep -E "error:|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" watch-build.log
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: "*-build.log"
+          if-no-files-found: ignore
