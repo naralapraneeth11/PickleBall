@@ -332,6 +332,16 @@ select test.eq((select status from public.callouts where id = :'callout'), 'comp
 select test.eq((select match_id from public.callouts where id = :'callout'), '10000000-0000-0000-0000-000000000007'::uuid,
   'call out links to its match');
 
+select public.create_callout(jsonb_build_object('challengers', jsonb_build_array(:'alice'), 'challenged', jsonb_build_array(:'carol'),
+  'sport', 'padel', 'rules', '{}'::jsonb)) as callout2 \gset
+:as_carol
+select test.eq(public.respond_callout(:'callout2', 'accept'), 'accepted', 'carol accepts');
+select test.throws(format($$select public.respond_callout(%L, 'cancel')$$, :'callout2'), 'only the challenger',
+  'only the challenger cancels');
+:as_alice
+select test.eq(public.respond_callout(:'callout2', 'cancel'), 'cancelled', 'an accepted call out can be called off');
+select test.eq(public.respond_callout(:'callout2', 'accept'), 'cancelled', 'a cancelled call out stays cancelled');
+
 -- ── Squad tournaments ────────────────────────────────────────────────────
 
 :as_alice

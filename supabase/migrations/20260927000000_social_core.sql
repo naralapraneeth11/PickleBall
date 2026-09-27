@@ -1024,13 +1024,14 @@ declare
 begin
   select * into co from public.callouts where id = cid for update;
   if not found then raise exception 'no such call out'; end if;
-  if co.status not in ('pending','countered') then return co.status; end if;
-
+  -- The challenger can call it off any time before it's played.
   if response = 'cancel' then
     if co.created_by <> me then raise exception 'only the challenger can cancel'; end if;
+    if co.status not in ('pending','countered','accepted') then return co.status; end if;
     update public.callouts set status = 'cancelled' where id = cid;
     return 'cancelled';
   end if;
+  if co.status not in ('pending','countered') then return co.status; end if;
 
   -- The side that didn't make the last move answers.
   if co.status = 'pending' and not (me = any(co.challenged)) then raise exception 'not your call out to answer'; end if;
