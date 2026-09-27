@@ -121,6 +121,12 @@ insert into public.profiles (id, username, display_name) values (:'eve', 'eve', 
 insert into public.profiles (id, username, display_name) values (:'frank', 'frank', 'Frank');
 
 :as_eve
+select test.ok(not public.username_available('alice'), 'taken usernames are unavailable');
+select test.ok(not public.username_available('ALICE'), 'availability ignores case');
+select test.ok(public.username_available('eve'), 'your own username counts as available');
+select test.ok(public.username_available('eve_2'), 'free usernames are available');
+select test.ok(not public.username_available('e'), 'invalid usernames are unavailable');
+:as_eve
 select test.eq((select count(*) from public.profiles where id = :'alice'), 0::bigint, 'strangers cannot read profiles');
 select test.eq((select count(*) from public.profiles), 1::bigint, 'profiles are not listable');
 select test.eq((select count(*) from public.search_users('ali')), 1::bigint, 'username prefix search finds alice');
@@ -391,6 +397,14 @@ select test.eq(public.save_match(test.match('10000000-0000-0000-0000-00000000000
 update public.tournament_fixtures set scheduled_at = '2026-10-07T19:00:00Z' where id = '20000000-0000-0000-0000-000000000002';
 select test.eq((select scheduled_at from public.tournament_fixtures where id = '20000000-0000-0000-0000-000000000002'),
   '2026-10-07T19:00:00Z'::timestamptz, 'members reschedule fixtures');
+insert into public.tournament_fixtures (tournament_id, round, team_a, team_b)
+values (:'tournament', 2, array[:'alice']::uuid[], array[:'carol']::uuid[]);
+select test.eq((select count(*) from public.tournament_fixtures where tournament_id = :'tournament'), 3::bigint,
+  'members add the next round');
+:as_eve
+select test.throws(format($$insert into public.tournament_fixtures (tournament_id, round, team_a, team_b) values (%L, 3, '{}', '{}')$$,
+  :'tournament'), 'row-level security', 'non-members cannot add fixtures');
+:as_bob
 select public.complete_tournament(:'tournament', array[:'alice']::uuid[]);
 select public.complete_tournament(:'tournament', array[:'alice']::uuid[]);
 select test.eq((select count(*) from public.trophies where owner_id = :'alice'), 1::bigint, 'champion gets one trophy');
@@ -475,6 +489,24 @@ select test.eq((select count(*) from public.feed_serves where id = '40000000-000
 :as_alice
 select test.eq((select count(*) from public.serves where author_id = :'alice'), 3::bigint, 'dead balls stay in the archive');
 
+-- ── Live matches ─────────────────────────────────────────────────────────
+
+:as_alice
+insert into public.live_matches (match_id, host_id, sport, player_ids, lineup, score)
+values ('70000000-0000-0000-0000-000000000001', :'alice', 'pickleball', array[:'alice', :'bob']::uuid[], '{}', '{"call":"0-0-2"}');
+update public.live_matches set score = '{"call":"1-0-2"}' where match_id = '70000000-0000-0000-0000-000000000001';
+:as_carol
+select test.eq((select score->>'call' from public.live_matches), '1-0-2', 'friends follow a live match');
+:as_eve
+select test.eq((select count(*) from public.live_matches), 0::bigint, 'strangers cannot see live matches');
+select test.throws(format($$insert into public.live_matches (match_id, host_id, sport, lineup, score) values (gen_random_uuid(), %L, 'padel', '{}', '{}')$$,
+  :'alice'), 'row-level security', 'nobody hosts for someone else');
+:as_bob
+update public.live_matches set score = '{"call":"hacked"}';
+select test.eq((select score->>'call' from public.live_matches), '1-0-2', 'only the host updates the score');
+:as_alice
+delete from public.live_matches where match_id = '70000000-0000-0000-0000-000000000001';
+
 -- ── Reports and blocks ───────────────────────────────────────────────────
 
 :as_bob
@@ -528,7 +560,7 @@ select test.eq((select display_name from public.players where id = :'frank'), 'F
 
 :as_admin
 select test.eq((select count(*) from pg_publication_tables where pubname = 'supabase_realtime'
-                and tablename in ('messages', 'matches', 'serves', 'callouts')), 4::bigint, 'live tables are published');
+                and tablename in ('messages', 'matches', 'serves', 'callouts', 'live_matches')), 5::bigint, 'live tables are published');
 
 -- ── API surface ──────────────────────────────────────────────────────────
 

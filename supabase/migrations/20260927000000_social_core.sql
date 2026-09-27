@@ -446,6 +446,27 @@ create trigger returns_rally after insert or delete on public.returns
   for each row execute function private.count_rally();
 
 -- ─────────────────────────────────────────────────────────────────────────
+-- Live matches: a Watch- or phone-scored match in progress, so friends can
+-- follow the score and send crowd taps. The host keeps it fresh and
+-- removes it at the end; the taps themselves go over a Realtime broadcast.
+-- ─────────────────────────────────────────────────────────────────────────
+
+create table public.live_matches (
+  match_id    uuid primary key,
+  host_id     uuid not null references public.profiles(id) on delete cascade,
+  sport       text not null check (sport in ('pickleball','padel')),
+  player_ids  uuid[] not null default '{}',   -- accounts in the match
+  lineup      jsonb not null,                 -- CourtKit Lineup (names)
+  score       jsonb not null,                 -- CourtKit LiveScoreSnapshot
+  squad_id    uuid references public.squads(id) on delete set null,
+  started_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create trigger live_matches_touch before update on public.live_matches
+  for each row execute function private.touch_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────
 -- Row-level security
 -- ─────────────────────────────────────────────────────────────────────────
 
@@ -469,6 +490,7 @@ alter table public.trophies             enable row level security;
 alter table public.replays              enable row level security;
 alter table public.serves               enable row level security;
 alter table public.returns              enable row level security;
+alter table public.live_matches         enable row level security;
 
 -- Profiles: you, friends and squadmates. Username search goes through an
 -- RPC that returns a minimal card, so profiles are never listable.
@@ -553,6 +575,10 @@ create policy tournament_entrants_select on public.tournament_entrants for selec
 create policy tournament_fixtures_select on public.tournament_fixtures for select to authenticated
   using (exists (select 1 from public.tournaments t where t.id = tournament_id
                  and private.is_squad_member(t.squad_id, auth.uid())));
+-- King of the Court adds each round's fixtures as the last one finishes.
+create policy tournament_fixtures_insert on public.tournament_fixtures for insert to authenticated
+  with check (exists (select 1 from public.tournaments t where t.id = tournament_id
+                      and t.status = 'active' and private.is_squad_member(t.squad_id, auth.uid())));
 create policy tournament_fixtures_update on public.tournament_fixtures for update to authenticated
   using (exists (select 1 from public.tournaments t where t.id = tournament_id
                  and private.is_squad_member(t.squad_id, auth.uid())));
@@ -591,6 +617,20 @@ create policy returns_insert on public.returns for insert to authenticated
 create policy returns_delete on public.returns for delete to authenticated
   using (author_id = auth.uid());
 
+-- Live matches: the host's friends, the players, and the squad follow along.
+create policy live_matches_select on public.live_matches for select to authenticated
+  using (
+    host_id = auth.uid() or auth.uid() = any(player_ids)
+    or private.are_friends(auth.uid(), host_id)
+    or (squad_id is not null and private.is_squad_member(squad_id, auth.uid()))
+  );
+create policy live_matches_insert on public.live_matches for insert to authenticated
+  with check (host_id = auth.uid());
+create policy live_matches_update on public.live_matches for update to authenticated
+  using (host_id = auth.uid()) with check (host_id = auth.uid());
+create policy live_matches_delete on public.live_matches for delete to authenticated
+  using (host_id = auth.uid());
+
 -- ─────────────────────────────────────────────────────────────────────────
 -- Views
 -- ─────────────────────────────────────────────────────────────────────────
@@ -607,6 +647,13 @@ create view public.feed_serves with (security_invoker = true) as
 -- ─────────────────────────────────────────────────────────────────────────
 -- RPCs
 -- ─────────────────────────────────────────────────────────────────────────
+
+-- Profile setup checks a name before saving it (profiles aren't listable).
+create or replace function public.username_available(name text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select lower(name) ~ '^[a-z0-9_.]{3,20}$' and lower(name) !~ '^[._]|[._]$'
+     and not exists (select 1 from public.profiles where username = lower(name) and id <> auth.uid())
+$$;
 
 -- Username search: exact or prefix match, minimal card only.
 create or replace function public.search_users(query text)
@@ -1182,7 +1229,7 @@ revoke execute on function private.finalize_match(uuid, uuid, jsonb),
 alter publication supabase_realtime add table
   public.messages, public.conversations, public.friendships, public.matches,
   public.match_participants, public.callouts, public.serves, public.returns,
-  public.tournament_fixtures, public.tournaments;
+  public.tournament_fixtures, public.tournaments, public.live_matches;
 
 insert into storage.buckets (id, name, public) values
   ('avatars', 'avatars', true),
