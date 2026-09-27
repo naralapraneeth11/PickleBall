@@ -36,6 +36,20 @@ struct WatchScoringView: View {
             teamButton(.a)
         }
         .padding(.horizontal, 4)
+        .overlay(alignment: .top) {
+            if let cheer = session.cheer {
+                Label(cheer, systemImage: "hands.clap.fill")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(theme.accent))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .animation(.snappy, value: session.cheer)
         .focusable()
         .focused($focused)
         .digitalCrownRotation($crown, from: -1_000, through: 1_000, by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)

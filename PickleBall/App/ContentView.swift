@@ -4,28 +4,29 @@ import CourtKit
 
 // MARK: - Tab Definition
 
+/// Five tabs, opening on Play. Me sits in the middle.
 enum AppTab: Int, CaseIterable, Identifiable {
-    case home, stats, play, profile, watch
+    case play, chats, me, tournaments, feed
 
     var id: Int { rawValue }
 
     var label: String {
         switch self {
-        case .home:    return "Home"
-        case .stats:   return "Stats"
-        case .play:    return "Play"
-        case .profile: return "Profile"
-        case .watch:   return "Watch"
+        case .play:        return "Play"
+        case .chats:       return "Chats"
+        case .me:          return "Me"
+        case .tournaments: return "Tournaments"
+        case .feed:        return "Feed"
         }
     }
 
     var icon: String {
         switch self {
-        case .home:    return "house.fill"
-        case .stats:   return "circle.hexagongrid.fill"
-        case .play:    return "tennisball.circle.fill"
-        case .profile: return "person.fill"
-        case .watch:   return "applewatch"
+        case .play:        return "tennisball.circle.fill"
+        case .chats:       return "bubble.left.and.bubble.right.fill"
+        case .me:          return "person.crop.circle.fill"
+        case .tournaments: return "trophy.fill"
+        case .feed:        return "rectangle.stack.fill"
         }
     }
 }
@@ -33,43 +34,40 @@ enum AppTab: Int, CaseIterable, Identifiable {
 // MARK: - ContentView
 
 struct ContentView: View {
-    // @State (not @SceneStorage) so cold launches always start on Home.
-    // Selection still survives backgrounding within the same session because
-    // SwiftUI keeps @State alive as long as the scene is alive.
-    @State private var selectedTab: AppTab = .home
-
+    // @State (not @SceneStorage) so cold launches always start on Play.
+    @State private var selectedTab: AppTab = .play
     @State private var isKeyboardVisible: Bool = false
+    private let social = Social.shared
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Switch instead of opacity stack. Apple's own tabs (Settings,
-            // Photos, Messages) swap, not crossfade. The opacity-stack
-            // approach keeps all 5 views alive at all times — meaning
-            // WatchStatsDetailView's fetchRecentFromHealthKit, MainMenu's
-            // loaders, etc. all fire on launch. Not worth it.
+            // Switch instead of an opacity stack: only the visible tab is
+            // alive, so its loaders don't all fire at launch.
             Group {
                 switch selectedTab {
-                case .home:
-                    MainMenu()
-                case .stats:
-                    NavigationStack { StatsView() }
                 case .play:
-                    PlayView()
-                case .profile:
+                    MainMenu()
+                case .chats:
+                    NavigationStack { ChatsView() }
+                case .me:
                     NavigationStack { ProfileView() }
-                case .watch:
-                    NavigationStack { WatchStatsDetailView() }
+                case .tournaments:
+                    NavigationStack { TournamentsView() }
+                case .feed:
+                    NavigationStack { FeedView() }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !isKeyboardVisible {
-                GlassTabBar(selectedTab: $selectedTab)
+                GlassTabBar(selectedTab: $selectedTab, badges: badges)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .ignoresSafeArea(.keyboard)
         .background(Color(.systemBackground))
+        .noticeToast()
+        .sharePromptHost()
         .onReceive(
             NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
         ) { _ in
@@ -81,12 +79,21 @@ struct ContentView: View {
             withAnimation(.easeOut(duration: 0.18)) { isKeyboardVisible = false }
         }
     }
+
+    /// Tabs with something waiting.
+    private var badges: Set<AppTab> {
+        var set: Set<AppTab> = []
+        if !social.awaitingMyConfirmation.isEmpty || !social.callOutsAwaitingMe.isEmpty { set.insert(.play) }
+        if social.conversations.contains(where: social.hasUnread) || !social.incomingRequests.isEmpty { set.insert(.chats) }
+        return set
+    }
 }
 
 // MARK: - Glass Tab Bar
 
 private struct GlassTabBar: View {
     @Binding var selectedTab: AppTab
+    var badges: Set<AppTab> = []
     @Namespace private var tabNamespace
 
     private let accent = DS.Palette.ink
@@ -98,6 +105,7 @@ private struct GlassTabBar: View {
                 TabBarButton(
                     tab: tab,
                     isSelected: selectedTab == tab,
+                    hasBadge: badges.contains(tab),
                     namespace: tabNamespace,
                     accent: accent,
                     inactive: inactive,
@@ -143,6 +151,7 @@ private struct GlassTabBar: View {
 private struct TabBarButton: View {
     let tab: AppTab
     let isSelected: Bool
+    var hasBadge = false
     let namespace: Namespace.ID
     let accent: Color
     let inactive: Color
@@ -159,6 +168,14 @@ private struct TabBarButton: View {
                     .frame(height: 24)
                     .scaleEffect(isSelected ? 1.08 : 1.0)
                     .animation(.spring(response: 0.28, dampingFraction: 0.7), value: isSelected)
+                    .overlay(alignment: .topTrailing) {
+                        if hasBadge {
+                            Circle()
+                                .fill(DS.Palette.loss)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 5, y: -2)
+                        }
+                    }
 
                 Text(tab.label)
                     .font(.system(size: 10,
@@ -199,6 +216,7 @@ private struct TabBarButton: View {
         .buttonStyle(.press)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isSelected ? "\(tab.label) tab, selected" : "\(tab.label) tab")
+        .accessibilityValue(hasBadge ? "New activity" : "")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

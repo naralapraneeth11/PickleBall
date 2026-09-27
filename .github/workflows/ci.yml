@@ -20,6 +20,37 @@ jobs:
       - name: swift test
         run: swift test --package-path Packages/CourtKit
 
+  courtnet:
+    name: CourtNet tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        run: swift test --package-path Packages/CourtNet
+
+  database:
+    name: Supabase schema tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations and run policy tests
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
+        run: supabase/ci-tests/run.sh
+
   apps:
     name: Build iOS + watchOS
     runs-on: macos-26
@@ -46,6 +77,7 @@ jobs:
             -configuration Debug \
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS='$(inherited) -continue-building-after-errors' \
             2>&1 | tee ios-build.log | grep -E "error:|warning: unre|\*\* BUILD" || true
           grep -q "\*\* BUILD SUCCEEDED \*\*" ios-build.log
 

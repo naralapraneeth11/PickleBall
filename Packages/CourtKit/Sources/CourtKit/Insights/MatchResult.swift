@@ -21,6 +21,8 @@ public struct MatchResult: Identifiable, Hashable, Codable, Sendable {
     public var pointsWon: TeamPair<Int>
     /// Games (pickleball) or sets (padel) won.
     public var matchScore: TeamPair<Int>
+    /// The squad the match was played in, if any. Decides squad belts.
+    public var squadID: UUID?
 
     public init(
         id: UUID,
@@ -30,7 +32,8 @@ public struct MatchResult: Identifiable, Hashable, Codable, Sendable {
         winner: Team?,
         units: [CompletedUnit],
         pointsWon: TeamPair<Int>,
-        matchScore: TeamPair<Int>
+        matchScore: TeamPair<Int>,
+        squadID: UUID? = nil
     ) {
         self.id = id
         self.sport = sport
@@ -40,6 +43,7 @@ public struct MatchResult: Identifiable, Hashable, Codable, Sendable {
         self.units = units
         self.pointsWon = pointsWon
         self.matchScore = matchScore
+        self.squadID = squadID
     }
 
     public init(id: UUID, date: Date, lineup: Lineup, scorer: MatchScorer) {

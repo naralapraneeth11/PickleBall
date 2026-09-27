@@ -10,28 +10,22 @@
 import SwiftUI
 import UIKit
 import CourtKit
-
-// Item-based cover wrapper guarantees `resuming` is passed as a parameter
-// to the closure rather than captured from state at presentation time.
-private struct TournamentPresentation: Identifiable {
-    let id: UUID
-    let resuming: SavedTournament?
-}
+import CourtNet
 
 struct PlayView: View {
     @Environment(SportMode.self) private var sportMode
-    @ObservedObject private var tournamentStore = TournamentStore.shared
     @ObservedObject private var matchStore = MatchStore.shared
     @ObservedObject private var directory = PlayerDirectory.shared
 
     var onDismiss: (() -> Void)?
+    /// A call out or tournament fixture: players, format and context set.
+    var prefill: MatchPrefill?
     @Environment(\.dismiss) private var dismiss
 
     @State private var isSingles = false
     @State private var slots: [SlotEntry] = [.empty, .empty, .empty, .empty]   // A1, A2, B1, B2
     @State private var firstServer: Team = .a
     @State private var showScoreboard = false
-    @State private var tournamentPresentation: TournamentPresentation?
 
     // Pickleball
     @State private var pickleballScoring: PickleballScoring = .sideOut
@@ -62,13 +56,9 @@ struct PlayView: View {
                         playersCard
                         formatCard
                         startMatchButton
-                        tournamentButton
 
-                        if !matchStore.parked.isEmpty {
+                        if !matchStore.parked.isEmpty && prefill == nil {
                             parkedSection
-                        }
-                        if !tournamentStore.incompleteTournaments.isEmpty {
-                            savedTournamentsSection
                         }
                     }
                     .padding(.top, 14)
@@ -82,16 +72,13 @@ struct PlayView: View {
         .fullScreenCover(isPresented: $showScoreboard) {
             LiveMatchScreen()
         }
-        .fullScreenCover(item: $tournamentPresentation) { presentation in
-            if let saved = presentation.resuming {
-                TournamentRunView(tournament: saved)
-            } else {
-                TournamentSetupView()
-            }
-        }
         .onAppear {
             Haptics.warm()
-            if slots[0] == .empty { slots[0] = .player(directory.me) }
+            if let prefill, slots[0] == .empty {
+                apply(prefill)
+            } else if slots[0] == .empty {
+                slots[0] = .player(directory.me)
+            }
         }
     }
 
@@ -345,6 +332,25 @@ struct PlayView: View {
         }
     }
 
+    /// Sets players and format from a call out or tournament fixture.
+    private func apply(_ prefill: MatchPrefill) {
+        if prefill.rules.sport != sportMode.sport { sportMode.toggle() }
+        isSingles = !prefill.rules.isDoubles
+        let a = prefill.lineup.teams.a, b = prefill.lineup.teams.b
+        slots = [a.first.map(SlotEntry.player) ?? .empty, a.dropFirst().first.map(SlotEntry.player) ?? .empty,
+                 b.first.map(SlotEntry.player) ?? .empty, b.dropFirst().first.map(SlotEntry.player) ?? .empty]
+        switch prefill.rules {
+        case .pickleball(let scoring, let config):
+            pickleballScoring = scoring
+            pointsIndex = pointsOptions.firstIndex(of: config.pointsToWin) ?? 0
+            gamesIndex = gamesOptions.firstIndex(of: config.gamesToWin) ?? 0
+        case .padel(let config):
+            setsIndex = config.setsToWin == 1 ? 0 : 1
+            deuceRule = config.deuceRule
+            if case .fullSet = config.decidingSet { superTiebreak = false } else { superTiebreak = true }
+        }
+    }
+
     private func buildLineup() -> Lineup {
         let placeholders = ["You", "Partner", "Opponent", "Opponent 2"]
         var players: [PlayerRef] = []
@@ -369,7 +375,7 @@ struct PlayView: View {
         Button {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             Haptics.medium()
-            MatchCenter.shared.startMatch(rules: currentRules, lineup: buildLineup())
+            MatchCenter.shared.startMatch(rules: currentRules, lineup: buildLineup(), context: prefill?.context ?? MatchContext())
             showScoreboard = true
         } label: {
             HStack(spacing: 10) {
@@ -390,28 +396,6 @@ struct PlayView: View {
         .buttonStyle(.press)
         .padding(.horizontal, 16)
         .accessibilityLabel("Start \(sport.displayName) match")
-    }
-
-    private var tournamentButton: some View {
-        Button {
-            Haptics.light()
-            tournamentPresentation = TournamentPresentation(id: UUID(), resuming: nil)
-        } label: {
-            Text("TOURNAMENT")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .tracking(0.8)
-                .foregroundStyle(DS.Palette.royalBlue)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 15)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous).fill(Color.white))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                        .stroke(DS.Palette.royalBlue.opacity(0.5), lineWidth: 1.5)
-                )
-        }
-        .buttonStyle(.press)
-        .padding(.horizontal, 16)
-        .accessibilityLabel("Tournament setup")
     }
 
     // MARK: Parked matches
@@ -440,57 +424,6 @@ struct PlayView: View {
                         }
                     } label: {
                         Text("Resume")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(DS.Palette.royalBlue))
-                    }
-                    .buttonStyle(.press)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .cardSurface(radius: DS.Radius.control)
-                .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    // MARK: Saved tournaments
-
-    private var savedTournamentsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("CONTINUE TOURNAMENT").eyebrowStyle().padding(.horizontal, 16)
-            ForEach(tournamentStore.incompleteTournaments) { tournament in
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(tournament.resolvedTitle)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(DS.Palette.royalBlue)
-                            .lineLimit(1)
-                        Text("\(tournament.completedCount) of \(tournament.matches.count) matches · \(tournament.createdAt.formatted(.dateTime.month(.abbreviated).day()))")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Palette.textSecondary)
-                    }
-                    Spacer()
-                    Button {
-                        Haptics.light()
-                        tournamentStore.delete(id: tournament.id)
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(DS.Palette.textMuted)
-                            .frame(width: 44, height: 44)
-                            .background(Circle().fill(DS.Palette.fieldGrey).frame(width: 28, height: 28))
-                    }
-                    .buttonStyle(.press)
-                    .accessibilityLabel("Delete \(tournament.resolvedTitle)")
-
-                    Button {
-                        Haptics.medium()
-                        tournamentPresentation = TournamentPresentation(id: tournament.id, resuming: tournament)
-                    } label: {
-                        Text("Continue")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 14)

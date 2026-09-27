@@ -51,8 +51,13 @@ struct StoredMatch: Identifiable, Equatable, Hashable {
 final class MatchStore: ObservableObject {
     static let shared = MatchStore()
 
-    /// Every finished match, newest first.
+    /// Every finished match that isn't disputed, newest first.
     @Published private(set) var results: [MatchResult] = []
+    /// Matches both sides agreed to (and ones against guests): what belts
+    /// are built from.
+    @Published private(set) var confirmedResults: [MatchResult] = []
+    /// The Belt, derived from confirmed matches.
+    @Published private(set) var belts = BeltLedger()
     /// Finished matches the device owner played, newest first.
     @Published private(set) var matches: [StoredMatch] = []
     /// Matches paused mid-way that can be resumed, newest first.
@@ -72,8 +77,10 @@ final class MatchStore: ObservableObject {
             predicate: #Predicate { $0.statusRaw == completed },
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
-        let records = (try? context.fetch(descriptor)) ?? []
+        let records = ((try? context.fetch(descriptor)) ?? []).filter { $0.confirmation != .disputed }
         results = records.compactMap(\.result)
+        confirmedResults = records.filter { $0.confirmation == .confirmed }.compactMap(\.result)
+        belts = BeltLedger.compute(confirmedResults)
 
         let meID = me.id
         matches = records.compactMap { Self.storedMatch(from: $0, me: meID) }
@@ -91,6 +98,14 @@ final class MatchStore: ObservableObject {
         var descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate { $0.id == raw })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
+    }
+
+    /// The local match recorded for a squad tournament fixture.
+    func matchID(forFixture fixtureID: UUID) -> UUID? {
+        let raw: UUID? = fixtureID
+        var descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate { $0.tournamentFixtureID == raw })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first?.id
     }
 
     func delete(matchID: UUID) {

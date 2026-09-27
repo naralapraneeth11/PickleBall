@@ -12,6 +12,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import WatchKit
 import CourtKit
 
 @MainActor
@@ -27,6 +28,10 @@ final class WatchMatchSession: NSObject {
     private(set) var revision = 0
     private(set) var lastEvents: [ScoreEvent] = []
     private(set) var isPhoneReachable = false
+    /// The latest crowd tap that buzzed the wrist: "Priya · Let's go!".
+    private(set) var cheer: String?
+    @ObservationIgnored private var chantPlayer = ChantPlayer()
+    @ObservationIgnored private var cheerTask: Task<Void, Never>?
 
     @ObservationIgnored private let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
     @ObservationIgnored private let defaults = UserDefaults.standard
@@ -181,6 +186,9 @@ final class WatchMatchSession: NSObject {
             return
         case .workout:
             return
+        case .crowd(let tap, let chant):
+            play(tap, chant: chant)
+            return
         default:
             break
         }
@@ -205,6 +213,31 @@ final class WatchMatchSession: NSObject {
             WorkoutManager.shared.start(sport: snapshot.setup.rules.sport, matchID: snapshot.setup.matchID)
         default:
             break
+        }
+    }
+
+    // MARK: - Crowd taps
+
+    /// Plays a friend's chant on the wrist — at most one every few seconds,
+    /// and never for a match that isn't on.
+    private func play(_ tap: CrowdTap, chant: Chant) {
+        guard let replica, replica.matchID == tap.matchID, !replica.isEnded,
+              chantPlayer.shouldPlay(tap, now: Date()) else { return }
+        let first = tap.fromName.split(separator: " ").first.map(String.init) ?? tap.fromName
+        cheer = "\(first) · \(chant.name)"
+        cheerTask?.cancel()
+        cheerTask = Task { [weak self] in
+            var elapsed = 0.0
+            for beat in chant.beats {
+                let wait = beat.at - elapsed
+                if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+                elapsed = beat.at
+                guard !Task.isCancelled else { return }
+                WKInterfaceDevice.current().play(beat.strength >= 0.85 ? .start : beat.strength >= 0.5 ? .directionUp : .click)
+            }
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            self?.cheer = nil
         }
     }
 

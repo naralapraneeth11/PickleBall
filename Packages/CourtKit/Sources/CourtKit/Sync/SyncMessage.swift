@@ -127,6 +127,9 @@ public enum SyncMessage: Hashable, Sendable {
     case preferences(WatchPreferences)
     /// Watch → phone: the workout recorded alongside a match.
     case workout(matchID: UUID?, date: Date, WorkoutReport)
+    /// Phone → Watch: a friend's crowd tap during a live match, with the
+    /// chant to play (so squad chants need no lookup on the wrist).
+    case crowd(CrowdTap, Chant)
 
     public var matchID: UUID? {
         switch self {
@@ -135,6 +138,7 @@ public enum SyncMessage: Hashable, Sendable {
              .logRequest(let id), .matchEnded(let id, _):
             return id
         case .workout(let id, _, _): return id
+        case .crowd(let tap, _): return tap.matchID
         case .preferences: return nil
         }
     }
@@ -208,11 +212,11 @@ extension JSONDecoder {
 
 extension SyncMessage: Codable {
     private enum CodingKeys: String, CodingKey {
-        case type, matchID, snapshot, intent, intentID, event, reason, preferences, date, workout
+        case type, matchID, snapshot, intent, intentID, event, reason, preferences, date, workout, tap, chant
     }
 
     private enum MessageType: String, Codable {
-        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, preferences, workout
+        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, preferences, workout, crowd
     }
 
     public init(from decoder: Decoder) throws {
@@ -240,6 +244,8 @@ extension SyncMessage: Codable {
             self = .workout(matchID: try c.decodeIfPresent(UUID.self, forKey: .matchID),
                             date: try c.decode(Date.self, forKey: .date),
                             try c.decode(WorkoutReport.self, forKey: .workout))
+        case .crowd:
+            self = .crowd(try c.decode(CrowdTap.self, forKey: .tap), try c.decode(Chant.self, forKey: .chant))
         }
     }
 
@@ -279,6 +285,10 @@ extension SyncMessage: Codable {
             try c.encodeIfPresent(matchID, forKey: .matchID)
             try c.encode(date, forKey: .date)
             try c.encode(report, forKey: .workout)
+        case .crowd(let tap, let chant):
+            try c.encode(MessageType.crowd, forKey: .type)
+            try c.encode(tap, forKey: .tap)
+            try c.encode(chant, forKey: .chant)
         }
     }
 }

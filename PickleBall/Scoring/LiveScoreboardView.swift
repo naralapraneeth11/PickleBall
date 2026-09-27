@@ -31,6 +31,7 @@ struct LiveMatchScreen: View {
                     .onAppear { dismiss() }
             }
         }
+        .sharePromptHost()
     }
 }
 
@@ -43,6 +44,7 @@ struct LiveScoreboardView: View {
     @State private var banner: String?
     @State private var sweepProgress: CGFloat = 0
     @State private var sweepVisible = false
+    @State private var showCamera = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var center: MatchCenter { .shared }
@@ -69,6 +71,7 @@ struct LiveScoreboardView: View {
 
             VStack(spacing: 0) {
                 topBar
+                crowdAndPhotoStrip
                 teamPanel(topTeam, isTop: true)
                 centerStrip
                 teamPanel(topTeam.opponent, isTop: false)
@@ -99,6 +102,18 @@ struct LiveScoreboardView: View {
             Haptics.warm()
         }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { data in
+                if let data { center.savePhoto(data, for: match.id) }
+                showCamera = false
+            }
+            .ignoresSafeArea()
+        }
+        .onChange(of: match.lastTap) { _, tap in
+            guard let tap else { return }
+            let chant = Chant.preset(id: tap.chantID)?.name ?? "Squad chant"
+            show(banner: "\(tap.fromName.split(separator: " ").first.map(String.init) ?? tap.fromName): \(chant)")
+        }
         .confirmationDialog("End this match?", isPresented: $showEndOptions, titleVisibility: .visible) {
             Button("Park and resume later") {
                 center.park()
@@ -112,6 +127,59 @@ struct LiveScoreboardView: View {
         } message: {
             Text("Parked matches wait on Home. Ending discards this match.")
         }
+    }
+
+    // MARK: - Crowd and changeover photos
+
+    @ViewBuilder
+    private var crowdAndPhotoStrip: some View {
+        HStack(spacing: 10) {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let level = match.crowd.level(at: context.date)
+                if level > 0.03 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "hands.clap.fill")
+                        Capsule()
+                            .fill(DS.Palette.hairline)
+                            .frame(width: 70, height: 6)
+                            .overlay(alignment: .leading) {
+                                Capsule().fill(theme.accent).frame(width: 70 * level, height: 6)
+                            }
+                    }
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(theme.accent)
+                    .accessibilityLabel("Crowd \(Int(level * 100)) percent")
+                    .transition(.opacity)
+                }
+            }
+            Spacer(minLength: 0)
+            if match.photoPromptVisible, !isLocked, CameraPicker.isAvailable {
+                Button {
+                    Haptics.light()
+                    showCamera = true
+                } label: {
+                    Label("Changeover photo", systemImage: "camera.fill")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(theme.accent))
+                }
+                .buttonStyle(.press)
+                Button {
+                    match.photoPromptVisible = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(DS.Palette.nightMuted)
+                        .frame(width: 28, height: 28)
+                }
+                .accessibilityLabel("No photo")
+            }
+        }
+        .frame(height: 30)
+        .padding(.horizontal, 20)
+        .animation(DS.Motion.snappy, value: match.photoPromptVisible)
     }
 
     // MARK: - Top bar
@@ -433,6 +501,16 @@ private struct MatchResultCard: View {
     let onSave: () -> Void
 
     @State private var appeared = false
+    @State private var replayPosted = false
+    @State private var isPosting = false
+    @State private var showServe = false
+
+    private func postReplay() async {
+        guard let record = MatchStore.shared.record(id: match.id) else { return }
+        isPosting = true
+        replayPosted = await Social.shared.postReplay(for: record) != nil
+        isPosting = false
+    }
 
     var body: some View {
         let display = match.display
@@ -470,6 +548,13 @@ private struct MatchResultCard: View {
                     .font(.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit())
                     .foregroundStyle(DS.Palette.nightText)
 
+                if let headline = match.drama.moments.isEmpty ? nil : match.drama.headline(match.lineup) {
+                    Text(headline)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(theme.accent)
+                        .multilineTextAlignment(.center)
+                }
+
                 HStack(spacing: 0) {
                     stat("POINTS", "\(points[winner])–\(points[winner.opponent])")
                     Rectangle().fill(DS.Palette.hairline).frame(width: 1, height: 34)
@@ -490,6 +575,33 @@ private struct MatchResultCard: View {
                             .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(theme.accent))
                     }
                     .buttonStyle(.press)
+
+                    if match.isEnded, Social.shared.phase == .ready {
+                        HStack(spacing: 10) {
+                            Button {
+                                Task { await postReplay() }
+                            } label: {
+                                Label(replayPosted ? "Posted" : "Post Replay", systemImage: replayPosted ? "checkmark" : "play.rectangle.on.rectangle")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 46)
+                                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(DS.Palette.nightRaised))
+                            }
+                            .disabled(replayPosted || isPosting)
+                            Button {
+                                showServe = true
+                            } label: {
+                                Label("Serve it", systemImage: "arrow.up.forward.circle")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 46)
+                                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(DS.Palette.nightRaised))
+                            }
+                        }
+                        .buttonStyle(.press)
+                    }
 
                     if !match.isEnded {
                         Button(action: onUndo) {
@@ -516,6 +628,9 @@ private struct MatchResultCard: View {
         }
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { appeared = true }
+        }
+        .sheet(isPresented: $showServe) {
+            ServeComposerView(matchID: match.id, matchSummary: "\(match.lineup.name(of: .a, separator: " & ")) vs \(match.lineup.name(of: .b, separator: " & ")) · \(match.result.scoreLine)")
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(match.lineup.name(of: winner)) win \(display.matchScore[winner]) to \(display.matchScore[winner.opponent])")

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		E66DC3CF2F1EDD6A0028171A /* Pickleball watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E66DC3AF2F1EDD680028171A /* Pickleball watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9F5C0903F95A070B1F1DBBBA /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = A0DB8025CF5D34C45562B11E /* CourtKit */; };
+		8144EFBD1566BE27ADE25764 /* CourtNet in Frameworks */ = {isa = PBXBuildFile; productRef = CA6B045DA232FBD6044F722B /* CourtNet */; };
 		8CB0E9E3D0EE24EDC0416422 /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = 789D134B33176EC241B4DFDE /* CourtKit */; };
 		8C89A4D516E3020BC03C11CD /* CourtKit in Frameworks */ = {isa = PBXBuildFile; productRef = C891D954C00197F557F02EA8 /* CourtKit */; };
 		5252576DCC31CBA5666333EA /* ScoreActivityWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1D96365B012FCF38D3420EE1 /* ScoreActivityWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -167,6 +168,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9F5C0903F95A070B1F1DBBBA /* CourtKit in Frameworks */,
+				8144EFBD1566BE27ADE25764 /* CourtNet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,6 +319,7 @@
 			name = PickleBall;
 			packageProductDependencies = (
 				A0DB8025CF5D34C45562B11E /* CourtKit */,
+				CA6B045DA232FBD6044F722B /* CourtNet */,
 			);
 			productName = PickleBall;
 			productReference = E6832A3C2F15744900570BB4 /* PickleBall.app */;
@@ -440,6 +443,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2107513BF774D196E563AB87 /* XCLocalSwiftPackageReference "Packages/CourtKit" */,
+				E703B5FA9E9CA688963C3768 /* XCLocalSwiftPackageReference "Packages/CourtNet" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E6832A3D2F15744900570BB4 /* Products */;
@@ -897,6 +901,8 @@
 				DEVELOPMENT_TEAM = 3A8H924A89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PickleBall-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "PickleBall uses the camera to scan a friend’s code and to take photos at changeovers.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "PickleBall reads your workouts, heart rate and energy from Apple Watch to show match stats such as heart-rate zones, duration and calories.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "PickleBall saves your matches to Health as workouts so your Apple Watch can track them.";
@@ -938,6 +944,8 @@
 				DEVELOPMENT_TEAM = 3A8H924A89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PickleBall-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "PickleBall uses the camera to scan a friend’s code and to take photos at changeovers.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "PickleBall reads your workouts, heart rate and energy from Apple Watch to show match stats such as heart-rate zones, duration and calories.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "PickleBall saves your matches to Health as workouts so your Apple Watch can track them.";
@@ -1187,6 +1195,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/CourtKit;
 		};
+		E703B5FA9E9CA688963C3768 /* XCLocalSwiftPackageReference "Packages/CourtNet" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CourtNet;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1204,6 +1216,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2107513BF774D196E563AB87 /* XCLocalSwiftPackageReference "Packages/CourtKit" */;
 			productName = CourtKit;
+		};
+		CA6B045DA232FBD6044F722B /* CourtNet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E703B5FA9E9CA688963C3768 /* XCLocalSwiftPackageReference "Packages/CourtNet" */;
+			productName = CourtNet;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

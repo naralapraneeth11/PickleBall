@@ -15,8 +15,6 @@ enum AppDatabase {
         PlayerRecord.self,
         MatchRecord.self,
         RallyRecord.self,
-        TournamentRecord.self,
-        TournamentFixtureRecord.self,
         WorkoutSessionRecord.self
     ])
 

@@ -1,12 +1,18 @@
 import SwiftUI
 import SwiftData
 import CourtKit
+import CourtNet
 
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
 
     @State private var showResetConfirm = false
     @State private var resetCompleted = false
+    @State private var confirmSignOut = false
+    @State private var confirmDelete = false
+    @State private var isDeleting = false
+    @State private var showBlocked = false
+    private let social = Social.shared
 
     let royalBlue    = DS.Palette.royalBlue
     let lightGrey    = Color(red: 0.973, green: 0.973, blue: 0.973)
@@ -22,6 +28,93 @@ struct SettingsView: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "VERSION \(version) (\(build))"
+    }
+
+    // MARK: - Account
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ACCOUNT")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(royalBlue)
+                .tracking(0.5)
+                .padding(.horizontal, 20)
+
+            VStack(spacing: 8) {
+                if let profile = social.profile {
+                    settingsRow(title: "@\(profile.username)", systemImage: "person.crop.circle", tint: royalBlue) {}
+                        .disabled(true)
+                }
+                Button {
+                    showBlocked = true
+                } label: {
+                    rowLabel(title: "Blocked", systemImage: "hand.raised", tint: royalBlue, detail: social.blocked.isEmpty ? nil : "\(social.blocked.count)")
+                }
+                .buttonStyle(.press)
+                if social.outboxCount > 0 {
+                    settingsRow(title: "\(social.outboxCount) waiting to send", systemImage: "arrow.up.circle", tint: DS.Palette.warning) {
+                        Task { await social.drainOutbox() }
+                    }
+                }
+                settingsRow(title: "Sign out", systemImage: "rectangle.portrait.and.arrow.right", tint: royalBlue) {
+                    confirmSignOut = true
+                }
+                settingsRow(title: isDeleting ? "Deleting…" : "Delete account", systemImage: "trash", tint: destructiveRed) {
+                    confirmDelete = true
+                }
+                .disabled(isDeleting)
+            }
+            .padding(.horizontal, 20)
+        }
+        .sheet(isPresented: $showBlocked) {
+            NavigationStack { BlockedUsersView() }
+        }
+        .confirmationDialog("Sign out?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+            Button("Sign out", role: .destructive) {
+                Task {
+                    await social.signOut()
+                    dismiss()
+                }
+            }
+        } message: {
+            Text(social.outboxCount > 0
+                 ? "\(social.outboxCount) change\(social.outboxCount == 1 ? " hasn’t" : "s haven’t") been sent yet and will be lost."
+                 : "Matches on this phone stay on this phone.")
+        }
+        .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete account", role: .destructive) {
+                isDeleting = true
+                Task {
+                    if await social.deleteAccount() { dismiss() }
+                    isDeleting = false
+                }
+            }
+        } message: {
+            Text("This permanently deletes your profile, friends, chats, Serves, Replays and trophies. Matches stay in your opponents’ history under “Former player”.")
+        }
+    }
+
+    private func settingsRow(title: String, systemImage: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            rowLabel(title: title, systemImage: systemImage, tint: tint, detail: nil)
+        }
+        .buttonStyle(.press)
+    }
+
+    private func rowLabel(title: String, systemImage: String, tint: Color, detail: String?) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage).foregroundColor(tint).frame(width: 22)
+            Text(title)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(tint == destructiveRed ? destructiveRed : .primary)
+            Spacer()
+            if let detail {
+                Text(detail).foregroundColor(versionGrey)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(cardWhite))
     }
 
     // MARK: - Header
@@ -95,6 +188,10 @@ struct SettingsView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
+
+                        if social.phase == .ready {
+                            accountSection
+                        }
 
                         // MARK: About Us
 
@@ -235,13 +332,11 @@ struct SettingsView: View {
 
     /// Wipe everything. Honest about what it touches — no surprise data loss.
     private func resetAllData() {
-        // SwiftData: matches (with rally logs), tournaments, Watch sessions, players.
+        // SwiftData: matches (with rally logs), Watch sessions, players.
         let context = AppDatabase.context
         do {
             try context.delete(model: RallyRecord.self)
             try context.delete(model: MatchRecord.self)
-            try context.delete(model: TournamentFixtureRecord.self)
-            try context.delete(model: TournamentRecord.self)
             try context.delete(model: WorkoutSessionRecord.self)
             try context.delete(model: PlayerRecord.self)
             try context.save()
@@ -267,7 +362,6 @@ struct SettingsView: View {
         PlayerDirectory.shared.ensureLocalUser()
         PlayerDirectory.shared.reload()
         MatchStore.shared.reload()
-        TournamentStore.shared.reload()
         WorkoutStore.shared.reload()
 
         resetCompleted = true
