@@ -31,14 +31,16 @@ extension SupabaseBackend {
     }
 
     /// The session as it changes: restored at launch, refreshed, signed out.
+    /// An expired saved session still counts as signed in: offline, the app
+    /// runs from its cache, and the SDK refreshes the token once it can.
     public func authStates() -> AsyncStream<AuthState> {
         let changes = client.auth.authStateChanges
         return AsyncStream { continuation in
             let task = Task {
                 for await (_, session) in changes {
-                    if let session, !session.isExpired {
+                    if let session {
                         continuation.yield(.signedIn(userID: session.user.id))
-                    } else if session == nil {
+                    } else {
                         continuation.yield(.signedOut)
                     }
                 }

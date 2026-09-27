@@ -32,12 +32,14 @@ extension Social {
             let aIDs = Set(fixture.teamA)
             let recordAIsFixtureA = Set(lineup.teams.a.map(\.id.rawValue)).intersection(aIDs).count > 0
                 || Set(lineup.teams.a.compactMap { self.playerUser($0.id.rawValue) }).intersection(aIDs).count > 0
-            var points = TeamPair(a: record.pointsA, b: record.pointsB)
-            var winner = record.winner
-            if tournament.format != .americano {
-                points = TeamPair(a: record.matchScoreA, b: record.matchScoreB)
-                if points.a == 0 && points.b == 0 { points = TeamPair(a: record.pointsA, b: record.pointsB) }
+            // Points (pickleball) or games (padel) across every game or set,
+            // so point difference means the same for scored and typed results.
+            var points = record.units.reduce(into: TeamPair<Int>.zero) { total, unit in
+                let score = unit.isSuperTiebreak ? (unit.tiebreak ?? .zero) : unit.score
+                total.a += score.a
+                total.b += score.b
             }
+            var winner = record.winner
             if !recordAIsFixtureA {
                 points = points.swapped
                 winner = winner?.opponent

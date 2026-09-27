@@ -56,6 +56,7 @@ extension Social {
 
     func refreshMatches() async {
         guard let backend, phase == .ready else { return }
+        var newlyConfirmed: [UUID] = []
         do {
             let rows = try await backend.matches(updatedAfter: matchCursor)
             if !rows.isEmpty {
@@ -65,7 +66,12 @@ extension Social {
                 mergePlayers(playerRows)
                 let byMatch = Dictionary(grouping: participantRows, by: \.matchID)
                 for row in rows {
+                    let before = MatchStore.shared.record(id: row.id)?.confirmation
                     merge(row, participants: byMatch[row.id] ?? [])
+                    // The other side just agreed to one of my results.
+                    if row.status == .confirmed, before == .pending || before == .local, row.createdBy == userID {
+                        newlyConfirmed.append(row.id)
+                    }
                 }
                 AppDatabase.save()
                 matchCursor = rows.compactMap(\.updatedAt).max() ?? matchCursor
@@ -80,6 +86,15 @@ extension Social {
             }
             MatchStore.shared.reload()
             scheduleCacheSave()
+            // Belt won (or upgraded) now that it counts: offer the card.
+            for id in newlyConfirmed {
+                guard let result = MatchStore.shared.record(id: id)?.result else { continue }
+                let events = MatchStore.shared.belts.events(for: id)
+                if events.contains(where: \.isShareWorthy) {
+                    offerShareCard(for: result, beltEvents: events, drama: nil)
+                    break
+                }
+            }
         } catch {
             report(error)
         }

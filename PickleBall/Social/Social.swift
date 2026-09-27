@@ -111,8 +111,11 @@ final class Social {
             phase = .offlineOnly
             return
         }
-        pathMonitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in self?.networkChanged(online: path.status == .satisfied) }
+        // The monitor calls back on its own queue; hop to the main actor
+        // through the singleton rather than capturing self across threads.
+        pathMonitor.pathUpdateHandler = { path in
+            let online = path.status == .satisfied
+            Task { @MainActor in Social.shared.networkChanged(online: online) }
         }
         pathMonitor.start(queue: DispatchQueue(label: "Social.path"))
 
