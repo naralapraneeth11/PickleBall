@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  TournamentChampionView.swift
 //  PickleBall
 //
 //  Created by sai praneeth reddy narala on 8/26/26.
@@ -139,4 +139,15 @@ struct TournamentChampionView: View {
     }
 }
 
-
+/// One row of a champion podium.
+struct PlayerStanding: Identifiable, Equatable {
+    var id: String { name }
+    let name: String
+    var points: Int
+    var wins: Int
+    var draws: Int
+    var losses: Int
+    var pointsFor: Int
+    var pointsAgainst: Int
+    var pointDifferential: Int { pointsFor - pointsAgainst }
+}

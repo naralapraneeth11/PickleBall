@@ -27,6 +27,15 @@ public struct ShareCardContent: Hashable, Sendable {
     public var callToAction: String
     public var scoreLine: String?
     public var tier: BeltTier?
+
+    public init(kind: Kind, title: String, subtitle: String, callToAction: String, scoreLine: String?, tier: BeltTier?) {
+        self.kind = kind
+        self.title = title
+        self.subtitle = subtitle
+        self.callToAction = callToAction
+        self.scoreLine = scoreLine
+        self.tier = tier
+    }
 }
 
 public enum ShareCards {

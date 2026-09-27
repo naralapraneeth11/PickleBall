@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import CourtKit
+import CourtNet
 
 struct LatestMatchData {
     let dateText:          String
@@ -755,13 +756,13 @@ struct MainMenu: View {
     @Environment(SportMode.self) private var sportMode
     @State private var showPlayView = false
     @State private var showSettings = false
-    @State private var showHistory = false
-    @State private var showNewTournament = false
     @State private var showScoreboard = false
-    @State private var tournamentToContinue: SavedTournament?
+    @State private var showEnterScore = false
+    @State private var showInbox = false
+    @State private var following: LiveMatchRow?
 
-    @ObservedObject private var tournamentStore = TournamentStore.shared
     @ObservedObject private var matchStore = MatchStore.shared
+    private let social = Social.shared
     @ObservedObject private var watchManager = WatchConnectivityManager.shared
     private let center = MatchCenter.shared
 
@@ -837,21 +838,19 @@ struct MainMenu: View {
                                 }
                             }
 
-                            menuSecondaryButton(title: "New Tournament", systemImage: "plus.circle.fill") {
-                                showNewTournament = true
+                            menuSecondaryButton(title: "Enter a score", systemImage: "square.and.pencil") {
+                                showEnterScore = true
                             }
 
-                            ForEach(tournamentStore.incompleteTournaments) { tournament in
-                                menuSecondaryButton(
-                                    title: "Continue: \(tournament.resolvedTitle)",
-                                    systemImage: "play.circle.fill"
-                                ) {
-                                    tournamentToContinue = tournament
+                            ForEach(inboxItems.prefix(3)) { item in
+                                menuSecondaryButton(title: item.title, systemImage: item.symbol) {
+                                    open(item)
                                 }
                             }
-
-                            menuSecondaryButton(title: "Tournament History", systemImage: "clock.arrow.circlepath") {
-                                showHistory = true
+                            if inboxItems.count > 3 {
+                                menuSecondaryButton(title: "See all (\(inboxItems.count))", systemImage: "tray.full.fill") {
+                                    showInbox = true
+                                }
                             }
                         }
                         .padding(.horizontal, 28)
@@ -878,21 +877,14 @@ struct MainMenu: View {
         .fullScreenCover(isPresented: $showScoreboard) {
             LiveMatchScreen()
         }
-        .fullScreenCover(isPresented: $showNewTournament) {
-            TournamentSetupView()
+        .sheet(isPresented: $showEnterScore) {
+            EnterScoreView()
         }
-        .fullScreenCover(item: $tournamentToContinue) { tournament in
-            TournamentRunView(tournament: tournament)
+        .sheet(isPresented: $showInbox) {
+            NavigationStack { PlayInboxView() }
         }
-        .fullScreenCover(isPresented: $showHistory) {
-            NavigationStack {
-                TournamentHistoryView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Done") { showHistory = false }
-                        }
-                    }
-            }
+        .fullScreenCover(item: $following) { live in
+            LiveFollowView(live: live)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -905,6 +897,19 @@ struct MainMenu: View {
                watchManager.isWatchPaired, watchManager.isWatchAppInstalled {
                 showHealthPrompt = true
             }
+        }
+    }
+
+    // MARK: Inbox
+
+    /// What's waiting on the Play tab: results to confirm, call outs to
+    /// answer, the next match, friends playing right now.
+    private var inboxItems: [PlayInboxItem] { PlayInboxItem.all(social: social) }
+
+    private func open(_ item: PlayInboxItem) {
+        switch item.kind {
+        case .live(let live): following = live
+        default: showInbox = true
         }
     }
 

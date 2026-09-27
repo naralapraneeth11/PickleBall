@@ -12,32 +12,41 @@ import Foundation
 import CourtKit
 import Supabase
 
-/// Where the backend lives. Read from Info.plist keys filled from
-/// Secrets.xcconfig, so keys never live in source control.
+/// Where the backend lives. Read from Secrets.plist (git-ignored, copied
+/// from Secrets.example.plist), so keys never live in source control.
 public struct BackendConfig: Sendable, Hashable {
     public let url: URL
     public let anonKey: String
+    /// The invite landing page (docs/invite on GitHub Pages), if set.
+    public let invitePage: URL?
 
-    public init(url: URL, anonKey: String) {
+    public init(url: URL, anonKey: String, invitePage: URL? = nil) {
         self.url = url
         self.anonKey = anonKey
+        self.invitePage = invitePage
     }
 
-    /// Nil when the app was built without Secrets.xcconfig: the app then
-    /// runs offline-only and says so.
+    /// Nil when the app was built without Secrets.plist. Such a build can
+    /// still score matches on the device, and says it isn't connected.
     public static func fromBundle(_ bundle: Bundle = .main) -> BackendConfig? {
-        guard let raw = bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
-              let key = bundle.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
-              !raw.isEmpty, !key.isEmpty, !raw.contains("$("),
-              let url = URL(string: raw.hasPrefix("http") ? raw : "https://\(raw)") else { return nil }
-        return BackendConfig(url: url, anonKey: key)
-    }
-
-    /// The invite landing page (docs/invite on GitHub Pages), if set.
-    public static func invitePage(_ bundle: Bundle = .main) -> URL? {
-        guard let raw = bundle.object(forInfoDictionaryKey: "INVITE_PAGE_URL") as? String,
-              !raw.isEmpty, !raw.contains("$(") else { return nil }
-        return URL(string: raw.hasPrefix("http") ? raw : "https://\(raw)")
+        var values: [String: Any] = [:]
+        if let url = bundle.url(forResource: "Secrets", withExtension: "plist"),
+           let data = try? Data(contentsOf: url),
+           let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] {
+            values = plist
+        }
+        func value(_ key: String) -> String? {
+            let raw = (values[key] as? String) ?? (bundle.object(forInfoDictionaryKey: key) as? String)
+            guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty,
+                  !raw.contains("$("), !raw.contains("YOUR-") else { return nil }
+            return raw
+        }
+        func url(_ raw: String?) -> URL? {
+            guard let raw else { return nil }
+            return URL(string: raw.hasPrefix("http") ? raw : "https://\(raw)")
+        }
+        guard let base = url(value("SUPABASE_URL")), let key = value("SUPABASE_ANON_KEY") else { return nil }
+        return BackendConfig(url: base, anonKey: key, invitePage: url(value("INVITE_PAGE_URL")))
     }
 }
 
@@ -378,6 +387,11 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
             await urlCache.store(url, for: path, validFor: 50 * 60)
             return url
         }
+    }
+
+    /// Public bucket URL, built locally (profile photos).
+    public func publicURL(for path: String, in bucket: MediaBucket) -> URL? {
+        try? client.storage.from(bucket.rawValue).getPublicURL(path: path)
     }
 
     public func removeMedia(_ paths: [String], from bucket: MediaBucket) async throws {

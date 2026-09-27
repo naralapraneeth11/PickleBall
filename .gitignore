@@ -20,3 +20,6 @@ Secrets.xcconfig
 # SPM / CocoaPods (if you add them later)
 .build/
 Pods/
+
+# Supabase keys (copy Secrets.example.plist)
+PickleBall/Secrets.plist

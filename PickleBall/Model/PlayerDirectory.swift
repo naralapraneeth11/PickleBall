@@ -18,8 +18,10 @@ final class PlayerDirectory: ObservableObject {
 
     /// The device owner.
     @Published private(set) var me: PlayerRef
-    /// Everyone except the device owner, most recently played first.
+    /// Friends and people you've played, most recently played first.
     @Published private(set) var others: [PlayerRef] = []
+    /// Accounts you're friends with.
+    @Published private(set) var friendIDs: Set<PlayerID> = []
 
     private var context: ModelContext { AppDatabase.context }
 
@@ -67,15 +69,84 @@ final class PlayerDirectory: ObservableObject {
     func reload() {
         let descriptor = FetchDescriptor<PlayerRecord>(predicate: #Predicate { !$0.isLocalUser })
         let records = (try? context.fetch(descriptor)) ?? []
+        // Players seen only in friends' matches stay out of the pickers.
+        let friends = friendIDs
         others = records
-            .sorted { ($0.lastPlayedAt ?? $0.createdAt) > ($1.lastPlayedAt ?? $1.createdAt) }
+            .filter { $0.lastPlayedAt != nil || friends.contains(PlayerID(rawValue: $0.id)) }
+            .sorted { ($0.lastPlayedAt ?? .distantPast, $0.displayName) > ($1.lastPlayedAt ?? .distantPast, $1.displayName) }
             .map(\.ref)
         me = ensureLocalUser().ref
     }
 
+    // MARK: Account
+
+    /// Makes the device owner's player ID the account ID, rewriting any
+    /// matches recorded before sign-in, and takes the profile name.
+    func adoptAccount(userID: UUID, displayName: String) {
+        let record = ensureLocalUser()
+        let oldID = record.id
+        if oldID != userID {
+            let account = PlayerRef(id: PlayerID(rawValue: userID), kind: .user, displayName: displayName)
+            for match in (try? context.fetch(FetchDescriptor<MatchRecord>())) ?? [] where match.playerIDs.contains(oldID) {
+                guard var lineup = match.lineup else { continue }
+                lineup.teams = lineup.teams.map { roster in roster.map { $0.id.rawValue == oldID ? account : $0 } }
+                match.lineupData = (try? JSONEncoder().encode(lineup)) ?? match.lineupData
+                match.playerIDs = lineup.allPlayers.map(\.id.rawValue)
+            }
+            if let existing = fetch(userID) {
+                existing.isLocalUser = true
+                existing.kindRaw = PlayerKind.user.rawValue
+                context.delete(record)
+            } else {
+                record.id = userID
+            }
+        }
+        let current = ensureLocalUser()
+        current.displayName = displayName
+        current.kindRaw = PlayerKind.user.rawValue
+        AppDatabase.save()
+        reload()
+        if oldID != userID { MatchStore.shared.reload() }
+    }
+
+    /// Friends are players you can pick for a match.
+    func upsertFriends(_ friends: [PlayerRef]) {
+        var changed = false
+        for friend in friends {
+            if let record = fetch(friend.id.rawValue) {
+                if record.displayName != friend.displayName || record.kind != .user {
+                    record.displayName = friend.displayName
+                    record.kindRaw = PlayerKind.user.rawValue
+                    changed = true
+                }
+            } else {
+                context.insert(PlayerRecord(id: friend.id.rawValue, kind: .user, displayName: friend.displayName))
+                changed = true
+            }
+        }
+        let ids = Set(friends.map(\.id))
+        if changed { AppDatabase.save() }
+        if changed || ids != friendIDs {
+            friendIDs = ids
+            reload()
+        }
+    }
+
+    private func fetch(_ id: UUID) -> PlayerRecord? {
+        var descriptor = FetchDescriptor<PlayerRecord>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    /// Guests created on this phone, for claim links.
+    var guests: [PlayerRef] {
+        others.filter { $0.kind == .guest }
+    }
+
     func player(_ id: PlayerID) -> PlayerRef? {
         if id == me.id { return me }
-        return others.first { $0.id == id }
+        if let known = others.first(where: { $0.id == id }) { return known }
+        return fetch(id.rawValue)?.ref
     }
 
     /// Known players whose name contains `query`, best matches first.

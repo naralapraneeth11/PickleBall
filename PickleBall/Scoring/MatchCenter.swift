@@ -18,6 +18,7 @@ import Foundation
 import Observation
 import SwiftData
 import CourtKit
+import CourtNet
 
 @MainActor
 @Observable
@@ -29,12 +30,22 @@ final class LiveMatch: Identifiable {
     /// Bumped on every visible change so views can animate on it.
     fileprivate(set) var revision = 0
 
-    /// Called once when the match is completed (used by tournaments).
+    /// Called once when the match is completed.
     @ObservationIgnored var onCompleted: ((MatchResult) -> Void)?
 
-    fileprivate init(setup: MatchSetup, role: MatchReplica.Role, log: [Rally] = []) {
+    /// Squad, tournament fixture, call out and court the match belongs to.
+    fileprivate(set) var context: MatchContext
+    /// Friends cheering: rises with every crowd tap and fades.
+    fileprivate(set) var crowd = CrowdMeter()
+    fileprivate(set) var lastTap: CrowdTap?
+    /// Set at a changeover when a photo would be welcome.
+    var photoPromptVisible = false
+    @ObservationIgnored fileprivate var photoPrompter = PhotoPrompter()
+
+    fileprivate init(setup: MatchSetup, role: MatchReplica.Role, log: [Rally] = [], context: MatchContext = MatchContext()) {
         self.setup = setup
         self.replica = MatchReplica(setup: setup, role: role, log: log)
+        self.context = context
     }
 
     var id: UUID { setup.matchID }
@@ -56,7 +67,14 @@ final class LiveMatch: Identifiable {
     }
 
     var result: MatchResult {
-        MatchResult(id: id, date: setup.startedAt, lineup: lineup, scorer: scorer)
+        var result = MatchResult(id: id, date: setup.startedAt, lineup: lineup, scorer: scorer)
+        result.squadID = context.squadID
+        return result
+    }
+
+    /// The story of the match so far.
+    var drama: DramaReport {
+        DramaDetector.analyze(rules: rules, rallies: replica.log)
     }
 }
 
@@ -90,13 +108,19 @@ final class MatchCenter {
     // MARK: - Starting
 
     @discardableResult
-    func startMatch(rules: MatchRules, lineup: Lineup, tournamentFixture: UUID? = nil) -> LiveMatch {
+    func startMatch(rules: MatchRules, lineup: Lineup, context matchContext: MatchContext = MatchContext()) -> LiveMatch {
         if let current = live, !current.isEnded {
             park()
         }
-        let setup = MatchSetup(rules: rules, lineup: lineup, host: .phone, tournamentMatchID: tournamentFixture)
-        let match = LiveMatch(setup: setup, role: .host)
-        context.insert(MatchRecord(setup: setup, status: .live))
+        var matchContext = matchContext
+        if matchContext.squadID == nil {
+            matchContext.squadID = Social.shared.sharedSquad(for: lineup.allPlayers.map(\.id))?.id
+        }
+        let setup = MatchSetup(rules: rules, lineup: lineup, host: .phone, tournamentMatchID: matchContext.fixtureID)
+        let match = LiveMatch(setup: setup, role: .host, context: matchContext)
+        let record = MatchRecord(setup: setup, status: .live)
+        record.matchContext = matchContext
+        context.insert(record)
         AppDatabase.save()
         PlayerDirectory.shared.adopt(lineup)
 
@@ -104,6 +128,7 @@ final class MatchCenter {
         connectivity.send(match.replica.startMessage)
         connectivity.wakeWatchForMatch(sport: rules.sport)
         activities.start(for: match)
+        Social.shared.goLive(match)
         Haptics.warm()
         return match
     }
@@ -128,10 +153,11 @@ final class MatchCenter {
         AppDatabase.save()
         MatchStore.shared.reload()
 
-        let match = LiveMatch(setup: setup, role: .host, log: record.rallyLog)
+        let match = LiveMatch(setup: setup, role: .host, log: record.rallyLog, context: record.matchContext)
         live = match
         connectivity.send(match.replica.startMessage)
         activities.start(for: match)
+        Social.shared.goLive(match)
         return match
     }
 
@@ -176,6 +202,36 @@ final class MatchCenter {
         if live?.isEnded == true { live = nil }
     }
 
+    // MARK: - Crowd and photos
+
+    /// A friend's crowd tap: fills the meter and buzzes the Watch.
+    func receiveCrowd(_ tap: CrowdTap, chant: Chant) {
+        guard let match = live, match.id == tap.matchID, !match.isEnded else { return }
+        match.crowd.add(at: Date())
+        match.lastTap = tap
+        connectivity.send(.crowd(tap, chant))
+    }
+
+    /// Photos taken at changeovers, stored until the Replay is posted.
+    static func photoDirectory(for matchID: UUID) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MatchPhotos/\(matchID.uuidString)", isDirectory: true)
+    }
+
+    func savePhoto(_ data: Data, for matchID: UUID) {
+        let directory = Self.photoDirectory(for: matchID)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let count = (try? FileManager.default.contentsOfDirectory(atPath: directory.path).count) ?? 0
+        try? data.write(to: directory.appendingPathComponent("\(count + 1).jpg"), options: .atomic)
+        live?.photoPromptVisible = false
+    }
+
+    static func photos(for matchID: UUID) -> [URL] {
+        let directory = photoDirectory(for: matchID)
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+        return names.sorted { $0.localizedStandardCompare($1) == .orderedAscending }.map { directory.appendingPathComponent($0) }
+    }
+
     // MARK: - Preferences for the Watch
 
     func publishPreferences(sport: Sport) {
@@ -198,9 +254,15 @@ final class MatchCenter {
         switch message {
         case .workout(let matchID, let date, let report):
             WorkoutStore.shared.add(report, matchID: matchID, date: date)
+            if let matchID, let record = MatchStore.shared.record(id: matchID) {
+                record.workout = report
+                AppDatabase.save()
+                // Re-send with the Watch extras if the server hasn't settled it.
+                Task { await Social.shared.upload(record) }
+            }
             MatchStore.shared.reload()
             return
-        case .preferences:
+        case .preferences, .crowd:
             return
         default:
             break
@@ -242,19 +304,32 @@ final class MatchCenter {
 
         // Mirror a live Watch match if the phone is free.
         guard setup.host == .watch, live == nil || live?.isEnded == true else { return }
-        let match = LiveMatch(setup: setup, role: .client, log: snapshot.rallies)
+        var matchContext = MatchContext()
+        matchContext.squadID = Social.shared.sharedSquad(for: setup.lineup.allPlayers.map(\.id))?.id
+        record.matchContext = matchContext
+        AppDatabase.save()
+        let match = LiveMatch(setup: setup, role: .client, log: snapshot.rallies, context: matchContext)
         live = match
         activities.start(for: match)
+        Social.shared.goLive(match)
     }
 
-    /// The device owner is the only user-kind player in an offline app. A
-    /// Watch that hasn't received the owner's ID yet labels them with a
-    /// Watch-local ID; map that back to the owner so the match is theirs.
+    /// A Watch that hasn't received the owner's ID yet labels them with a
+    /// Watch-local user ID. Map an unknown user back to the owner — but only
+    /// when the owner isn't already in the lineup, so friends picked on the
+    /// Watch stay themselves.
     private func normalized(_ setup: MatchSetup) -> MatchSetup {
-        let me = PlayerDirectory.shared.me
+        let directory = PlayerDirectory.shared
+        let me = directory.me
+        guard !setup.lineup.allPlayers.contains(where: { $0.id == me.id }) else { return setup }
         var normalized = setup
+        var mapped = false
         normalized.lineup.teams = setup.lineup.teams.map { roster in
-            roster.map { $0.kind == .user && $0.id != me.id ? me : $0 }
+            roster.map { player in
+                guard !mapped, player.kind == .user, directory.player(player.id) == nil else { return player }
+                mapped = true
+                return me
+            }
         }
         return normalized
     }
@@ -268,6 +343,13 @@ final class MatchCenter {
         }
         if isLocal { Haptics.play(outcome.events) }
         connectivity.send(outcome.outgoing)
+        if outcome.changed, !match.isEnded {
+            Social.shared.updateLive(match)
+            if match.photoPrompter.shouldPrompt(after: outcome.events, at: Date()) {
+                match.photoPrompter.didPrompt(at: Date())
+                match.photoPromptVisible = true
+            }
+        }
 
         guard let record = MatchStore.shared.record(id: match.id) else { return }
         if outcome.changed {
@@ -292,7 +374,16 @@ final class MatchCenter {
             record.endedAt = record.endedAt ?? Date()
             AppDatabase.save()
             if let lineup = record.lineup { PlayerDirectory.shared.markPlayed(lineup) }
-            if !alreadyCompleted, let match { match.onCompleted?(match.result) }
+            if !alreadyCompleted {
+                if let match { match.onCompleted?(match.result) }
+                Task { await Social.shared.upload(record) }
+                if let result = record.result {
+                    let drama = DramaDetector.analyze(rules: record.rules ?? .standard(for: record.sport), rallies: record.rallyLog)
+                    // Belts wait for the other side to confirm; a comeback
+                    // is worth sharing straight away.
+                    Social.shared.offerShareCard(for: result, beltEvents: [], drama: drama)
+                }
+            }
         case .completed, .parked:
             record.status = .parked
             AppDatabase.save()
@@ -302,6 +393,9 @@ final class MatchCenter {
         }
         MatchStore.shared.reload()
 
+        if let match {
+            Social.shared.endLive(match.id)
+        }
         if let match, live?.id == match.id {
             activities.end(for: match, dismissImmediately: reason != .completed)
             // A completed match keeps its result card up until dismissed.

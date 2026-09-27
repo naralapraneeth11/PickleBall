@@ -790,6 +790,9 @@ begin
     update public.players set claimed_by = me
     where id = inv.target_id and kind = 'guest' and claimed_by is null;
     update public.invites set used_at = now() where token = tok;
+    -- Nudge every match with this guest so phones re-read the lineup.
+    update public.matches set updated_at = now()
+    where id in (select match_id from public.match_participants where player_id = inv.target_id);
     -- Claiming a guest means you played the person who made the link.
     if inv.created_by <> me then
       insert into public.friendships (user_a, user_b, status, requested_by, accepted_at)

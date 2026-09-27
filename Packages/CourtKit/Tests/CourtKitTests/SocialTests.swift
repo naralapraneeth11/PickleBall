@@ -303,3 +303,14 @@ struct SeededGenerator: RandomNumberGenerator {
         return z ^ (z >> 31)
     }
 }
+
+final class CrowdMessageTests: XCTestCase {
+    func testCrowdTapsTravelToTheWatchWithTheirChant() throws {
+        let tap = CrowdTap(matchID: UUID(), from: PlayerID(), fromName: "Priya", chantID: "squad", at: t0)
+        let chant = Chant.signature(squadName: "Tuesday Night", beats: [.init(at: 0), .init(at: 0.4, strength: 0.5)])
+        let message = SyncMessage.crowd(tap, chant)
+        XCTAssertEqual(message.matchID, tap.matchID)
+        XCTAssertNil(message.contextKey, "taps are fire-and-forget, never application context")
+        XCTAssertEqual(SyncMessage(wcPayload: message.wcPayload), message)
+    }
+}

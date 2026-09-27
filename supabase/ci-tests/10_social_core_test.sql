@@ -256,6 +256,8 @@ select test.eq(public.redeem_invite(:'claim')->>'kind', 'guest_claim', 'guest cl
 select test.eq((select count(*) from public.matches where id = '10000000-0000-0000-0000-000000000002'), 1::bigint,
   'claimer inherits the guest''s matches');
 select test.ok(private.are_friends(:'alice', :'dave'), 'claiming a guest friends the host');
+select test.ok((select updated_at from public.matches where id = '10000000-0000-0000-0000-000000000002') > now() - interval '1 minute',
+  'claimed matches are re-announced');
 
 :as_eve
 select test.throws(format('select public.redeem_invite(%L)', :'claim'), 'invite used', 'claim links are single use');

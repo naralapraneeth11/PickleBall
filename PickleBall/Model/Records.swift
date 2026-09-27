@@ -10,6 +10,7 @@
 import Foundation
 import SwiftData
 import CourtKit
+import CourtNet
 
 // MARK: - Player
 
@@ -39,6 +40,24 @@ final class PlayerRecord {
 }
 
 // MARK: - Match
+
+/// Where a finished match stands with the other side.
+enum MatchConfirmation: String, Codable {
+    /// Not on the server yet (offline, or just finished).
+    case local
+    /// Waiting for the other side to confirm.
+    case pending
+    case confirmed
+    case disputed
+
+    init(_ status: ConfirmationStatus) {
+        switch status {
+        case .pending: self = .pending
+        case .confirmed: self = .confirmed
+        case .disputed: self = .disputed
+        }
+    }
+}
 
 enum MatchStatus: String, Codable {
     /// Being scored right now.
@@ -78,6 +97,18 @@ final class MatchRecord {
     /// `WorkoutSummary` JSON from the Watch, when one was recorded.
     var workoutData: Data?
 
+    // Phase 2: shared matches.
+    var sourceRaw: String = MatchSource.phone.rawValue
+    var confirmationRaw: String = MatchConfirmation.local.rawValue
+    /// The account that recorded it (nil before sign-in).
+    var createdByID: UUID?
+    var squadID: UUID?
+    var calloutID: UUID?
+    /// `CourtTag` JSON.
+    var courtData: Data?
+    /// Server `updated_at` of the copy we last saw.
+    var remoteUpdatedAt: Date?
+
     @Relationship(deleteRule: .cascade, inverse: \RallyRecord.match)
     var rallies: [RallyRecord] = []
 
@@ -95,6 +126,64 @@ final class MatchRecord {
         self.pointsA = 0
         self.pointsB = 0
         self.tournamentFixtureID = setup.tournamentMatchID
+        self.sourceRaw = (setup.host == .watch ? MatchSource.watch : MatchSource.phone).rawValue
+    }
+
+    /// A match typed in after it was played.
+    convenience init(entered score: EnteredScore, rules: MatchRules, lineup: Lineup, playedAt: Date, context: MatchContext) {
+        self.init(setup: MatchSetup(rules: rules, lineup: lineup, startedAt: playedAt, host: .phone), status: .completed)
+        sourceRaw = MatchSource.entered.rawValue
+        endedAt = playedAt
+        winnerRaw = score.winner.rawValue
+        matchScoreA = score.matchScore.a
+        matchScoreB = score.matchScore.b
+        pointsA = score.pointsWon.a
+        pointsB = score.pointsWon.b
+        unitsData = try? JSONEncoder().encode(score.units)
+        matchContext = context
+    }
+
+    var source: MatchSource {
+        get { MatchSource(rawValue: sourceRaw) ?? .phone }
+        set { sourceRaw = newValue.rawValue }
+    }
+
+    var confirmation: MatchConfirmation {
+        get { MatchConfirmation(rawValue: confirmationRaw) ?? .local }
+        set { confirmationRaw = newValue.rawValue }
+    }
+
+    var court: CourtTag? {
+        get { courtData.flatMap { try? JSONDecoder().decode(CourtTag.self, from: $0) } }
+        set { courtData = newValue.flatMap { try? JSONEncoder().encode($0) } }
+    }
+
+    /// Squad, tournament, call out and court: where the match belongs.
+    var matchContext: MatchContext {
+        get {
+            MatchContext(court: court, squadID: squadID, tournamentID: tournamentID,
+                         fixtureID: tournamentFixtureID, calloutID: calloutID)
+        }
+        set {
+            court = newValue.court
+            squadID = newValue.squadID
+            tournamentID = newValue.tournamentID
+            tournamentFixtureID = newValue.fixtureID
+            calloutID = newValue.calloutID
+        }
+    }
+
+    /// Everything the server needs to store this match.
+    var uploadRequest: SaveMatchRequest? {
+        guard let rules, let lineup, winner != nil else { return nil }
+        if source == .entered {
+            let score = EnteredScore(units: units, winner: winner ?? .a,
+                                     matchScore: TeamPair(a: matchScoreA, b: matchScoreB),
+                                     pointsWon: TeamPair(a: pointsA, b: pointsB))
+            return MatchWire.payload(id: id, rules: rules, lineup: lineup, entered: score, playedAt: startedAt, context: matchContext)
+        }
+        return MatchWire.payload(id: id, rules: rules, lineup: lineup, rallies: rallyLog, startedAt: startedAt,
+                                 endedAt: endedAt, source: source, context: matchContext, workout: workout)
     }
 
     var sport: Sport { Sport(rawValue: sportRaw) ?? .pickleball }
@@ -176,7 +265,8 @@ final class MatchRecord {
             winner: winner,
             units: units,
             pointsWon: TeamPair(a: pointsA, b: pointsB),
-            matchScore: TeamPair(a: matchScoreA, b: matchScoreB)
+            matchScore: TeamPair(a: matchScoreA, b: matchScoreB),
+            squadID: squadID
         )
     }
 }
@@ -196,58 +286,6 @@ final class RallyRecord {
     }
 
     var team: Team? { Team(rawValue: winnerRaw) }
-}
-
-// MARK: - Tournament
-
-@Model
-final class TournamentRecord {
-    @Attribute(.unique) var id: UUID
-    var createdAt: Date
-    var name: String?
-    var sportRaw: String
-    var isSingles: Bool
-    var bestOf: Int
-    var targetScore: Int
-    var participantCount: Int
-    var shuffledOrder: [UUID]
-    /// `[TournamentParticipant]` JSON: each label with its player IDs.
-    var participantsData: Data
-
-    @Relationship(deleteRule: .cascade, inverse: \TournamentFixtureRecord.tournament)
-    var fixtures: [TournamentFixtureRecord] = []
-
-    init(id: UUID, createdAt: Date, sport: Sport) {
-        self.id = id
-        self.createdAt = createdAt
-        self.sportRaw = sport.rawValue
-        self.isSingles = true
-        self.bestOf = 1
-        self.targetScore = 11
-        self.participantCount = 0
-        self.shuffledOrder = []
-        self.participantsData = Data()
-    }
-}
-
-@Model
-final class TournamentFixtureRecord {
-    var id: UUID
-    var order: Int
-    var player1: String
-    var player2: String
-    var player1GamesWon: Int?
-    var player2GamesWon: Int?
-    var gameScoresData: Data?
-    var matchRecordID: UUID?
-    var tournament: TournamentRecord?
-
-    init(id: UUID, order: Int, player1: String, player2: String) {
-        self.id = id
-        self.order = order
-        self.player1 = player1
-        self.player2 = player2
-    }
 }
 
 // MARK: - Watch workouts

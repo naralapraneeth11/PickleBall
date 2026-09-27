@@ -9,16 +9,27 @@
 
 import SwiftUI
 import CourtKit
+import CourtNet
 
+/// The player card: yours on the Me tab, a friend's anywhere else.
 struct ProfileView: View {
+    /// Nil for the device owner.
+    var playerID: PlayerID?
+
     @Environment(SportMode.self) private var sportMode
     @ObservedObject private var matchStore = MatchStore.shared
     @ObservedObject private var directory = PlayerDirectory.shared
+    private let social = Social.shared
 
     @State private var filter: SportFilter = .all
     @State private var window: FormWindow = .thirty
     @State private var selection: Int?
     @State private var showEdit = false
+    @State private var showSettings = false
+    @State private var showShare = false
+    @State private var showCallOut = false
+    @State private var confirmBlock = false
+    @State private var openChat: ConversationRow?
 
     enum SportFilter: String, CaseIterable, Identifiable {
         case all, pickleball, padel
@@ -51,7 +62,15 @@ struct ProfileView: View {
         }
     }
 
-    private var me: PlayerRef { directory.me }
+    private var isMe: Bool { playerID == nil || playerID == directory.me.id }
+    /// Whose card this is.
+    private var me: PlayerRef {
+        guard let playerID, !isMe else { return directory.me }
+        return social.playerRef(for: playerID.rawValue)
+    }
+    private var profile: ProfileRow? {
+        isMe ? social.profile : social.profiles[me.id.rawValue]
+    }
     private var accent: Color { (filter.sport ?? sportMode.sport).theme.accent }
 
     private var results: [MatchResult] {
@@ -75,11 +94,16 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 26) {
                 header
+                if !isMe { friendActions }
                 hero
                 chartSection
                 statsRow
-                if !rivals.isEmpty { rivalsSection }
+                beltsSection
+                trophySection
+                if !isMe { RivalrySection(friend: me) }
+                if isMe && !rivals.isEmpty { rivalsSection }
                 if !partners.isEmpty { partnersSection }
+                if isMe { moreSection }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -89,7 +113,26 @@ struct ProfileView: View {
         .environment(\.colorScheme, .dark)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showEdit) {
-            ProfileEditView()
+            if social.phase == .ready {
+                ProfileSetupView(isEditing: true)
+            } else {
+                ProfileEditView()
+            }
+        }
+        .sheet(isPresented: $showSettings) { SettingsView() }
+        .sheet(isPresented: $showShare) {
+            ShareCardSheet(content: playerCardContent)
+        }
+        .sheet(isPresented: $showCallOut) {
+            CallOutComposerView(opponents: [me.id.rawValue])
+        }
+        .navigationDestination(item: $openChat) { conversation in
+            ChatView(conversationID: conversation.id)
+        }
+        .confirmationDialog("Block \(me.shortName)?", isPresented: $confirmBlock, titleVisibility: .visible) {
+            Button("Block", role: .destructive) { Task { await social.block(me.id.rawValue) } }
+        } message: {
+            Text("They won’t be able to message you, see your Serves or call you out. They aren’t told.")
         }
         .onChange(of: filter) { _, _ in selection = nil }
         .onChange(of: window) { _, _ in selection = nil }
@@ -100,31 +143,181 @@ struct ProfileView: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Avatar(name: me.displayName, color: accent, size: 44)
+            if me.kind == .user, social.phase == .ready {
+                ProfileAvatar(userID: me.id.rawValue, size: 52)
+            } else {
+                Avatar(name: me.displayName, color: accent, size: 52)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(me.displayName)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text("\(results.count) match\(results.count == 1 ? "" : "es") on this phone")
+                Text(subtitle)
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Palette.nightMuted)
             }
             Spacer()
-            Button {
-                Haptics.light()
-                showEdit = true
-            } label: {
-                Text("Edit")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(DS.Palette.nightRaised))
+            if isMe {
+                headerButton("square.and.arrow.up", label: "Share my card") { showShare = true }
+                headerButton("pencil", label: "Edit profile") { showEdit = true }
+                headerButton("gearshape.fill", label: "Settings") { showSettings = true }
             }
-            .buttonStyle(.press)
-            .accessibilityLabel("Edit profile")
         }
         .padding(.top, 8)
+    }
+
+    private var subtitle: String {
+        if let profile {
+            let courts = profile.homeCourts.first.map { " · \($0.name)" } ?? ""
+            return "@\(profile.username)\(courts)"
+        }
+        return "\(results.count) match\(results.count == 1 ? "" : "es")"
+    }
+
+    private func headerButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.light()
+            action()
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(DS.Palette.nightRaised))
+        }
+        .buttonStyle(.press)
+        .accessibilityLabel(label)
+    }
+
+    // MARK: Friend actions
+
+    @ViewBuilder
+    private var friendActions: some View {
+        let id = me.id.rawValue
+        HStack(spacing: 10) {
+            switch social.relationship(with: id) {
+            case .friend:
+                darkPill("Message", "bubble.left.fill") { openChat = social.directConversation(with: id) }
+                darkPill("Call out", "flag.2.crossed.fill") { showCallOut = true }
+            case .incoming:
+                darkPill("Accept request", "person.badge.plus") { Task { await social.respondToRequest(from: id, accept: true) } }
+            case .outgoing:
+                darkPill("Requested", "clock") {}
+            case .none:
+                if me.kind == .user { darkPill("Add friend", "person.badge.plus") { Task { await social.requestFriend(id) } } }
+            case .blocked:
+                darkPill("Unblock", "hand.raised.slash") { Task { await social.unblock(id) } }
+            case .me:
+                EmptyView()
+            }
+            Spacer()
+            if me.kind == .user {
+                Menu {
+                    if social.relationship(with: id) == .friend {
+                        Button("Remove friend", role: .destructive) { Task { await social.removeFriend(id) } }
+                    }
+                    Button("Report", role: .destructive) { Task { _ = await social.report(.user, id: id, reason: "Reported from player card") } }
+                    if social.relationship(with: id) != .blocked {
+                        Button("Block", role: .destructive) { confirmBlock = true }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(DS.Palette.nightRaised))
+                }
+                .accessibilityLabel("More")
+            }
+        }
+    }
+
+    private func darkPill(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.light()
+            action()
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(Capsule().fill(accent))
+        }
+        .buttonStyle(.press)
+    }
+
+    // MARK: Belts and trophies
+
+    @ViewBuilder
+    private var beltsSection: some View {
+        let held = matchStore.belts.held(by: me.id)
+        let involved = matchStore.belts.belts(involving: me.id).filter { !$0.isHeld(by: me.id) }
+        if !held.isEmpty || !involved.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("BELTS").eyebrowStyle(DS.Palette.nightMuted)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(held + involved) { belt in
+                            NavigationLink { BeltDetailView(belt: belt) } label: {
+                                BeltTile(belt: belt, isHeld: belt.isHeld(by: me.id))
+                            }
+                            .buttonStyle(.press)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var trophySection: some View {
+        let trophies = social.trophies.filter { $0.ownerID == me.id.rawValue }
+        if !trophies.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("TROPHY CASE").eyebrowStyle(DS.Palette.nightMuted)
+                TrophyCase(trophies: trophies)
+            }
+        }
+    }
+
+    // MARK: More
+
+    private var moreSection: some View {
+        VStack(spacing: 0) {
+            moreRow("Stats", "chart.bar.fill") { StatsView() }
+            moreRow("Apple Watch workouts", "applewatch") { WatchStatsDetailView() }
+            if social.phase == .ready {
+                moreRow("Friends", "person.2.fill") { FriendsView() }
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(DS.Palette.nightRaised))
+    }
+
+    private func moreRow<Destination: View>(_ title: String, _ symbol: String, @ViewBuilder destination: () -> Destination) -> some View {
+        NavigationLink(destination: destination()) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol).frame(width: 24).foregroundStyle(accent)
+                Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(DS.Palette.nightMuted)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.press)
+    }
+
+    /// The card shared outside the app.
+    private var playerCardContent: ShareCardContent {
+        let held = matchStore.belts.held(by: me.id)
+        if let belt = held.first {
+            return ShareCards.beltDefended(holderName: me.displayName, sport: belt.key.sport, defenses: belt.defenses, tier: belt.tier)
+        }
+        let form = FormLine.compute(for: me.id, results: matchStore.results)
+        return ShareCardContent(kind: .result, title: me.displayName, subtitle: "\(form.wins)–\(form.losses) · form \(Int(form.current ?? 50))",
+                                callToAction: "Think you can beat \(me.shortName)?", scoreLine: nil, tier: nil)
     }
 
     // MARK: Hero

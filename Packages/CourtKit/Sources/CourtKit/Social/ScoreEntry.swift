@@ -39,6 +39,13 @@ public struct EnteredScore: Hashable, Sendable {
     public let matchScore: TeamPair<Int>
     /// Points (pickleball) or games (padel) won, for the form line.
     public let pointsWon: TeamPair<Int>
+
+    public init(units: [CompletedUnit], winner: Team, matchScore: TeamPair<Int>, pointsWon: TeamPair<Int>) {
+        self.units = units
+        self.winner = winner
+        self.matchScore = matchScore
+        self.pointsWon = pointsWon
+    }
 }
 
 public enum ScoreEntry {
