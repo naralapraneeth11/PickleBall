@@ -8,6 +8,7 @@
 
 import SwiftUI
 import CoreImage.CIFilterBuiltins
+import Vision
 import VisionKit
 import CourtKit
 import CourtNet

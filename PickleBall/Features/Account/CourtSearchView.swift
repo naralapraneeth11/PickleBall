@@ -8,6 +8,7 @@
 
 import SwiftUI
 import MapKit
+import CoreLocation
 import CourtKit
 
 struct CourtSearchView: View {
@@ -30,13 +31,13 @@ struct CourtSearchView: View {
                 }
                 ForEach(results, id: \.self) { item in
                     Button {
-                        let coordinate = item.placemark.coordinate
+                        let coordinate = item.location.coordinate
                         pick(CourtTag(name: item.name ?? query, latitude: coordinate.latitude, longitude: coordinate.longitude,
                                       mapItemID: item.identifier?.rawValue))
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name ?? "Court").foregroundStyle(.primary)
-                            if let address = item.placemark.title {
+                            if let address = item.address?.shortAddress ?? item.address?.fullAddress {
                                 Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             }
                         }
