@@ -19,7 +19,17 @@ create schema if not exists auth;
 create table if not exists auth.users (
   id uuid primary key,
   email text,
-  raw_user_meta_data jsonb default '{}'::jsonb
+  raw_user_meta_data jsonb default '{}'::jsonb,
+  banned_until timestamptz
+);
+create table if not exists auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade
+);
+create table if not exists auth.refresh_tokens (
+  id bigserial primary key,
+  user_id varchar(255),
+  session_id uuid references auth.sessions(id) on delete cascade
 );
 
 -- Supabase reads the caller from the JWT; tests set it with set_config.
