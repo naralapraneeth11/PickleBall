@@ -736,6 +736,9 @@ alter table public.tournament_fixtures add column stage text not null default 'm
   check (stage in ('main','pool','winners','losers','final','reset'));
 alter table public.tournament_fixtures add column slot smallint;
 alter table public.tournament_fixtures add column pool smallint;
+-- Progressive formats set a slot, so two phones adding the same next
+-- match at once can't create it twice (league fixtures leave it null).
+alter table public.tournament_fixtures add constraint tournament_fixtures_place unique (tournament_id, stage, round, slot);
 
 
 -- Tournaments carry their settings (pool count, bracket size, points per

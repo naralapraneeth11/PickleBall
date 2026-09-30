@@ -11,6 +11,7 @@
 import SwiftUI
 import UIKit
 import CourtKit
+import CourtNet
 
 /// Presents whatever match `MatchCenter` is running and dismisses itself
 /// when the match goes away (parked, abandoned, or saved).
@@ -45,6 +46,7 @@ struct LiveScoreboardView: View {
     @State private var sweepProgress: CGFloat = 0
     @State private var sweepVisible = false
     @State private var showCamera = false
+    @State private var liveLink: IdentifiedURL?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var center: MatchCenter { .shared }
@@ -102,6 +104,10 @@ struct LiveScoreboardView: View {
             Haptics.warm()
         }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .sheet(item: $liveLink) { item in
+            ShareSheet(items: [String(localized: "Watch us play live"), item.url])
+                .presentationDetents([.medium])
+        }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { data in
                 if let data { center.savePhoto(data, for: match.id) }
@@ -205,6 +211,14 @@ struct LiveScoreboardView: View {
             }
 
             Spacer(minLength: 0)
+
+            if Social.shared.phase == .ready, !isLocked {
+                circleButton("dot.radiowaves.left.and.right", label: "Share the live score") {
+                    Task {
+                        if let url = await Social.shared.shareLink(.match, target: match.id) { liveLink = IdentifiedURL(url: url) }
+                    }
+                }
+            }
 
             circleButton("arrow.uturn.backward", label: "Undo last rally", dimmed: !match.canUndo) {
                 undoLast()

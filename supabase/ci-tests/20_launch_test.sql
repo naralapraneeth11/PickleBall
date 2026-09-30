@@ -105,6 +105,13 @@ select test.throws(format($$insert into public.tournament_fixtures (tournament_i
   :'cup', :'ben', :'ivy'), 'row-level security', 'added fixtures only use entrants');
 insert into public.tournament_fixtures (tournament_id, round, stage, slot, team_a, team_b)
 values (:'cup', 2, 'losers', 0, array[:'cat']::uuid[], array['00000000-0000-0000-0000-0000000000f8']::uuid[]);
+select test.throws(format($$insert into public.tournament_fixtures (tournament_id, round, stage, slot, team_a, team_b) values (%L, 2, 'losers', 0, array[%L]::uuid[], array[%L]::uuid[])$$,
+  :'cup', :'cat', :'ben'), 'tournament_fixtures_place', 'the same bracket match is only added once');
+insert into public.tournament_fixtures (tournament_id, round, stage, slot, team_a, team_b)
+values (:'cup', 2, 'losers', 0, array[:'cat']::uuid[], array[:'ben']::uuid[])
+on conflict (tournament_id, stage, round, slot) do nothing;
+select test.eq((select count(*) from public.tournament_fixtures where tournament_id = :'cup'), 2::bigint,
+  'a second phone adding it again is a no-op');
 select test.throws(format($$update public.tournament_fixtures set match_id = '40000000-0000-0000-0000-000000000001' where tournament_id = %L$$, :'cup'),
   'permission denied', 'fixtures cannot be relinked');
 

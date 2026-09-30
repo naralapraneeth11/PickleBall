@@ -1,0 +1,242 @@
+//
+//  SeasonRecapView.swift
+//  PickleBall
+//
+//  Your season, Wrapped-style: a stack of full-screen cards you swipe
+//  through — matches, record, belts, your nemesis, your best partner —
+//  ending on one card made for sharing.
+//
+
+import SwiftUI
+import CourtKit
+import CourtNet
+
+struct SeasonRecapView: View {
+    @ObservedObject private var matchStore = MatchStore.shared
+    private let social = Social.shared
+    @State private var season = Season(containing: Date())
+    @State private var page = 0
+    @State private var shareImage: UIImage?
+
+    private var me: PlayerID { PlayerDirectory.shared.me.id }
+
+    private var recap: SeasonRecap {
+        let trophies = social.trophies.filter {
+            $0.ownerID == social.userID && $0.kind == .tournament && Season(containing: $0.awardedAt) == season
+        }.count
+        return SeasonRecap.compute(for: me, season: season, results: matchStore.confirmedResults,
+                                   ledger: matchStore.belts, tournamentsWon: trophies)
+    }
+
+    private var seasons: [Season] {
+        let years = Set(matchStore.confirmedResults.map { Season(containing: $0.date) }) .union([Season(containing: Date())])
+        return years.sorted { $0.year > $1.year }
+    }
+
+    var body: some View {
+        let current = self.recap
+        let pages = cards(for: current)
+        return ZStack {
+            LinearGradient(colors: [DS.Palette.night, Color(red: 0.08, green: 0.1, blue: 0.22)], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            if current.isEmpty {
+                ContentUnavailableView("No matches yet in \(season.title)", systemImage: "sparkles",
+                                       description: Text("Your season story fills in as friends confirm your results."))
+                    .foregroundStyle(.white)
+            } else {
+                TabView(selection: $page) {
+                    ForEach(Array(pages.enumerated()), id: \.offset) { index, card in
+                        card.padding(28).tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+            }
+        }
+        .environment(\.colorScheme, .dark)
+        .navigationTitle(season.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if seasons.count > 1 {
+                ToolbarItem(placement: .principal) {
+                    Menu {
+                        ForEach(seasons) { option in
+                            Button(option.title) { season = option; page = 0 }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(season.title).font(.headline)
+                            Image(systemName: "chevron.down").font(.caption.bold())
+                        }
+                    }
+                }
+            }
+            if !current.isEmpty, let shareImage {
+                ToolbarItem(placement: .primaryAction) {
+                    ShareLink(item: Image(uiImage: shareImage), preview: SharePreview(String(localized: "My \(season.title) season"), image: Image(uiImage: shareImage))) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
+        .task(id: season) { render(current) }
+    }
+
+    // MARK: Cards
+
+    private func cards(for recap: SeasonRecap) -> [AnyView] {
+        var list: [AnyView] = []
+        list.append(AnyView(RecapCard(eyebrow: "Your \(season.title)", big: "\(recap.matches)", caption: recap.matches == 1 ? "match played" : "matches played",
+                                      footnote: String(localized: "against \(recap.peoplePlayed) people"))))
+        list.append(AnyView(RecapCard(eyebrow: "Record", big: "\(recap.wins)–\(recap.losses)",
+                                      caption: String(localized: "\(Int((recap.winRate * 100).rounded()))% won"),
+                                      footnote: recap.longestWinStreak > 1 ? String(localized: "Longest streak: \(recap.longestWinStreak) in a row") : nil)))
+        if recap.beltsWon > 0 || recap.titleDefenses > 0 {
+            list.append(AnyView(RecapCard(eyebrow: "Belts", big: "\(recap.beltsWon)", caption: recap.beltsWon == 1 ? "belt won" : "belts won",
+                                          footnote: String(localized: "\(recap.titleDefenses) defenses · longest reign \(recap.longestReignDays)d"),
+                                          symbol: "crown.fill")))
+        }
+        if let nemesis = recap.nemesis {
+            list.append(AnyView(RecapPersonCard(eyebrow: "Your nemesis", person: nemesis, line: String(localized: "\(nemesis.wins)–\(nemesis.losses) against"))))
+        }
+        if let partner = recap.bestPartner {
+            list.append(AnyView(RecapPersonCard(eyebrow: "Best partner", person: partner, line: String(localized: "\(partner.wins)–\(partner.losses) together"))))
+        }
+        if let month = recap.busiestMonth {
+            let name = Calendar.current.monthSymbols[month - 1]
+            list.append(AnyView(RecapCard(eyebrow: "Busiest month", big: name.capitalized, caption: String(localized: "\(recap.busiestMonthMatches) matches"),
+                                          footnote: recap.tournamentsWon > 0 ? String(localized: "\(recap.tournamentsWon) tournaments won") : nil)))
+        }
+        list.append(AnyView(VStack(spacing: 18) {
+            RecapShareCard(recap: recap, name: PlayerDirectory.shared.me.displayName)
+                .frame(width: 300, height: 480)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .shadow(color: .black.opacity(0.4), radius: 24, y: 12)
+            if let shareImage {
+                ShareLink(item: Image(uiImage: shareImage), preview: SharePreview(String(localized: "My \(season.title) season"), image: Image(uiImage: shareImage))) {
+                    Label("Share my season", systemImage: "square.and.arrow.up")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(width: 300, height: 52)
+                        .background(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous).fill(DS.Palette.royalBlue))
+                }
+            }
+        }))
+        return list
+    }
+
+    private func render(_ recap: SeasonRecap) {
+        let renderer = ImageRenderer(content: RecapShareCard(recap: recap, name: PlayerDirectory.shared.me.displayName)
+            .frame(width: 300, height: 480)
+            .environment(\.colorScheme, .dark))
+        renderer.scale = 3
+        shareImage = renderer.uiImage
+    }
+}
+
+private struct RecapCard: View {
+    let eyebrow: LocalizedStringKey
+    let big: String
+    let caption: LocalizedStringKey
+    var footnote: String?
+    var symbol: String?
+
+    init(eyebrow: LocalizedStringKey, big: String, caption: String, footnote: String? = nil, symbol: String? = nil) {
+        self.eyebrow = eyebrow
+        self.big = big
+        self.caption = LocalizedStringKey(caption)
+        self.footnote = footnote
+        self.symbol = symbol
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Spacer()
+            Text(eyebrow).eyebrowStyle(DS.Palette.nightMuted)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 44, weight: .bold)).foregroundStyle(DS.Palette.gold)
+                }
+                Text(big)
+                    .font(DS.Typography.hero(big.count > 6 ? 56 : 96))
+                    .foregroundStyle(.white)
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
+            }
+            Text(caption).font(.system(size: 22, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
+            if let footnote {
+                Text(footnote).font(.system(size: 16, weight: .medium, design: .rounded)).foregroundStyle(DS.Palette.nightMuted)
+            }
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct RecapPersonCard: View {
+    let eyebrow: LocalizedStringKey
+    let person: RecapPerson
+    let line: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Spacer()
+            Text(eyebrow).eyebrowStyle(DS.Palette.nightMuted)
+            if person.player.kind == .user {
+                ProfileAvatar(userID: person.player.id.rawValue, size: 120)
+            } else {
+                Avatar(name: person.player.displayName, color: DS.Palette.electricBlue, size: 120)
+            }
+            Text(person.player.displayName)
+                .font(DS.Typography.hero(44))
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+            Text(line).font(.system(size: 22, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The one card made for sharing: the season on a single image.
+struct RecapShareCard: View {
+    let recap: SeasonRecap
+    let name: String
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [DS.Palette.royalBlue, DS.Palette.night], startPoint: .topLeading, endPoint: .bottomTrailing)
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    BallIcon(sport: .pickleball, size: 26)
+                    Text("PickleBall").font(.system(size: 16, weight: .heavy, design: .rounded)).foregroundStyle(.white)
+                    Spacer()
+                    Text(recap.season.title).font(.system(size: 16, weight: .heavy, design: .rounded)).foregroundStyle(.white.opacity(0.7))
+                }
+                Spacer()
+                Text(name).font(.system(size: 30, weight: .heavy, design: .rounded)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.5)
+                row("Matches", "\(recap.matches)")
+                row("Record", "\(recap.wins)–\(recap.losses)")
+                if recap.beltsWon > 0 { row("Belts won", "\(recap.beltsWon)") }
+                if recap.longestWinStreak > 1 { row("Best streak", "\(recap.longestWinStreak)") }
+                if let nemesis = recap.nemesis { row("Nemesis", nemesis.player.shortName) }
+                if let partner = recap.bestPartner { row("Best partner", partner.player.shortName) }
+                Spacer()
+                Text("Come for the belt.").font(.system(size: 15, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(26)
+        }
+    }
+
+    private func row(_ title: LocalizedStringKey, _ value: String) -> some View {
+        HStack {
+            Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.7))
+            Spacer()
+            Text(value).font(.system(size: 20, weight: .heavy, design: .rounded).monospacedDigit()).foregroundStyle(.white)
+        }
+    }
+}

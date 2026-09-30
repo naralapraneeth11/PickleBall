@@ -75,6 +75,9 @@ final class Social {
     /// When each chat was last opened, for unread dots.
     private(set) var lastRead: [UUID: Date] = [:]
 
+    /// Moderators see the admin screen (the server checks every call).
+    var isAdmin = false
+
     /// A share card waiting to be offered (belt won, trophy, comeback).
     var sharePrompt: SharePrompt?
     /// An invite opened before the account was ready.
@@ -297,6 +300,9 @@ final class Social {
         _ = await (friends, squads, callOuts, tournaments, feed, replays, live)
         await refreshMatches()
         await refreshTrophies()
+        await advanceTournaments()
+        await publishLevels()
+        await refreshAdminFlag()
         scheduleCacheSave()
     }
 
@@ -521,7 +527,9 @@ final class Social {
         }
         var mediaPath: String?
         if let photo {
-            guard let path = await uploadMedia(photo, kind: "chat") else { return }
+            // Chat photos live under <me>/chat/<conversation>/ so only
+            // that chat's members can read them.
+            guard let path = await uploadMedia(photo, kind: "chat/\(conversationID.uuidString.lowercased())") else { return }
             mediaPath = path
         }
         guard body != nil || mediaPath != nil else { return }

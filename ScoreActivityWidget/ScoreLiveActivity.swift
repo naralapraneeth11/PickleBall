@@ -16,6 +16,7 @@ import CourtKit
 struct ScoreActivityWidgetBundle: WidgetBundle {
     var body: some Widget {
         ScoreLiveActivity()
+        BeltWidget()
     }
 }
 

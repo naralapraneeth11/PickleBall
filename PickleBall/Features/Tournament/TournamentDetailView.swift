@@ -2,9 +2,10 @@
 //  TournamentDetailView.swift
 //  PickleBall
 //
-//  A squad tournament: live standings, the schedule (anyone can set a time
-//  or court, anyone can score any match), King of the Court rounds, and
-//  the champion's moment. Results post to the squad chat and count for
+//  A squad tournament: live standings or the bracket, pool tables, the
+//  schedule (anyone can set a time or court, anyone can score any match),
+//  King of the Court and Mexicano rounds, a live page to share, and the
+//  champion's moment. Results post to the squad chat and count for
 //  the Belt like any other squad match.
 //
 
@@ -18,10 +19,11 @@ struct TournamentDetailView: View {
     private let social = Social.shared
     @State private var playPrefill: MatchPrefill?
     @State private var enterPrefill: MatchPrefill?
-    @State private var americanoFixture: FixtureRow?
+    @State private var pointsFixture: FixtureRow?
     @State private var scheduling: FixtureRow?
     @State private var champions: [PlayerID]?
     @State private var isWorking = false
+    @State private var shareURL: IdentifiedURL?
 
     private var tournament: TournamentRow? { social.tournaments.first { $0.id == tournamentID } }
 
@@ -34,22 +36,29 @@ struct TournamentDetailView: View {
     }
 
     private func content(_ tournament: TournamentRow) -> some View {
+        let format = tournament.format
         let fixtures = social.fixtures(of: tournament)
         let scores = social.scores(of: tournament)
         let standings = social.standings(of: tournament)
-        let rounds = Dictionary(grouping: fixtures, by: \.round).sorted { $0.key < $1.key }
-        let allPlayed = !fixtures.isEmpty && fixtures.allSatisfy { scores[$0.id] != nil }
-        let lastRoundDone = rounds.last.map { $0.value.allSatisfy { scores[$0.id] != nil } } ?? false
+        let bracket = social.bracket(of: tournament)
+        let league = fixtures.filter { ($0.stage ?? .main) == .main }
+        let rounds = Dictionary(grouping: league, by: \.round).sorted { $0.key < $1.key }
+        let decided = social.champions(of: tournament) != nil
 
         return List {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(social.squad(tournament.squadID)?.name ?? "Squad") · \(tournament.format.title)")
+                    Text("\(social.squad(tournament.squadID)?.name ?? "Squad") · \(format.title)")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                     Text(tournament.rules.summary)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
+                    if format == .mexicano {
+                        Text("Round \(rounds.last?.key ?? 1) of \(tournament.settings?.rounds ?? 6)")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     if tournament.status == .completed {
                         Label("Won by \(tournament.champions.map(social.firstName(of:)).joined(separator: " & "))", systemImage: "trophy.fill")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -59,56 +68,47 @@ struct TournamentDetailView: View {
                 }
             }
 
-            Section(tournament.format == .americano ? "Standings · points" : "Standings") {
-                ForEach(standings) { row in
-                    HStack(spacing: 10) {
-                        Text("\(row.rank)")
-                            .font(.system(size: 15, weight: .heavy, design: .rounded).monospacedDigit())
-                            .foregroundStyle(row.rank == 1 ? DS.Palette.gold : .secondary)
-                            .frame(width: 22)
-                        Text(row.entrant.map { social.firstName(of: $0.rawValue) }.joined(separator: " & "))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .lineLimit(1)
-                        Spacer()
-                        if tournament.format == .americano {
-                            Text("\(row.pointsFor)").font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
-                        } else {
-                            Text("\(row.wins)–\(row.losses)").font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
-                            Text(row.pointDifference >= 0 ? "+\(row.pointDifference)" : "\(row.pointDifference)")
-                                .font(.system(size: 13, weight: .medium, design: .rounded).monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 40, alignment: .trailing)
-                        }
-                    }
+            if format == .pools {
+                poolSections(tournament, fixtures: fixtures, scores: scores)
+            } else if !format.isBracket {
+                standingsSection(format, standings: standings)
+            }
+
+            if let bracket {
+                Section(format == .pools ? "Knockout" : "Bracket") {
+                    BracketView(state: bracket, fixtures: fixtures, scores: scores, isActive: tournament.status == .active,
+                                onPlay: { playPrefill = MatchPrefill(tournament: tournament, fixture: $0, social: social) },
+                                onEnter: { enter($0, in: tournament) },
+                                onSchedule: { scheduling = $0 })
+                        .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
+                }
+            } else if format == .pools {
+                Section {
+                    Label("The knockout starts when every pool match is in.", systemImage: "arrow.triangle.branch")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
-            ForEach(rounds, id: \.key) { round, roundFixtures in
-                Section("Round \(round)") {
-                    ForEach(roundFixtures) { fixture in
-                        FixtureRowView(tournament: tournament, fixture: fixture, score: scores[fixture.id],
-                                       onPlay: { playPrefill = MatchPrefill(tournament: tournament, fixture: fixture, social: social) },
-                                       onEnter: {
-                                           if tournament.format == .americano {
-                                               americanoFixture = fixture
-                                           } else {
-                                               enterPrefill = MatchPrefill(tournament: tournament, fixture: fixture, social: social)
-                                           }
-                                       },
-                                       onSchedule: { scheduling = fixture })
+            if !format.isBracket && format != .pools {
+                ForEach(rounds, id: \.key) { round, roundFixtures in
+                    Section("Round \(round)") {
+                        ForEach(roundFixtures) { fixture in
+                            fixtureRow(tournament, fixture, score: scores[fixture.id])
+                        }
                     }
                 }
             }
 
             if tournament.status == .active {
                 Section {
-                    if tournament.format == .kingOfTheCourt {
+                    if format == .kingOfTheCourt || format == .mexicano {
                         Button {
                             run { await social.startNextRound(of: tournament) }
                         } label: {
-                            Label("Start the next round", systemImage: "arrow.up.arrow.down")
+                            Label("Start the next round", systemImage: format == .mexicano ? "shuffle" : "arrow.up.arrow.down")
                         }
-                        .disabled(!lastRoundDone || isWorking)
+                        .disabled(!social.canStartNextRound(of: tournament) || isWorking)
                     }
                     Button {
                         run {
@@ -118,17 +118,29 @@ struct TournamentDetailView: View {
                         Label("Finish and crown the champion", systemImage: "trophy.fill")
                             .fontWeight(.semibold)
                     }
-                    .disabled(!allPlayed || isWorking)
+                    .disabled(!decided || isWorking)
                 } footer: {
-                    Text(allPlayed ? "Everyone’s played. Time to crown the champion." : "Finish every match to crown the champion.")
+                    Text(decided ? "It’s decided. Time to crown the champion." : "Finish every match to crown the champion.")
                 }
             }
         }
         .navigationTitle(tournament.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task {
+                        if let url = await social.shareLink(.tournament, target: tournament.id) { shareURL = IdentifiedURL(url: url) }
+                    }
+                } label: {
+                    Label("Share live page", systemImage: "square.and.arrow.up")
+                }
+            }
+        }
         .refreshable {
             await social.refreshTournaments()
             await social.refreshMatches()
+            await social.advanceTournaments()
         }
         .fullScreenCover(item: $playPrefill) { prefill in
             PlayView(onDismiss: { playPrefill = nil }, prefill: prefill)
@@ -136,22 +148,84 @@ struct TournamentDetailView: View {
         .sheet(item: $enterPrefill) { prefill in
             EnterScoreView(prefill: prefill)
         }
-        .sheet(item: $americanoFixture) { fixture in
+        .sheet(item: $pointsFixture) { fixture in
             AmericanoScoreView(tournament: tournament, fixture: fixture)
         }
         .sheet(item: $scheduling) { fixture in
             ScheduleFixtureView(fixture: fixture)
         }
+        .sheet(item: $shareURL) { item in
+            ShareSheet(items: [String(localized: "Follow \(tournament.name) live"), item.url])
+                .presentationDetents([.medium])
+        }
         .fullScreenCover(isPresented: Binding(get: { champions != nil }, set: { if !$0 { champions = nil } })) {
-            championView(tournament, standings: standings)
+            championView(tournament, standings: standings, bracket: bracket)
         }
     }
 
-    private func championView(_ tournament: TournamentRow, standings: [StandingRow]) -> some View {
-        let podium = standings.prefix(3).map { row in
-            PlayerStanding(name: row.entrant.map { social.firstName(of: $0.rawValue) }.joined(separator: " & "),
-                           points: tournament.format == .americano ? row.pointsFor : row.wins,
-                           wins: row.wins, draws: 0, losses: row.losses, pointsFor: row.pointsFor, pointsAgainst: row.pointsAgainst)
+    private func standingsSection(_ format: TournamentFormat, standings: [StandingRow]) -> some View {
+        Section(format.ranksByPoints ? "Standings · points" : "Standings") {
+            ForEach(standings) { row in
+                StandingLine(row: row, byPoints: format.ranksByPoints)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func poolSections(_ tournament: TournamentRow, fixtures: [FixtureRow], scores: [UUID: FixtureScore]) -> some View {
+        let pools = social.pools(of: tournament)
+        let tables = Pools.standings(pools: pools, fixtures: fixtures.map(\.fixture), scores: scores)
+        let advancing = tournament.settings?.advancing ?? Pools.suggestedAdvancing(entrants: pools.joined().count, pools: pools.count)
+        ForEach(Array(tables.enumerated()), id: \.offset) { index, table in
+            Section {
+                ForEach(table) { row in
+                    StandingLine(row: row, byPoints: false, qualifies: row.rank <= advancing)
+                }
+                ForEach(fixtures.filter { $0.stage == .pool && $0.pool == index }) { fixture in
+                    fixtureRow(tournament, fixture, score: scores[fixture.id])
+                }
+            } header: {
+                Text("Pool \(Self.poolLetter(index))")
+            } footer: {
+                if index == tables.count - 1 {
+                    Text("Top \(advancing) in each pool go through to the knockout.")
+                }
+            }
+        }
+    }
+
+    static func poolLetter(_ index: Int) -> String {
+        String(UnicodeScalar(UInt8(65 + index % 26)))
+    }
+
+    private func fixtureRow(_ tournament: TournamentRow, _ fixture: FixtureRow, score: FixtureScore?) -> some View {
+        FixtureRowView(tournament: tournament, fixture: fixture, score: score,
+                       onPlay: { playPrefill = MatchPrefill(tournament: tournament, fixture: fixture, social: social) },
+                       onEnter: { enter(fixture, in: tournament) },
+                       onSchedule: { scheduling = fixture })
+    }
+
+    private func enter(_ fixture: FixtureRow, in tournament: TournamentRow) {
+        if tournament.format.ranksByPoints {
+            pointsFixture = fixture
+        } else {
+            enterPrefill = MatchPrefill(tournament: tournament, fixture: fixture, social: social)
+        }
+    }
+
+    private func championView(_ tournament: TournamentRow, standings: [StandingRow], bracket: Bracket.State?) -> some View {
+        let name = { (ids: [PlayerID]) in ids.map { social.firstName(of: $0.rawValue) }.joined(separator: " & ") }
+        let podium: [PlayerStanding]
+        if let bracket, let champion = bracket.champion {
+            podium = ([champion] + (bracket.runnerUp.map { [$0] } ?? [])).map {
+                PlayerStanding(name: name($0), points: 0, wins: 0, draws: 0, losses: 0, pointsFor: 0, pointsAgainst: 0)
+            }
+        } else {
+            podium = standings.prefix(3).map { row in
+                PlayerStanding(name: name(row.entrant),
+                               points: tournament.format.ranksByPoints ? row.pointsFor : row.wins,
+                               wins: row.wins, draws: 0, losses: row.losses, pointsFor: row.pointsFor, pointsAgainst: row.pointsAgainst)
+            }
         }
         let ordered = podium.count >= 3 ? [podium[1], podium[0], podium[2]] : podium
         return TournamentChampionView(champion: podium.first ?? PlayerStanding(name: "", points: 0, wins: 0, draws: 0, losses: 0, pointsFor: 0, pointsAgainst: 0),
@@ -165,6 +239,41 @@ struct TournamentDetailView: View {
         Task {
             await work()
             isWorking = false
+        }
+    }
+}
+
+private struct StandingLine: View {
+    let row: StandingRow
+    let byPoints: Bool
+    var qualifies = false
+    private let social = Social.shared
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(row.rank)")
+                .font(.system(size: 15, weight: .heavy, design: .rounded).monospacedDigit())
+                .foregroundStyle(row.rank == 1 ? DS.Palette.gold : .secondary)
+                .frame(width: 22)
+            Text(row.entrant.map { social.firstName(of: $0.rawValue) }.joined(separator: " & "))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+            if qualifies {
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(DS.Palette.win)
+                    .accessibilityLabel("Goes through")
+            }
+            Spacer()
+            if byPoints {
+                Text("\(row.pointsFor)").font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+            } else {
+                Text("\(row.wins)–\(row.losses)").font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                Text(row.pointDifference >= 0 ? "+\(row.pointDifference)" : "\(row.pointDifference)")
+                    .font(.system(size: 13, weight: .medium, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40, alignment: .trailing)
+            }
         }
     }
 }
@@ -200,7 +309,7 @@ private struct FixtureRowView: View {
                 Spacer()
                 if score == nil, tournament.status == .active {
                     Menu {
-                        if tournament.format != .americano {
+                        if !tournament.format.ranksByPoints {
                             Button { onPlay() } label: { Label("Score it live", systemImage: "play.fill") }
                         }
                         Button { onEnter() } label: { Label("Enter the score", systemImage: "square.and.pencil") }
@@ -226,7 +335,7 @@ private struct FixtureRowView: View {
 
     private var details: String {
         var parts: [String] = []
-        if tournament.format == .kingOfTheCourt { parts.append(fixture.courtNumber == 1 ? "King court" : "Court \(fixture.courtNumber)") }
+        if tournament.format == .kingOfTheCourt { parts.append(fixture.courtNumber == 1 ? String(localized: "King court") : String(localized: "Court \(fixture.courtNumber)")) }
         else if fixture.courtNumber > 1 { parts.append("Court \(fixture.courtNumber)") }
         if let date = fixture.scheduledAt { parts.append(RelativeTime.upcoming(date)) }
         if let court = fixture.court { parts.append(court.name) }
