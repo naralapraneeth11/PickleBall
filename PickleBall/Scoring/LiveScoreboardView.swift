@@ -240,7 +240,7 @@ struct LiveScoreboardView: View {
                 .overlay(Circle().stroke(DS.Palette.hairline, lineWidth: 1))
         }
         .buttonStyle(.press)
-        .accessibilityLabel(label)
+        .accessibilityLabel(LocalizedStringKey(label))
     }
 
     // MARK: - Team panels
@@ -668,7 +668,7 @@ private struct MatchResultCard: View {
 
     private func stat(_ title: String, _ value: String) -> some View {
         VStack(spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.2)
                 .foregroundStyle(DS.Palette.nightMuted)

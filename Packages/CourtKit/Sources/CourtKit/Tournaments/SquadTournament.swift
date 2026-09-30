@@ -34,25 +34,25 @@ public enum TournamentFormat: String, Codable, Hashable, Sendable, CaseIterable,
 
     public var title: String {
         switch self {
-        case .roundRobin: return "Round robin"
-        case .kingOfTheCourt: return "King of the Court"
-        case .americano: return "Americano"
-        case .mexicano: return "Mexicano"
-        case .singleElimination: return "Knockout"
-        case .doubleElimination: return "Double elimination"
-        case .pools: return "Pools + knockout"
+        case .roundRobin: return L("Round robin")
+        case .kingOfTheCourt: return L("King of the Court")
+        case .americano: return L("Americano")
+        case .mexicano: return L("Mexicano")
+        case .singleElimination: return L("Knockout")
+        case .doubleElimination: return L("Double elimination")
+        case .pools: return L("Pools + knockout")
         }
     }
 
     public var blurb: String {
         switch self {
-        case .roundRobin: return "Everyone plays everyone once."
-        case .kingOfTheCourt: return "Win and move up. Lose and move down. Partners change every round."
-        case .americano: return "New partner every round. Every point you win counts."
-        case .mexicano: return "Like Americano, but each round pairs players by the standings: close games all night."
-        case .singleElimination: return "Lose once and you're out. Top seeds get the byes."
-        case .doubleElimination: return "Lose twice and you're out. The losers' bracket gets a second life."
-        case .pools: return "Round robin in small pools, then the top of each pool plays a knockout."
+        case .roundRobin: return L("Everyone plays everyone once.")
+        case .kingOfTheCourt: return L("Win and move up. Lose and move down. Partners change every round.")
+        case .americano: return L("New partner every round. Every point you win counts.")
+        case .mexicano: return L("Like Americano, but each round pairs players by the standings: close games all night.")
+        case .singleElimination: return L("Lose once and you're out. Top seeds get the byes.")
+        case .doubleElimination: return L("Lose twice and you're out. The losers' bracket gets a second life.")
+        case .pools: return L("Round robin in small pools, then the top of each pool plays a knockout.")
         }
     }
 

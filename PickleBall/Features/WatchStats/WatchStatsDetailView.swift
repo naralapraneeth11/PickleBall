@@ -605,7 +605,7 @@ struct WatchStatsDetailView: View {
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .monospacedDigit()
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(WatchStatsTheme.muted)
         }
@@ -1040,7 +1040,7 @@ struct ShotStatRing: View {
             }
             .frame(width: 48, height: 48)
             HStack(spacing: 2) {
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(WatchStatsTheme.muted)
                 if isPB {

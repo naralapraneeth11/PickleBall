@@ -131,7 +131,7 @@ struct SettingsView: View {
     private func rowLabel(title: String, systemImage: String, tint: Color, detail: String?) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage).foregroundColor(tint).frame(width: 22)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(tint == destructiveRed ? destructiveRed : .primary)
             Spacer()
@@ -337,7 +337,7 @@ struct SettingsView: View {
             UIApplication.shared.open(url)
         }) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 16))
                     .foregroundColor(royalBlue)
                 Spacer()

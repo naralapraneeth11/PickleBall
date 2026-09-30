@@ -187,7 +187,7 @@ struct ProfileView: View {
                 .background(Circle().fill(DS.Palette.nightRaised))
         }
         .buttonStyle(.press)
-        .accessibilityLabel(label)
+        .accessibilityLabel(LocalizedStringKey(label))
     }
 
     // MARK: Friend actions
@@ -300,7 +300,7 @@ struct ProfileView: View {
         NavigationLink(destination: destination()) {
             HStack(spacing: 12) {
                 Image(systemName: symbol).frame(width: 24).foregroundStyle(accent)
-                Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                Text(LocalizedStringKey(title)).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
                 Spacer()
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(DS.Palette.nightMuted)
             }
@@ -415,7 +415,7 @@ struct ProfileView: View {
             Haptics.selection()
             withAnimation(DS.Motion.snappy) { action() }
         } label: {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(isOn ? Color.black : DS.Palette.nightMuted)
                 .padding(.horizontal, 10)
@@ -507,7 +507,7 @@ struct ProfileView: View {
 
     private func statCell(_ title: String, _ value: String) -> some View {
         VStack(spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.1)
                 .foregroundStyle(DS.Palette.nightMuted)

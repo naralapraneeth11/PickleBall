@@ -12,11 +12,11 @@ enum AppTab: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .play:        return "Play"
-        case .chats:       return "Chats"
-        case .me:          return "Me"
-        case .tournaments: return "Tournaments"
-        case .feed:        return "Feed"
+        case .play:        return String(localized: "Play")
+        case .chats:       return String(localized: "Chats")
+        case .me:          return String(localized: "Me")
+        case .tournaments: return String(localized: "Tournaments")
+        case .feed:        return String(localized: "Feed")
         }
     }
 

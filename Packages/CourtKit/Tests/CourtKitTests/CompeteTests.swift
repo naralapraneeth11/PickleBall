@@ -431,3 +431,16 @@ final class NudgeTests: XCTestCase {
         XCTAssertEqual(decoded, snapshot)
     }
 }
+
+final class LocalizationTests: XCTestCase {
+    func testFormatNamesAreTranslated() throws {
+        for (lang, expected) in [("es", "Eliminatoria"), ("pt-BR", "Mata-mata"), ("it", "Eliminazione diretta")] {
+            // SwiftPM lowercases region folders on Linux (pt-br.lproj).
+            let path = try XCTUnwrap(CourtKitStrings.bundle.path(forResource: lang, ofType: "lproj")
+                                     ?? CourtKitStrings.bundle.path(forResource: lang.lowercased(), ofType: "lproj"), lang)
+            let bundle = try XCTUnwrap(Bundle(path: path))
+            XCTAssertEqual(bundle.localizedString(forKey: "Knockout", value: nil, table: nil), expected, lang)
+        }
+        XCTAssertEqual(TournamentFormat.singleElimination.title.isEmpty, false)
+    }
+}

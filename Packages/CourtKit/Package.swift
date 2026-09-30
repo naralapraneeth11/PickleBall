@@ -11,6 +11,7 @@ import PackageDescription
 
 let package = Package(
     name: "CourtKit",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .watchOS(.v10),
@@ -20,7 +21,7 @@ let package = Package(
         .library(name: "CourtKit", targets: ["CourtKit"])
     ],
     targets: [
-        .target(name: "CourtKit"),
+        .target(name: "CourtKit", resources: [.process("Resources")]),
         .testTarget(name: "CourtKitTests", dependencies: ["CourtKit"])
     ]
 )

@@ -562,7 +562,7 @@ struct ShutterPanel: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 9, weight: .black, design: .rounded))
                     .tracking(1.2)
                     .foregroundColor(Color.white.opacity(0.45))
@@ -665,7 +665,7 @@ struct ShutterPanel: View {
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(.white.opacity(0.85))
                         .lineLimit(1)

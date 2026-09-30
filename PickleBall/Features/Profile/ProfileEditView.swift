@@ -401,7 +401,7 @@ struct ProfileEditView: View {
         onSubmit: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(textMuted)
                 .tracking(1.2)
