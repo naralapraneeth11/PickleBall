@@ -21,9 +21,12 @@ public struct ProfileRow: Codable, Hashable, Sendable, Identifiable {
     public var homeCourts: [CourtTag]
     public var createdAt: Date?
     public var updatedAt: Date?
+    /// Published levels per sport: {"pickleball": 3.42}.
+    public var levels: [String: Double]?
 
     public init(id: UUID, username: String, displayName: String, avatarPath: String? = nil,
-                sports: [Sport] = [.pickleball], homeCourts: [CourtTag] = [], createdAt: Date? = nil, updatedAt: Date? = nil) {
+                sports: [Sport] = [.pickleball], homeCourts: [CourtTag] = [], createdAt: Date? = nil, updatedAt: Date? = nil,
+                levels: [String: Double]? = nil) {
         self.id = id
         self.username = username
         self.displayName = displayName
@@ -32,10 +35,13 @@ public struct ProfileRow: Codable, Hashable, Sendable, Identifiable {
         self.homeCourts = homeCourts
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.levels = levels
     }
 
+    public func level(in sport: Sport) -> Double? { levels?[sport.rawValue] }
+
     enum CodingKeys: String, CodingKey {
-        case id, username, sports
+        case id, username, sports, levels
         case displayName = "display_name"
         case avatarPath = "avatar_path"
         case homeCourts = "home_courts"
@@ -530,9 +536,10 @@ public struct TournamentRow: Codable, Hashable, Sendable, Identifiable {
     public var createdBy: UUID?
     public var createdAt: Date?
     public var completedAt: Date?
+    public var settings: TournamentSettings?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, sport, format, rules, status, champions
+        case id, name, sport, format, rules, status, champions, settings
         case squadID = "squad_id"
         case createdBy = "created_by"
         case createdAt = "created_at"
@@ -560,9 +567,14 @@ public struct FixtureRow: Codable, Hashable, Sendable, Identifiable {
     public var scheduledAt: Date?
     public var court: CourtTag?
     public var matchID: UUID?
+    /// Nil means league play ("main").
+    public var stage: FixtureStage?
+    public var slot: Int?
+    public var pool: Int?
 
     public init(id: UUID, tournamentID: UUID, round: Int, courtNumber: Int, teamA: [UUID], teamB: [UUID],
-                scheduledAt: Date? = nil, court: CourtTag? = nil, matchID: UUID? = nil) {
+                scheduledAt: Date? = nil, court: CourtTag? = nil, matchID: UUID? = nil,
+                stage: FixtureStage? = nil, slot: Int? = nil, pool: Int? = nil) {
         self.id = id
         self.tournamentID = tournamentID
         self.round = round
@@ -572,22 +584,26 @@ public struct FixtureRow: Codable, Hashable, Sendable, Identifiable {
         self.scheduledAt = scheduledAt
         self.court = court
         self.matchID = matchID
+        self.stage = stage
+        self.slot = slot
+        self.pool = pool
     }
 
     public init(_ fixture: Fixture, tournamentID: UUID) {
         self.init(id: fixture.id, tournamentID: tournamentID, round: fixture.round, courtNumber: fixture.court,
                   teamA: fixture.teams.a.map(\.rawValue), teamB: fixture.teams.b.map(\.rawValue),
-                  scheduledAt: fixture.scheduledAt, court: fixture.place)
+                  scheduledAt: fixture.scheduledAt, court: fixture.place,
+                  stage: fixture.stage == .main ? nil : fixture.stage, slot: fixture.slot, pool: fixture.pool)
     }
 
     public var fixture: Fixture {
         Fixture(id: id, round: round, court: courtNumber,
                 teams: TeamPair(a: teamA.map(PlayerID.init(rawValue:)), b: teamB.map(PlayerID.init(rawValue:))),
-                scheduledAt: scheduledAt, place: court)
+                scheduledAt: scheduledAt, place: court, stage: stage ?? .main, slot: slot, pool: pool)
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, round, court
+        case id, round, court, stage, slot, pool
         case tournamentID = "tournament_id"
         case courtNumber = "court_number"
         case teamA = "team_a"
