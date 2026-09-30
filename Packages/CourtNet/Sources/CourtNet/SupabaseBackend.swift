@@ -17,13 +17,17 @@ import Supabase
 public struct BackendConfig: Sendable, Hashable {
     public let url: URL
     public let anonKey: String
-    /// The invite landing page (docs/invite on GitHub Pages), if set.
+    /// The invite landing page, if set.
     public let invitePage: URL?
+    /// The public web site (web/ on Cloudflare Pages): live scoreboards,
+    /// privacy policy, support.
+    public let site: URL?
 
-    public init(url: URL, anonKey: String, invitePage: URL? = nil) {
+    public init(url: URL, anonKey: String, invitePage: URL? = nil, site: URL? = nil) {
         self.url = url
         self.anonKey = anonKey
-        self.invitePage = invitePage
+        self.site = site
+        self.invitePage = invitePage ?? site?.appendingPathComponent("invite/")
     }
 
     /// Nil when the app was built without Secrets.plist. Such a build can
@@ -46,7 +50,7 @@ public struct BackendConfig: Sendable, Hashable {
             return URL(string: raw.hasPrefix("http") ? raw : "https://\(raw)")
         }
         guard let base = url(value("SUPABASE_URL")), let key = value("SUPABASE_ANON_KEY") else { return nil }
-        return BackendConfig(url: base, anonKey: key, invitePage: url(value("INVITE_PAGE_URL")))
+        return BackendConfig(url: base, anonKey: key, invitePage: url(value("INVITE_PAGE_URL")), site: url(value("SITE_URL")))
     }
 }
 
@@ -284,7 +288,10 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
 
     public func addFixtures(_ fixtures: [FixtureRow]) async throws {
         guard !fixtures.isEmpty else { return }
-        try await db.from("tournament_fixtures").insert(fixtures, returning: .minimal).execute()
+        // Another phone may have added the same bracket match a moment ago.
+        try await db.from("tournament_fixtures")
+            .upsert(fixtures, onConflict: "tournament_id,stage,round,slot", returning: .minimal, ignoreDuplicates: true)
+            .execute()
     }
 
     public func completeTournament(_ id: UUID, champions: [UUID]) async throws {

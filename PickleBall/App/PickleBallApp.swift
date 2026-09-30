@@ -25,6 +25,8 @@ struct PickleBallApp: App {
         WorkoutStore.shared.reload()
         MatchCenter.shared.boot()
         Social.shared.boot()
+        Telemetry.shared.start()
+        Nudger.shared.register()
 
         // Kill the ~100ms tap-vs-drag delay on every ScrollView in the app.
         UIScrollView.appearance().delaysContentTouches = false
@@ -43,10 +45,19 @@ struct PickleBallApp: App {
                     }
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    guard phase == .active else { return }
-                    Task {
-                        await Social.shared.drainOutbox()
-                        await Social.shared.refreshAll()
+                    switch phase {
+                    case .active:
+                        Nudger.shared.withdraw()
+                        Task {
+                            await Social.shared.drainOutbox()
+                            await Social.shared.refreshAll()
+                            await Telemetry.shared.pingIfNeeded()
+                        }
+                    case .background:
+                        Nudger.shared.scheduleRefresh()
+                        Task { await Nudger.shared.plan() }
+                    default:
+                        break
                     }
                 }
         }

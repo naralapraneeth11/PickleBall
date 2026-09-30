@@ -12,11 +12,11 @@ enum AppTab: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .play:        return "Play"
-        case .chats:       return "Chats"
-        case .me:          return "Me"
-        case .tournaments: return "Tournaments"
-        case .feed:        return "Feed"
+        case .play:        return String(localized: "Play")
+        case .chats:       return String(localized: "Chats")
+        case .me:          return String(localized: "Me")
+        case .tournaments: return String(localized: "Tournaments")
+        case .feed:        return String(localized: "Feed")
         }
     }
 
@@ -37,6 +37,7 @@ struct ContentView: View {
     // @State (not @SceneStorage) so cold launches always start on Play.
     @State private var selectedTab: AppTab = .play
     @State private var isKeyboardVisible: Bool = false
+    @AppStorage("onboarding.firstStepsDone") private var firstStepsDone = false
     private let social = Social.shared
 
     var body: some View {
@@ -68,6 +69,14 @@ struct ContentView: View {
         .background(Color(.systemBackground))
         .noticeToast()
         .sharePromptHost()
+        .fullScreenCover(isPresented: Binding(get: { social.phase == .ready && !firstStepsDone },
+                                              set: { if !$0 { firstStepsDone = true } })) {
+            FirstStepsView { firstStepsDone = true }
+        }
+        .onOpenURL { url in
+            // The belt widget opens the player card.
+            if url.scheme == "pickleball", url.host == "belts" { selectedTab = .me }
+        }
         .onReceive(
             NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
         ) { _ in

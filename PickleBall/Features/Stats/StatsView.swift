@@ -309,7 +309,7 @@ struct StatsView: View {
             Text(value)
                 .fontWeight(.bold)
                 .monospacedDigit()
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundColor(navy.opacity(0.5))
         }

@@ -86,9 +86,9 @@ public enum BeltTier: Int, Codable, Hashable, Sendable, Comparable, CaseIterable
 
     public var title: String {
         switch self {
-        case .plain: return "Belt"
-        case .gold: return "Gold Belt"
-        case .undisputed: return "Undisputed Belt"
+        case .plain: return L("Belt")
+        case .gold: return L("Gold Belt")
+        case .undisputed: return L("Undisputed Belt")
         }
     }
 

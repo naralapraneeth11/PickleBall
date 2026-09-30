@@ -107,6 +107,14 @@ struct SquadInfoView: View {
                 Text("Members")
             }
 
+            Section {
+                NavigationLink { SquadLadderView(squadID: squadID) } label: {
+                    Label("Ladder", systemImage: "chart.bar.xaxis.ascending")
+                }
+            } footer: {
+                Text("Beat someone above you and take their rung.")
+            }
+
             let belts = MatchStore.shared.belts.squadBelts(squadID)
             if !belts.isEmpty {
                 Section("Squad belts") {

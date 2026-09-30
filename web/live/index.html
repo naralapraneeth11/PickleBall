@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live on PickleBall</title>
+<meta name="description" content="Follow the score live.">
+<meta name="theme-color" content="#0e1a46">
+<meta property="og:title" content="Live on PickleBall">
+<meta property="og:description" content="Follow the score live.">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/config.js" defer></script>
+<script src="../assets/site.js" defer></script>
+<meta name="robots" content="noindex">
+<script src="live.js" defer></script>
+</head>
+<body>
+<div class="wrap narrow">
+  <header class="top">
+    <a class="brand" href="../"><span class="ball" aria-hidden="true"></span>PickleBall</a>
+    <select class="lang"></select>
+  </header>
+  <main id="app" aria-live="polite">
+    <p class="muted center" data-i18n="live.loading">Loading the score…</p>
+  </main>
+  <footer class="site">
+    <a href="../privacy/" data-i18n="footer.privacy">Privacy</a>
+    <a href="../terms/" data-i18n="footer.terms">Terms</a>
+    <a href="../support/" data-i18n="footer.support">Support</a>
+    <span>© PickleBall</span>
+  </footer>
+</div>
+<aside class="getapp" id="getapp" hidden></aside>
+</body>
+</html>

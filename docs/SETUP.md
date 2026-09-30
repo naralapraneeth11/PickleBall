@@ -18,8 +18,14 @@ key, decides what each signed-in user can see. Never put the
 
 ## 2. Create the database
 
-Open **SQL Editor → New query**, paste the whole of
-`supabase/migrations/20260927000000_social_core.sql`, and run it.
+Open **SQL Editor → New query** and run each migration, in order:
+
+1. `supabase/migrations/20260927000000_social_core.sql`
+2. `supabase/migrations/20261001000000_launch.sql` (security fixes,
+   moderation, anonymous launch numbers, share links, new tournament formats)
+
+Enable the `pg_cron` extension first (**Database → Extensions**) so old
+usage pings are purged automatically.
 
 Or, with the Supabase CLI:
 
@@ -60,20 +66,19 @@ In Supabase, **Authentication → Sign In / Providers → Apple**:
 Without `Secrets.plist` the app still builds and scores matches on the
 device, and shows the original onboarding instead of sign-in.
 
-## 5. Invite links (optional but recommended)
+## 5. The web site (invite links, live scoreboards, privacy policy)
 
-Friend, squad and guest-claim links shared outside the app open a small
-page with "Open in PickleBall" and "Get PickleBall" buttons:
+`web/` is a static site for Cloudflare Pages: invite links, the live
+scoreboard behind share links, the privacy policy, terms and support.
 
-1. In GitHub: **Settings → Pages → Build and deployment**: deploy from the
-   `main` branch, `/docs` folder.
-2. Your page is `https://<your-username>.github.io/PickleBall/invite/`.
-3. Put that URL in `INVITE_PAGE_URL` in `Secrets.plist`.
-4. When the app is on TestFlight or the App Store, set the "Get
-   PickleBall" link in `docs/invite/index.html`.
+1. Cloudflare → **Workers & Pages → Create → Pages → Connect to Git**.
+2. Build command `bash web/build.sh`, output directory `web`.
+3. Environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `APP_STORE_URL`, `SUPPORT_EMAIL` (optional `ANDROID_URL`).
+4. Put the site's address in `SITE_URL` in `Secrets.plist`.
 
-Without it, links use the `pickleball://` scheme, which works between
-people who already have the app.
+Without it, invite links use the `pickleball://` scheme (works between
+people who have the app) and live sharing is off.
 
 ## 6. Capabilities to check in Xcode
 
@@ -81,6 +86,8 @@ The app target's entitlements already include:
 
 - **Sign in with Apple**
 - **HealthKit** (Apple Watch workouts)
+- **App Groups** `group.ME.PickleBall` (app and widget: the belt widget
+  reads its data from the shared container)
 - **Sensitive Content Analysis**: checks photos on the device before
   they're posted or shown. It only runs when a person has turned on
   Sensitive Content Warning (or Communication Safety) in Settings;
@@ -98,11 +105,16 @@ and let it register the capabilities for your team.
 
 ## Moderation
 
-Reports land in the `reports` table (**Table Editor → reports**). Review
-them regularly; App Store Guideline 1.2 expects a way to act on
-objectionable content. To remove content, delete the row in `messages`,
-`serves`, `returns` or `replays`; to remove a person, delete their user in
-**Authentication → Users**.
+Make yourself an admin (after signing in once):
+
+```sql
+insert into private.admins (user_id)
+select id from auth.users where email = 'you@example.com';
+```
+
+Then **Me → Settings → Moderation** in the app shows the report queue
+(dismiss, remove the content, or ban the author), the ban list, and the
+launch numbers: top countries, weekly return rate and crashes.
 
 ## Tests
 

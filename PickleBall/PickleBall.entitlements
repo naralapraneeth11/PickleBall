@@ -12,5 +12,9 @@
 	<array>
 		<string>analysis</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.ME.PickleBall</string>
+	</array>
 </dict>
 </plist>

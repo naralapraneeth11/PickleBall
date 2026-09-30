@@ -190,7 +190,7 @@ struct PlayView: View {
     private func teamSection(_ team: Team, title: String, placeholders: [String]) -> some View {
         let base = team == .a ? 0 : 2
         return VStack(alignment: .leading, spacing: 8) {
-            Text(title).eyebrowStyle()
+            Text(LocalizedStringKey(title)).eyebrowStyle()
             PlayerSlotField(entry: $slots[base], placeholder: placeholders[0], accent: theme.accent, excluded: usedIDs(except: base))
             if !isSingles {
                 PlayerSlotField(entry: $slots[base + 1], placeholder: placeholders[1], accent: theme.accent, excluded: usedIDs(except: base + 1))
@@ -289,7 +289,7 @@ struct PlayView: View {
 
     private func segmentRow(_ title: String, options: [String], selected: Int, onSelect: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).eyebrowStyle()
+            Text(LocalizedStringKey(title)).eyebrowStyle()
             OffsetPillSegment(
                 options: options,
                 selectedIndex: selected,

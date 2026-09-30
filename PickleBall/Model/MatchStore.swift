@@ -58,6 +58,8 @@ final class MatchStore: ObservableObject {
     @Published private(set) var confirmedResults: [MatchResult] = []
     /// The Belt, derived from confirmed matches.
     @Published private(set) var belts = BeltLedger()
+    /// Personal levels per sport, from the same confirmed matches.
+    @Published private(set) var levels = LevelBook()
     /// Finished matches the device owner played, newest first.
     @Published private(set) var matches: [StoredMatch] = []
     /// Matches paused mid-way that can be resumed, newest first.
@@ -81,6 +83,8 @@ final class MatchStore: ObservableObject {
         results = records.compactMap(\.result)
         confirmedResults = records.filter { $0.confirmation == .confirmed }.compactMap(\.result)
         belts = BeltLedger.compute(confirmedResults)
+        levels = LevelBook.compute(confirmedResults)
+        BeltWidgetBridge.update(belts: belts)
 
         let meID = me.id
         matches = records.compactMap { Self.storedMatch(from: $0, me: meID) }

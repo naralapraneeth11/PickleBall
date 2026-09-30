@@ -151,7 +151,7 @@ struct HeadToHeadView: View {
 
     private func fact(_ title: String, _ value: String, _ caption: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.1)
                 .foregroundStyle(DS.Palette.nightMuted)

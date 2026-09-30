@@ -98,6 +98,23 @@ public protocol SocialAPI: OutboxTransport {
 
     // Account
     func deleteAccount() async throws
+    func publishLevels(_ levels: [String: Double]) async throws
+
+    // Watch and share
+    func createShareLink(_ kind: ShareLinkKind, target: UUID) async throws -> String
+
+    // Moderation (admins only; the server checks)
+    func isAdmin() async throws -> Bool
+    func adminReports(openOnly: Bool) async throws -> [AdminReportRow]
+    func adminResolve(_ reportID: UUID, _ resolution: ReportResolution) async throws
+    func adminBans() async throws -> [AdminBanRow]
+    func adminBan(_ userID: UUID, reason: String) async throws
+    func adminUnban(_ userID: UUID) async throws
+    func adminStats() async throws -> AdminStats
+
+    // Launch numbers (no account needed)
+    func ping(_ ping: PingDraft) async throws
+    func reportCrash(_ crash: CrashDraft) async throws
 }
 
 /// Everything create_tournament takes.
@@ -108,9 +125,10 @@ public struct TournamentDraft: Codable, Hashable, Sendable {
         public var sport: Sport
         public var format: TournamentFormat
         public var rules: MatchRules
+        public var settings: TournamentSettings
 
         enum CodingKeys: String, CodingKey {
-            case name, sport, format, rules
+            case name, sport, format, rules, settings
             case squadID = "squad_id"
         }
     }
@@ -131,8 +149,9 @@ public struct TournamentDraft: Codable, Hashable, Sendable {
     public var entrants: [Entrant]
     public var fixtures: [FixtureRow]
 
-    public init(squadID: UUID, name: String, format: TournamentFormat, rules: MatchRules, entrants: [PlayerRef], fixtures: [Fixture]) {
-        self.t = Info(squadID: squadID, name: name, sport: rules.sport, format: format, rules: rules)
+    public init(squadID: UUID, name: String, format: TournamentFormat, rules: MatchRules, entrants: [PlayerRef], fixtures: [Fixture],
+                settings: TournamentSettings = TournamentSettings()) {
+        self.t = Info(squadID: squadID, name: name, sport: rules.sport, format: format, rules: rules, settings: settings)
         self.entrants = entrants.map { Entrant(playerID: $0.id.rawValue, kind: $0.kind, displayName: $0.displayName) }
         // The tournament id is assigned by the server; fixtures carry a
         // placeholder that create_tournament ignores.

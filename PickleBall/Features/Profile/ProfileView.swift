@@ -98,6 +98,7 @@ struct ProfileView: View {
                 hero
                 chartSection
                 statsRow
+                levelSection
                 beltsSection
                 trophySection
                 if !isMe { RivalrySection(friend: me) }
@@ -186,7 +187,7 @@ struct ProfileView: View {
                 .background(Circle().fill(DS.Palette.nightRaised))
         }
         .buttonStyle(.press)
-        .accessibilityLabel(label)
+        .accessibilityLabel(LocalizedStringKey(label))
     }
 
     // MARK: Friend actions
@@ -285,6 +286,7 @@ struct ProfileView: View {
 
     private var moreSection: some View {
         VStack(spacing: 0) {
+            moreRow("Your \(Season(containing: Date()).title) season", "sparkles") { SeasonRecapView() }
             moreRow("Stats", "chart.bar.fill") { StatsView() }
             moreRow("Apple Watch workouts", "applewatch") { WatchStatsDetailView() }
             if social.phase == .ready {
@@ -298,7 +300,7 @@ struct ProfileView: View {
         NavigationLink(destination: destination()) {
             HStack(spacing: 12) {
                 Image(systemName: symbol).frame(width: 24).foregroundStyle(accent)
-                Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                Text(LocalizedStringKey(title)).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
                 Spacer()
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(DS.Palette.nightMuted)
             }
@@ -413,7 +415,7 @@ struct ProfileView: View {
             Haptics.selection()
             withAnimation(DS.Motion.snappy) { action() }
         } label: {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(isOn ? Color.black : DS.Palette.nightMuted)
                 .padding(.horizontal, 10)
@@ -453,9 +455,59 @@ struct ProfileView: View {
         Rectangle().fill(DS.Palette.hairline).frame(width: 1, height: 30)
     }
 
+    // MARK: Level
+
+    /// Level per sport: worked out on this phone for me, as published for
+    /// friends (they can't see every match I play, and vice versa).
+    private var levels: [(sport: Sport, level: Double, change: Double?, provisional: Bool)] {
+        Sport.allCases.compactMap { sport in
+            if isMe {
+                guard let level = matchStore.levels.level(of: me.id, in: sport) else { return nil }
+                return (sport, level.level, level.recentChange, level.isProvisional)
+            }
+            guard let published = profile?.level(in: sport) else { return nil }
+            return (sport, published, nil, false)
+        }
+    }
+
+    @ViewBuilder
+    private var levelSection: some View {
+        let list = levels
+        if !list.isEmpty {
+            HStack(spacing: 0) {
+                ForEach(Array(list.enumerated()), id: \.offset) { index, item in
+                    if index > 0 { divider }
+                    VStack(spacing: 4) {
+                        Text(item.sport == .padel ? "PADEL LEVEL" : "PICKLEBALL LEVEL")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .tracking(1.1)
+                            .foregroundStyle(DS.Palette.nightMuted)
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(PlayerLevel.format(item.level))
+                                .font(.system(size: 22, weight: .heavy, design: .rounded).monospacedDigit())
+                                .foregroundStyle(.white)
+                            if let change = item.change, abs(change) >= 0.01 {
+                                Text("\(change >= 0 ? "▲" : "▼")\(String(format: "%.2f", abs(change)))")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
+                                    .foregroundStyle(change >= 0 ? item.sport.theme.accent : Color.white.opacity(0.55))
+                            }
+                        }
+                        if item.provisional {
+                            Text("Provisional").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(DS.Palette.nightMuted)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(.vertical, 14)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(DS.Palette.nightRaised))
+        }
+    }
+
     private func statCell(_ title: String, _ value: String) -> some View {
         VStack(spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.1)
                 .foregroundStyle(DS.Palette.nightMuted)

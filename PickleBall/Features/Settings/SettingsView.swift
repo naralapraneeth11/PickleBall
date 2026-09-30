@@ -12,6 +12,9 @@ struct SettingsView: View {
     @State private var confirmDelete = false
     @State private var isDeleting = false
     @State private var showBlocked = false
+    @State private var showNudges = false
+    @State private var showPrivacy = false
+    @State private var showAdmin = false
     private let social = Social.shared
 
     let royalBlue    = DS.Palette.royalBlue
@@ -20,9 +23,10 @@ struct SettingsView: View {
     let destructiveRed = DS.Palette.loss
     let versionGrey  = Color(red: 0.627, green: 0.627, blue: 0.627)
 
-    private let termsURL    = URL(string: "https://accurate-alder-cf4.notion.site/Terms-of-service-3268c115cbf380c5a352e2382b074ffd")!
-    private let privacyURL  = URL(string: "https://accurate-alder-cf4.notion.site/Privacy-Policy-3268c115cbf38009a4ecc5ac57003615")!
-    private let feedbackURL = URL(string: "https://accurate-alder-cf4.notion.site/3268c115cbf38048be19e2a747011d37")!
+    // The web site (web/ on Cloudflare Pages) when configured.
+    private var termsURL: URL { SitePages.url("terms/") ?? URL(string: "https://accurate-alder-cf4.notion.site/Terms-of-service-3268c115cbf380c5a352e2382b074ffd")! }
+    private var privacyURL: URL { SitePages.url("privacy/") ?? URL(string: "https://accurate-alder-cf4.notion.site/Privacy-Policy-3268c115cbf38009a4ecc5ac57003615")! }
+    private var feedbackURL: URL { SitePages.url("support/") ?? URL(string: "https://accurate-alder-cf4.notion.site/3268c115cbf38048be19e2a747011d37")! }
 
     private var appVersionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -51,6 +55,20 @@ struct SettingsView: View {
                     rowLabel(title: "Blocked", systemImage: "hand.raised", tint: royalBlue, detail: social.blocked.isEmpty ? nil : "\(social.blocked.count)")
                 }
                 .buttonStyle(.press)
+                Button { showNudges = true } label: {
+                    rowLabel(title: String(localized: "Nudges"), systemImage: "bell", tint: royalBlue, detail: Nudger.isEnabled ? nil : String(localized: "Off"))
+                }
+                .buttonStyle(.press)
+                Button { showPrivacy = true } label: {
+                    rowLabel(title: String(localized: "Privacy"), systemImage: "lock.shield", tint: royalBlue, detail: nil)
+                }
+                .buttonStyle(.press)
+                if social.isAdmin {
+                    Button { showAdmin = true } label: {
+                        rowLabel(title: String(localized: "Moderation"), systemImage: "shield.lefthalf.filled", tint: royalBlue, detail: nil)
+                    }
+                    .buttonStyle(.press)
+                }
                 if social.outboxCount > 0 {
                     settingsRow(title: "\(social.outboxCount) waiting to send", systemImage: "arrow.up.circle", tint: DS.Palette.warning) {
                         Task { await social.drainOutbox() }
@@ -68,6 +86,15 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showBlocked) {
             NavigationStack { BlockedUsersView() }
+        }
+        .sheet(isPresented: $showNudges) {
+            NavigationStack { NudgeSettingsView() }
+        }
+        .sheet(isPresented: $showPrivacy) {
+            NavigationStack { PrivacySettingsView() }
+        }
+        .fullScreenCover(isPresented: $showAdmin) {
+            AdminView()
         }
         .confirmationDialog("Sign out?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Sign out", role: .destructive) {
@@ -104,7 +131,7 @@ struct SettingsView: View {
     private func rowLabel(title: String, systemImage: String, tint: Color, detail: String?) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage).foregroundColor(tint).frame(width: 22)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(tint == destructiveRed ? destructiveRed : .primary)
             Spacer()
@@ -310,7 +337,7 @@ struct SettingsView: View {
             UIApplication.shared.open(url)
         }) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 16))
                     .foregroundColor(royalBlue)
                 Spacer()

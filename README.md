@@ -4,7 +4,10 @@ Pickleball and padel for iPhone and Apple Watch: score on your wrist or
 type it in later, friends confirm every result, and the Belt goes to
 whoever beats the holder. Friends only. Nothing is ever public.
 
-Setting up the backend: **[docs/SETUP.md](docs/SETUP.md)**.
+Setting up the backend: **[docs/SETUP.md](docs/SETUP.md)** · Launch steps:
+**[docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md)** · Store listing:
+**[docs/APP_STORE.md](docs/APP_STORE.md)** · Security review:
+**[docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)**.
 
 ## Layout
 
@@ -16,8 +19,11 @@ Packages/CourtKit/            Shared Swift package (phone, Watch, widget), Found
   Health/                     Heart-rate zones, WorkoutReport
   Insights/                   MatchResult, head-to-head, partners, form line, serve stats
   Social/                     Belts, call outs, score entry, drama, Replays, Feed rules,
-                              crowd taps, team shuffle, share cards, usernames, content filter
-  Tournaments/                Round robin, King of the Court, Americano, standings
+                              crowd taps, team shuffle, share cards, usernames, content filter,
+                              squad ladder, nudges, belt widget snapshot
+  Insights/ (also)            Levels per sport, season recap
+  Tournaments/                Round robin, King of the Court, Americano, Mexicano,
+                              knockout and double elimination brackets, pools, standings
   LiveActivity/               Live Activity payload + attributes
   DesignSystem/               Palette, sport themes, press style, haptics, court art, sport switch
 Packages/CourtNet/            Backend client (iPhone only)
@@ -27,16 +33,17 @@ Packages/CourtNet/            Backend client (iPhone only)
 supabase/
   migrations/                 Schema, row-level security, functions, storage, Realtime
   ci-tests/                   Runs the migration on plain Postgres and tests every policy
-PickleBall/                   iPhone app (Xcode synchronized folder)
+PickleBall/                   iPhone app (Xcode synchronized folder), String Catalog (en/es/pt-BR/it)
   App/                        Entry point, sign-in gate, five tabs
   Social/                     Social: session, friends, squads, chats, matches, Feed, live, cache
+  Launch/                     Telemetry (daily ping, MetricKit), nudges, belt widget bridge
   Model/                      SwiftData records, stores, player directory
   Scoring/                    MatchCenter, live scoreboard, match setup, Live Activity
   Connectivity/               WatchConnectivity (phone side)
   Features/                   Account, Play, Chats, Me (Profile), Tournament, Feed, Stats, Settings
 Pickleball watch Watch App/   Watch app: scoring, setup, workout + heart-rate zones, crowd taps
-ScoreActivityWidget/          Live Activity / Dynamic Island widget extension
-docs/invite/                  Landing page for invite links shared outside the app
+ScoreActivityWidget/          Live Activity / Dynamic Island, and the Belt widget
+web/                          Cloudflare Pages site: invite links, live scoreboard, privacy, terms, support
 ```
 
 ## The app
@@ -45,7 +52,7 @@ Five tabs, opening on **Play**:
 
 | Play | Chats | Me | Tournaments | Feed |
 | --- | --- | --- | --- | --- |
-| Start a Watch or phone match, enter a score, results to confirm, call outs, upcoming matches, friends live | Friend and squad chats with the belt pinned on top, friends, requests, squads | Your player card: form line, record, belts, trophy case, settings | Squad round robin, King of the Court and Americano with schedules and live standings | Replays across the top, friends' Serves below |
+| Start a Watch or phone match, enter a score, results to confirm, call outs, upcoming matches, friends live | Friend and squad chats with the belt pinned on top, friends, requests, squads and their ladder | Your player card: form line, level per sport, record, belts, trophy case, season recap, settings | Round robin, King of the Court, Americano, Mexicano, knockouts and pools, with brackets and a live page to share | Replays across the top, friends' Serves below |
 
 ## How scoring works
 

@@ -25,6 +25,9 @@ struct CreateTournamentView: View {
     @State private var guests: [PlayerRef] = []
     @State private var guestName = ""
     @State private var courts = 1
+    @State private var mexicanoRounds = 6
+    @State private var poolCount = 2
+    @State private var advancing = 2
     @State private var hasDate = true
     @State private var startsAt = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date().addingTimeInterval(86_400)) ?? Date()
     @State private var court: CourtTag?
@@ -37,13 +40,13 @@ struct CreateTournamentView: View {
 
     private var rules: MatchRules {
         switch (sport, format) {
-        case (.padel, .americano):
-            // Americano matches are short: to 24 points, scored by points.
+        case (.padel, .americano), (.padel, .mexicano):
+            // Americano and Mexicano matches are short, scored by points.
             return .padel(PadelConfig(setsToWin: 1, gamesPerSet: 6, isDoubles: true))
         case (.pickleball, .kingOfTheCourt):
             return .pickleball(.rally, PickleballConfig(pointsToWin: 11, gamesToWin: 1, isDoubles: isDoubles))
         default:
-            return .standard(for: sport, isDoubles: format == .americano ? true : isDoubles)
+            return .standard(for: sport, isDoubles: format.ranksIndividuals && format != .kingOfTheCourt ? true : isDoubles)
         }
     }
 
@@ -59,8 +62,21 @@ struct CreateTournamentView: View {
             return count >= size * 2 ? nil : "King of the Court needs at least \(size * 2) players."
         case .americano:
             return count >= 4 ? nil : "Americano needs at least 4 players."
+        case .mexicano:
+            return count >= 4 ? nil : "Mexicano needs at least 4 players."
+        case .singleElimination, .doubleElimination, .pools:
+            let entrants = isDoubles ? count / 2 : count
+            if isDoubles, !count.isMultiple(of: 2) { return "Doubles needs an even number of players." }
+            if format == .pools { return entrants >= 4 ? nil : "Pools need at least 4 entrants." }
+            return entrants >= (format == .doubleElimination ? 3 : 2) ? nil : "A knockout needs more entrants."
         }
     }
+
+    private var needsPairs: Bool {
+        isDoubles && (format == .roundRobin || format.isBracket || format == .pools)
+    }
+
+    private var entrantCount: Int { isDoubles && needsPairs ? players.count / 2 : players.count }
 
     var body: some View {
         NavigationStack {
@@ -80,11 +96,24 @@ struct CreateTournamentView: View {
                     Picker("Format", selection: $format) {
                         ForEach(TournamentFormat.available(for: sport)) { Text($0.title).tag($0) }
                     }
-                    if format != .americano {
+                    if !format.ranksByPoints {
                         Toggle("Doubles", isOn: $isDoubles)
                     }
+                    if format == .mexicano {
+                        Stepper("Rounds: \(mexicanoRounds)", value: $mexicanoRounds, in: 3...12)
+                    }
+                    if format == .pools {
+                        Stepper("Pools: \(poolCount)", value: $poolCount, in: 1...max(1, entrantCount / 3))
+                        Stepper("Through from each pool: \(advancing)", value: $advancing, in: 1...max(1, entrantCount / max(poolCount, 1)))
+                    }
                 } footer: {
-                    Text(format.blurb + (format == .roundRobin && isDoubles ? " Pairs stay together, in the order entered." : ""))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(format.blurb)
+                        if needsPairs { Text("Pairs stay together, in the order entered.") }
+                        if format.isBracket || format == .pools || format == .mexicano {
+                            Text("Seeded by level, so the strongest meet last.")
+                        }
+                    }
                 }
 
                 Section {
@@ -142,6 +171,7 @@ struct CreateTournamentView: View {
             .onAppear {
                 sport = sportMode.sport
                 if sport == .padel { format = .americano }
+                poolCount = Pools.suggestedCount(entrants: max(players.count, 4))
                 selectedSquad = squadID ?? social.squads.first?.id
                 entrants = Set(members)
             }
@@ -168,13 +198,17 @@ struct CreateTournamentView: View {
         guard let squad = selectedSquad else { return }
         isCreating = true
         let list = players
-        let pairs: [[PlayerRef]]? = format == .roundRobin && isDoubles
+        let pairs: [[PlayerRef]]? = needsPairs
             ? stride(from: 0, to: list.count - 1, by: 2).map { [list[$0], list[$0 + 1]] }
             : nil
+        let options = Social.TournamentOptions(courts: courts, mexicanoRounds: mexicanoRounds,
+                                               pools: format == .pools ? poolCount : nil,
+                                               advancing: format == .pools ? advancing : nil,
+                                               startsAt: hasDate ? startsAt : nil, court: court)
         Task {
             let id = await social.createTournament(
                 squadID: squad, name: name.isEmpty ? defaultName : name, format: format, rules: rules,
-                entrants: list, pairs: pairs, courts: courts, startsAt: hasDate ? startsAt : nil, court: court
+                entrants: list, pairs: pairs, options: options
             )
             isCreating = false
             if id != nil {

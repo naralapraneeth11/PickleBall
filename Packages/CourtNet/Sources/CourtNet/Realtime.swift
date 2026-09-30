@@ -88,6 +88,9 @@ public final class CrowdChannel: @unchecked Sendable {
         self.client = backend.client
         self.channel = backend.client.channel("crowd-\(matchID.uuidString.lowercased())") {
             $0.broadcast.receiveOwnBroadcasts = false
+            // Only people who can see the live match may join (Realtime
+            // Authorization policy in the launch migration).
+            $0.isPrivate = true
         }
     }
 

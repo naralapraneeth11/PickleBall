@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Join me on PickleBall</title>
+<meta name="description" content="You've been invited to PickleBall: scores, belts and your squad.">
+<meta name="theme-color" content="#0e1a46">
+<meta property="og:title" content="Join me on PickleBall">
+<meta property="og:description" content="You've been invited to PickleBall: scores, belts and your squad.">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/config.js" defer></script>
+<script src="../assets/site.js" defer></script>
+<script src="invite.js" defer></script>
+</head>
+<body>
+<div class="wrap narrow">
+  <header class="top">
+    <a class="brand" href="../"><span class="ball" aria-hidden="true"></span>PickleBall</a>
+    <select class="lang"></select>
+  </header>
+  <main class="card center">
+    <div class="belt" aria-hidden="true">🏆</div>
+    <h1 data-i18n="invite.title">You’ve been called up</h1>
+    <p data-i18n="invite.lead">Scores, belts and your squad. Beat them and take the belt.</p>
+    <a id="open" class="button primary" href="pickleball://invite/" data-i18n="invite.open">Open in PickleBall</a>
+    <a class="button secondary" href="https://apps.apple.com/" data-app-store data-i18n="invite.get">Get PickleBall</a>
+    <div class="small muted" id="codeBox" hidden><span data-i18n="invite.code">Or enter this code in the app</span><br><b id="code"></b></div>
+  </main>
+  <footer class="site">
+    <a href="../privacy/" data-i18n="footer.privacy">Privacy</a>
+    <a href="../terms/" data-i18n="footer.terms">Terms</a>
+    <a href="../support/" data-i18n="footer.support">Support</a>
+    <span>© PickleBall</span>
+  </footer>
+</div>
+</body>
+</html>
