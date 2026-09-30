@@ -309,4 +309,13 @@ select test.throws($$select * from private.report_target('message', gen_random_u
 select test.throws($$select private.remove_target('message', gen_random_uuid())$$, 'permission denied',
   'content removal is admin only');
 
+-- ── Retention ────────────────────────────────────────────────────────────
+
+:as_admin
+insert into public.app_pings (install_id, day) values ('60000000-0000-0000-0000-000000000009', current_date - 500);
+select private.purge_telemetry();
+select test.eq((select count(*) from public.app_pings where install_id = '60000000-0000-0000-0000-000000000009'), 0::bigint,
+  'pings older than 13 months are purged');
+select test.eq((select count(*) from public.app_pings), 2::bigint, 'recent pings stay');
+
 \echo 'launch: all tests passed'

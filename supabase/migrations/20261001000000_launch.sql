@@ -588,6 +588,25 @@ begin
   values (install, app_version, os_version, device, kind, summary, payload);
 end $$;
 
+-- Kept for 13 months, as the privacy policy says. Runs nightly where
+-- pg_cron is enabled (Supabase: Database → Extensions → pg_cron).
+create or replace function private.purge_telemetry() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.app_pings where day < current_date - interval '13 months';
+  delete from public.crash_reports where created_at < now() - interval '13 months';
+  delete from public.share_links where expires_at < now() - interval '30 days';
+end $$;
+
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('purge-telemetry', '17 3 * * *', 'select private.purge_telemetry()');
+  end if;
+exception when others then
+  raise notice 'cron schedule skipped: %', sqlerrm;
+end $$;
+
 -- The launch numbers: top countries, weekly actives, week-over-week
 -- retention, and recent crashes.
 create or replace function public.admin_stats() returns jsonb
@@ -842,7 +861,8 @@ grant execute on all functions in schema private to authenticated, service_role;
 revoke execute on function private.finalize_match(uuid, uuid, jsonb),
                            private.ensure_direct_conversation(uuid, uuid),
                            private.remove_target(text, uuid),
-                           private.report_target(text, uuid) from authenticated;
+                           private.report_target(text, uuid),
+                           private.purge_telemetry() from authenticated;
 -- The web scoreboard and the launch pings work without an account.
 grant usage on schema public to anon;
 grant execute on function public.public_scoreboard(text), public.ping(uuid, text, text, text, date),

@@ -23,8 +23,8 @@ final class Telemetry: NSObject, MXMetricManagerSubscriber {
     static let shared = Telemetry()
 
     private static let enabledKey = "telemetry.enabled"
-    private static let installKey = "telemetry.installID"
-    private static let firstSeenKey = "telemetry.firstSeen"
+    nonisolated private static let installKey = "telemetry.installID"
+    nonisolated private static let firstSeenKey = "telemetry.firstSeen"
     private static let lastPingKey = "telemetry.lastPingDay"
 
     static var isEnabled: Bool {

@@ -16,6 +16,7 @@ import Foundation
 import BackgroundTasks
 import UserNotifications
 import CourtKit
+import CourtNet
 
 final class Nudger {
     static let shared = Nudger()
