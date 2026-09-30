@@ -2,7 +2,8 @@
 //  SquadTournament.swift
 //  CourtKit
 //
-//  Squad tournaments in three formats:
+//  Squad tournaments. League formats live here; brackets, pools and
+//  Mexicano are in Brackets.swift.
 //
 //  • Round robin — every entrant (player or fixed pair) plays every other
 //    once. Standings: wins, then head-to-head between two tied entrants,
@@ -24,6 +25,10 @@ public enum TournamentFormat: String, Codable, Hashable, Sendable, CaseIterable,
     case roundRobin = "round_robin"
     case kingOfTheCourt = "king_of_court"
     case americano
+    case mexicano
+    case singleElimination = "single_elimination"
+    case doubleElimination = "double_elimination"
+    case pools
 
     public var id: String { rawValue }
 
@@ -32,6 +37,10 @@ public enum TournamentFormat: String, Codable, Hashable, Sendable, CaseIterable,
         case .roundRobin: return "Round robin"
         case .kingOfTheCourt: return "King of the Court"
         case .americano: return "Americano"
+        case .mexicano: return "Mexicano"
+        case .singleElimination: return "Knockout"
+        case .doubleElimination: return "Double elimination"
+        case .pools: return "Pools + knockout"
         }
     }
 
@@ -40,13 +49,50 @@ public enum TournamentFormat: String, Codable, Hashable, Sendable, CaseIterable,
         case .roundRobin: return "Everyone plays everyone once."
         case .kingOfTheCourt: return "Win and move up. Lose and move down. Partners change every round."
         case .americano: return "New partner every round. Every point you win counts."
+        case .mexicano: return "Like Americano, but each round pairs players by the standings: close games all night."
+        case .singleElimination: return "Lose once and you're out. Top seeds get the byes."
+        case .doubleElimination: return "Lose twice and you're out. The losers' bracket gets a second life."
+        case .pools: return "Round robin in small pools, then the top of each pool plays a knockout."
         }
     }
 
+    /// Fixtures are added as earlier ones finish.
+    public var isProgressive: Bool {
+        switch self {
+        case .roundRobin, .americano: return false
+        default: return true
+        }
+    }
+
+    public var isBracket: Bool { self == .singleElimination || self == .doubleElimination }
+
+    /// Rotating-partner formats rank players; the rest rank entrants as
+    /// entered (players or fixed pairs).
+    public var ranksIndividuals: Bool { self == .kingOfTheCourt || self == .americano || self == .mexicano }
+
+    /// Points won decide the standings.
+    public var ranksByPoints: Bool { self == .americano || self == .mexicano }
+
     /// Formats that make sense for a sport.
     public static func available(for sport: Sport) -> [TournamentFormat] {
-        sport == .padel ? [.americano, .roundRobin, .kingOfTheCourt] : [.roundRobin, .kingOfTheCourt]
+        sport == .padel
+            ? [.americano, .mexicano, .roundRobin, .singleElimination, .doubleElimination, .pools, .kingOfTheCourt]
+            : [.roundRobin, .singleElimination, .doubleElimination, .pools, .kingOfTheCourt]
     }
+}
+
+/// Where a fixture sits in a tournament.
+public enum FixtureStage: String, Codable, Hashable, Sendable {
+    /// League play: round robin, King of the Court, Americano, Mexicano.
+    case main
+    case pool
+    /// The (only) bracket in a knockout, or the winners' side of a double.
+    case winners
+    case losers
+    /// Double elimination: winners' champion against losers' champion.
+    case final
+    /// Double elimination: played only if the losers' champion wins the final.
+    case reset
 }
 
 public struct Fixture: Identifiable, Hashable, Codable, Sendable {
@@ -58,17 +104,42 @@ public struct Fixture: Identifiable, Hashable, Codable, Sendable {
     public var teams: TeamPair<[PlayerID]>
     public var scheduledAt: Date?
     public var place: CourtTag?
+    public var stage: FixtureStage
+    /// Position within a bracket round (0-based).
+    public var slot: Int?
+    /// Pool index (0-based) in pool play.
+    public var pool: Int?
 
-    public init(id: UUID = UUID(), round: Int, court: Int, teams: TeamPair<[PlayerID]>, scheduledAt: Date? = nil, place: CourtTag? = nil) {
+    public init(id: UUID = UUID(), round: Int, court: Int, teams: TeamPair<[PlayerID]>, scheduledAt: Date? = nil, place: CourtTag? = nil,
+                stage: FixtureStage = .main, slot: Int? = nil, pool: Int? = nil) {
         self.id = id
         self.round = round
         self.court = court
         self.teams = teams
         self.scheduledAt = scheduledAt
         self.place = place
+        self.stage = stage
+        self.slot = slot
+        self.pool = pool
     }
 
     public var players: [PlayerID] { teams.a + teams.b }
+
+    private enum CodingKeys: String, CodingKey { case id, round, court, teams, scheduledAt, place, stage, slot, pool }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try c.decode(UUID.self, forKey: .id),
+                  round: try c.decode(Int.self, forKey: .round),
+                  court: try c.decode(Int.self, forKey: .court),
+                  teams: try c.decode(TeamPair<[PlayerID]>.self, forKey: .teams),
+                  scheduledAt: try c.decodeIfPresent(Date.self, forKey: .scheduledAt),
+                  place: try c.decodeIfPresent(CourtTag.self, forKey: .place),
+                  // Cached before Phase 3: league fixtures.
+                  stage: try c.decodeIfPresent(FixtureStage.self, forKey: .stage) ?? .main,
+                  slot: try c.decodeIfPresent(Int.self, forKey: .slot),
+                  pool: try c.decodeIfPresent(Int.self, forKey: .pool))
+    }
 }
 
 /// A played fixture: points (or games) per side.
@@ -324,9 +395,9 @@ public enum Standings {
         fixtures: [Fixture],
         scores: [UUID: FixtureScore]
     ) -> [StandingRow] {
-        // Americano and King of the Court rank individuals; round robin ranks
-        // the entrants as entered (players or fixed pairs).
-        let individual = format != .roundRobin
+        // Rotating-partner formats rank individuals; the others rank the
+        // entrants as entered (players or fixed pairs).
+        let individual = format.ranksIndividuals
         let units: [[PlayerID]] = individual ? Array(Set(entrants.flatMap { $0 })).sorted { $0.rawValue.uuidString < $1.rawValue.uuidString }.map { [$0] } : entrants
         var rows: [String: StandingRow] = [:]
         for unit in units { rows[key(unit)] = StandingRow(entrant: unit) }
@@ -365,7 +436,7 @@ public enum Standings {
 
         func order(_ x: StandingRow, _ y: StandingRow) -> Bool? {
             switch format {
-            case .roundRobin:
+            case .roundRobin, .pools, .singleElimination, .doubleElimination:
                 if x.wins != y.wins { return x.wins > y.wins }
                 if tiedOnWins[x.wins] == 2 {
                     let hx = beats(x, y), hy = beats(y, x)
@@ -377,7 +448,7 @@ public enum Standings {
                 if x.wins != y.wins { return x.wins > y.wins }
                 if x.kingCourtWins != y.kingCourtWins { return x.kingCourtWins > y.kingCourtWins }
                 if x.pointDifference != y.pointDifference { return x.pointDifference > y.pointDifference }
-            case .americano:
+            case .americano, .mexicano:
                 if x.pointsFor != y.pointsFor { return x.pointsFor > y.pointsFor }
                 if x.wins != y.wins { return x.wins > y.wins }
                 if x.pointDifference != y.pointDifference { return x.pointDifference > y.pointDifference }

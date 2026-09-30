@@ -185,7 +185,7 @@ final class TournamentFormatTests: XCTestCase {
     }
 
     func testFormatRawValuesMatchTheDatabase() {
-        XCTAssertEqual(TournamentFormat.allCases.map(\.rawValue), ["round_robin", "king_of_court", "americano"])
+        XCTAssertEqual(TournamentFormat.allCases.map(\.rawValue), ["round_robin", "king_of_court", "americano", "mexicano", "single_elimination", "double_elimination", "pools"])
         XCTAssertEqual(TournamentFormat.available(for: .padel).first, .americano)
         XCTAssertFalse(TournamentFormat.available(for: .pickleball).contains(.americano))
     }
