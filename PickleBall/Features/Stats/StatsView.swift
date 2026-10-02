@@ -95,7 +95,7 @@ struct StatsView: View {
             pageBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                courtStripHeader
+                header
 
                 ZStack(alignment: .top) {
                     ScrollView {
@@ -302,7 +302,7 @@ struct StatsView: View {
 
     // MARK: - Court Header
 
-    private var courtStripHeader: some View {
+    private var header: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(trimmedFirstName.isEmpty ? String(localized: "Me") : trimmedFirstName).courtEyebrow()

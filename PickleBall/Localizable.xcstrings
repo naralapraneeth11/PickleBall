@@ -4417,6 +4417,29 @@
         }
       }
     },
+    "ME": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YO"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EU"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IO"
+          }
+        }
+      }
+    },
     "MEETINGS": {
       "extractionState": "manual",
       "localizations": {
@@ -4689,6 +4712,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "La mia stagione %@"
+          }
+        }
+      }
+    },
+    "NEW MATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUEVO PARTIDO"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA PARTIDA"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUOVA PARTITA"
           }
         }
       }
@@ -9115,19 +9161,19 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "TOCA LA PISTA PARA EMPEZAR · MANTÉN PARA CAMBIAR"
+            "value": "TOCA PARA EMPEZAR · MANTÉN PARA CAMBIAR"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "TOQUE NA QUADRA PARA COMEÇAR · SEGURE PARA TROCAR"
+            "value": "TOQUE PARA COMEÇAR · SEGURE PARA TROCAR"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "TOCCA IL CAMPO PER INIZIARE · TIENI PREMUTO PER CAMBIARE"
+            "value": "TOCCA PER INIZIARE · TIENI PER CAMBIARE"
           }
         }
       }
