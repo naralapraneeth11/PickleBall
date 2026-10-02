@@ -209,7 +209,7 @@ extension View {
     }
 }
 
-private struct RaisedSurface<S: Shape>: ViewModifier {
+private struct RaisedSurface<S: InsettableShape>: ViewModifier {
     let shape: S
     @Environment(\.appearanceStyle) private var style
 
