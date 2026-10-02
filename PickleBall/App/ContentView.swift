@@ -50,21 +50,42 @@ struct ContentView: View {
                 case .play:
                     MainMenu()
                 case .chats:
-                    NavigationStack { ChatsView() }
+                    if hasServer {
+                        NavigationStack { ChatsView() }
+                    } else {
+                        ServerNeededView(eyebrow: "Chats", title: "Friends", symbol: "bubble.left.and.bubble.right",
+                                         message: "Friends, squads, chats, call outs and your QR code are shared through it.")
+                    }
                 case .me:
                     NavigationStack { ProfileView() }
                 case .tournaments:
-                    NavigationStack { TournamentsView() }
+                    if hasServer {
+                        NavigationStack { TournamentsView() }
+                    } else {
+                        ServerNeededView(eyebrow: "Tournaments", title: "Tournaments", symbol: "trophy",
+                                         message: "Tournaments belong to a squad, and everyone’s phone follows the same draw through it.")
+                    }
                 case .feed:
-                    NavigationStack { FeedView() }
+                    if hasServer {
+                        NavigationStack { FeedView() }
+                    } else {
+                        ServerNeededView(eyebrow: "Feed", title: "Feed", symbol: "square.stack",
+                                         message: "Serves, Returns and Replays go to your friends through it.")
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !isKeyboardVisible {
-                TileTabBar(selectedTab: $selectedTab, badges: badges)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .ignoresSafeArea(edges: .bottom)
+                // Measured from the real bottom edge of the screen, not the
+                // safe area, so it sits in the same place on every iPhone.
+                GeometryReader { proxy in
+                    TileTabBar(selectedTab: $selectedTab, badges: badges,
+                               bottomGap: Court.Metrics.tabBarGap(safeBottom: proxy.safeAreaInsets.bottom))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .ignoresSafeArea(.container, edges: .bottom)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .ignoresSafeArea(.keyboard)
@@ -91,6 +112,9 @@ struct ContentView: View {
         }
     }
 
+    /// Chats, Tournaments and the Feed need the server.
+    private var hasServer: Bool { social.backend != nil }
+
     /// Tabs with something waiting.
     private var badges: Set<AppTab> {
         var set: Set<AppTab> = []
@@ -108,6 +132,8 @@ struct ContentView: View {
 private struct TileTabBar: View {
     @Binding var selectedTab: AppTab
     var badges: Set<AppTab> = []
+    /// Distance from the bottom edge of the screen to the tiles.
+    var bottomGap: CGFloat = Court.Metrics.tabBarBottom
     @Environment(SportMode.self) private var sportMode
 
     var body: some View {
@@ -123,9 +149,7 @@ private struct TileTabBar: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 18)
-        // Fixed distance from the bottom edge on every iPhone, above the
-        // home indicator.
-        .padding(.bottom, Court.Metrics.tabBarBottom)
+        .padding(.bottom, bottomGap)
         .background(alignment: .bottom) {
             // Content scrolling underneath fades out instead of showing
             // through the gaps between tiles.

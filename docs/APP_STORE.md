@@ -157,6 +157,10 @@ Not collected: email (only if the user shares it through Sign in with
 Apple; it isn't stored in the profile), precise location, contacts,
 browsing or search history, purchases, financial info, sensitive info.
 
+Contacts: "Invite from contacts" reads names and phone numbers on the
+device, after the user allows it, only to open Messages with an invite.
+Nothing is uploaded, so Contacts stays "not collected".
+
 These answers match `PickleBall/PrivacyInfo.xcprivacy`.
 
 ## Age rating

@@ -141,9 +141,17 @@ enum Court {
         static let tileIcon: CGFloat = 22
         static let selectedLine: CGFloat = 3
         static let avatar: CGFloat = 30
-        static let tabBarBottom: CGFloat = 34
+        /// Tiles to the screen's bottom edge on iPhones with a home
+        /// indicator: a touch higher than the system tab bar.
+        static let tabBarBottom: CGFloat = 26
         /// Room scrolling content leaves for the tab bar.
         static let tabBarClearance: CGFloat = 110
+
+        /// Gap under the tiles: just above the home indicator, or a small
+        /// margin on iPhones with a Home button.
+        static func tabBarGap(safeBottom: CGFloat) -> CGFloat {
+            safeBottom > 0 ? tabBarBottom : 14
+        }
     }
 }
 
@@ -292,5 +300,28 @@ private struct GroundBackground: ViewModifier {
             }
             .ignoresSafeArea()
         }
+    }
+}
+
+// MARK: - Back button
+
+/// The round raised back button for screens with their own header.
+struct CourtBackButton: View {
+    var action: (() -> Void)?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Button {
+            Haptics.light()
+            if let action { action() } else { dismiss() }
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Court.text)
+                .frame(width: Court.Metrics.pillHeight, height: Court.Metrics.pillHeight)
+                .courtRaisedCapsule()
+        }
+        .buttonStyle(.press)
+        .accessibilityLabel("Go back")
     }
 }

@@ -43,6 +43,10 @@ as you go.
 
 ## 2. Secrets for the app (5 minutes)
 
+Without this file the app runs in scoring-only mode: Chats, Tournaments and
+the Feed show "Needs the PickleBall server", and QR codes, Serves and
+Returns can't be made. That's what you see in the simulator today.
+
 - [ ] Copy `Secrets.example.plist` to `PickleBall/Secrets.plist` and fill in:
       `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SITE_URL` (your Cloudflare Pages
       address, step 4). The file is git-ignored.

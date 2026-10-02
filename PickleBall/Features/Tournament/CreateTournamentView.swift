@@ -12,6 +12,8 @@ import CourtNet
 
 struct CreateTournamentView: View {
     var squadID: UUID?
+    /// "Run it again": a finished tournament to copy the setup from.
+    var template: TournamentRow?
     @Environment(\.dismiss) private var dismiss
     @Environment(SportMode.self) private var sportMode
     private let social = Social.shared
@@ -32,6 +34,21 @@ struct CreateTournamentView: View {
     @State private var startsAt = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date().addingTimeInterval(86_400)) ?? Date()
     @State private var court: CourtTag?
     @State private var isCreating = false
+    @State private var pairing: Pairing = .balanced
+    @State private var pendingEntrants: Set<UUID>?
+
+    /// How doubles pairs are made.
+    enum Pairing: String, CaseIterable, Identifiable {
+        case balanced, random, inOrder
+        var id: String { rawValue }
+        var title: LocalizedStringKey {
+            switch self {
+            case .balanced: return "Balanced"
+            case .random: return "Random"
+            case .inOrder: return "As listed"
+            }
+        }
+    }
 
     private var members: [UUID] { selectedSquad.map(social.members(of:)) ?? [] }
     private var players: [PlayerRef] {
@@ -115,7 +132,6 @@ struct CreateTournamentView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(format.blurb)
-                        if needsPairs { Text("Pairs stay together, in the order entered.") }
                         if format.isBracket || format == .pools || format == .mexicano {
                             Text("Seeded by level, so the strongest meet last.")
                         }
@@ -150,15 +166,24 @@ struct CreateTournamentView: View {
                                 .onSubmit(addGuest)
                             Button("Add", action: addGuest).disabled(guestName.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
+                        if needsPairs {
+                            Picker("Pairs", selection: $pairing) {
+                                ForEach(Pairing.allCases) { Text($0.title).tag($0) }
+                            }
+                        }
                     }
                     .courtRows()
                 } header: {
                     Text("Players (\(players.count))")
                 } footer: {
-                    if let problem { Text(problem).foregroundStyle(DS.Palette.loss) }
+                    if let problem {
+                        Text(problem).foregroundStyle(DS.Palette.loss)
+                    } else if needsPairs {
+                        Text(pairingNote)
+                    }
                 }
 
-                Section("Schedule") {
+                Section {
                     Group {
                         Stepper("Courts: \(courts)", value: $courts, in: 1...8)
                         Toggle("Set a start time", isOn: $hasDate)
@@ -168,6 +193,10 @@ struct CreateTournamentView: View {
                         CourtPickerRow(court: $court)
                     }
                     .courtRows()
+                } header: {
+                    Text("Schedule")
+                } footer: {
+                    if let estimate { Text(estimate) }
                 }
             }
             .courtList()
@@ -187,12 +216,118 @@ struct CreateTournamentView: View {
                 poolCount = Pools.suggestedCount(entrants: max(players.count, 4))
                 selectedSquad = squadID ?? social.squads.first?.id
                 entrants = Set(members)
+                if let template { apply(template) }
             }
-            .onChange(of: selectedSquad) { _, _ in entrants = Set(members) }
+            .onChange(of: selectedSquad) { _, _ in
+                if let pendingEntrants {
+                    entrants = pendingEntrants
+                    self.pendingEntrants = nil
+                } else {
+                    entrants = Set(members)
+                }
+            }
             .onChange(of: sport) { _, newSport in
                 if !TournamentFormat.available(for: newSport).contains(format) { format = .roundRobin }
             }
             .noticeToast()
+        }
+    }
+
+    /// Same squad, sport, format and courts; the same players where they're
+    /// still in the squad.
+    private func apply(_ template: TournamentRow) {
+        let squadChanges = selectedSquad != template.squadID
+        selectedSquad = template.squadID
+        sport = template.sport
+        format = template.format
+        isDoubles = template.rules.isDoubles
+        courts = template.settings?.courts ?? courts
+        mexicanoRounds = template.settings?.rounds ?? mexicanoRounds
+        poolCount = template.settings?.pools ?? poolCount
+        advancing = template.settings?.advancing ?? advancing
+        let previous = Set(social.entrants(of: template))
+        let squadMembers = social.members(of: template.squadID)
+        let returning = Set(squadMembers.filter(previous.contains))
+        let chosen = returning.isEmpty ? Set(squadMembers) : returning
+        entrants = chosen
+        // Switching squad resets the entrants; keep these instead.
+        if squadChanges { pendingEntrants = chosen }
+    }
+
+    private var pairingNote: LocalizedStringKey {
+        switch pairing {
+        case .balanced: return "The strongest player is paired with the weakest, and so on, by level."
+        case .random: return "Pairs are drawn at random when you tap Create."
+        case .inOrder: return "Pairs stay together in the order listed: first and second, third and fourth."
+        }
+    }
+
+    private func makePairs(_ list: [PlayerRef]) -> [[PlayerRef]] {
+        var ordered = list
+        switch pairing {
+        case .inOrder:
+            break
+        case .random:
+            ordered.shuffle()
+        case .balanced:
+            let levels = Dictionary(list.map { ($0.id, social.level(of: $0.id.rawValue, in: sport) ?? PlayerLevel().level) },
+                                    uniquingKeysWith: { first, _ in first })
+            let byLevel = list.sorted { (levels[$0.id] ?? 0) > (levels[$1.id] ?? 0) }
+            ordered = []
+            var low = 0, high = byLevel.count - 1
+            while low < high {
+                ordered.append(byLevel[low])
+                ordered.append(byLevel[high])
+                low += 1
+                high -= 1
+            }
+        }
+        return stride(from: 0, to: ordered.count - 1, by: 2).map { [ordered[$0], ordered[$0 + 1]] }
+    }
+
+    // MARK: Estimate
+
+    /// "About 7 rounds · 1 hr 45 min": from the real schedule generators.
+    private var estimate: String? {
+        guard problem == nil, !players.isEmpty else { return nil }
+        let ids = players.map { _ in PlayerID() }
+        let units: [[PlayerID]] = needsPairs
+            ? stride(from: 0, to: ids.count - 1, by: 2).map { [ids[$0], ids[$0 + 1]] }
+            : ids.map { [$0] }
+        let rounds: Int
+        switch format {
+        case .roundRobin:
+            rounds = RoundRobin.schedule(units, courts: courts).map(\.round).max() ?? 0
+        case .americano:
+            rounds = Americano.schedule(ids, courts: courts).map(\.round).max() ?? 0
+        case .mexicano:
+            rounds = mexicanoRounds
+        case .kingOfTheCourt:
+            return String(localized: "King of the Court runs as long as you like: end it from the tournament screen.")
+        case .singleElimination, .doubleElimination:
+            let depth = Int(log2(Double(Bracket.size(for: units.count))).rounded(.up))
+            let perRound = Int((Double(Bracket.size(for: units.count)) / 2 / Double(courts)).rounded(.up))
+            let base = depth * max(1, min(perRound, 2))
+            rounds = format == .doubleElimination ? base * 2 + 1 : base
+        case .pools:
+            let split = Pools.split(units, pools: poolCount)
+            let poolRounds = Pools.schedule(split).map(\.round).max() ?? 0
+            let knockout = Int(log2(Double(max(2, poolCount * advancing))).rounded(.up))
+            rounds = poolRounds + knockout
+        }
+        guard rounds > 0 else { return nil }
+        let minutes = rounds * minutesPerMatch
+        let time = Duration.seconds(minutes * 60).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+        return String(localized: "About \(rounds) rounds · \(time) on \(courts) courts")
+    }
+
+    /// A rough match length, with time to change over.
+    private var minutesPerMatch: Int {
+        switch rules {
+        case .pickleball(_, let config):
+            return config.gamesToWin <= 1 ? (config.pointsToWin <= 11 ? 15 : 22) : 40
+        case .padel(let config):
+            return config.setsToWin <= 1 ? 35 : 80
         }
     }
 
@@ -211,9 +346,7 @@ struct CreateTournamentView: View {
         guard let squad = selectedSquad else { return }
         isCreating = true
         let list = players
-        let pairs: [[PlayerRef]]? = needsPairs
-            ? stride(from: 0, to: list.count - 1, by: 2).map { [list[$0], list[$0 + 1]] }
-            : nil
+        let pairs: [[PlayerRef]]? = needsPairs ? makePairs(list) : nil
         let options = Social.TournamentOptions(courts: courts, mexicanoRounds: mexicanoRounds,
                                                pools: format == .pools ? poolCount : nil,
                                                advancing: format == .pools ? advancing : nil,

@@ -24,6 +24,7 @@ struct TournamentDetailView: View {
     @State private var champions: [PlayerID]?
     @State private var isWorking = false
     @State private var shareURL: IdentifiedURL?
+    @State private var showRerun = false
 
     private var tournament: TournamentRow? { social.tournaments.first { $0.id == tournamentID } }
 
@@ -65,6 +66,13 @@ struct TournamentDetailView: View {
                                 .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(DS.Palette.gold)
                                 .padding(.top, 6)
+                        }
+                    }
+                    if tournament.status == .completed {
+                        Button {
+                            showRerun = true
+                        } label: {
+                            Label("Run it again", systemImage: "arrow.clockwise")
                         }
                     }
                 }
@@ -165,6 +173,9 @@ struct TournamentDetailView: View {
         }
         .sheet(item: $pointsFixture) { fixture in
             AmericanoScoreView(tournament: tournament, fixture: fixture)
+        }
+        .sheet(isPresented: $showRerun) {
+            CreateTournamentView(squadID: tournament.squadID, template: tournament)
         }
         .sheet(item: $scheduling) { fixture in
             ScheduleFixtureView(fixture: fixture)

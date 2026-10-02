@@ -190,6 +190,7 @@ final class Social {
     }
 
     private func tearDown() async {
+        QRCode.forget()
         liveTask?.cancel()
         await live?.stop()
         live = nil

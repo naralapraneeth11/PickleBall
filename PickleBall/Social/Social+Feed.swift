@@ -20,7 +20,10 @@ extension Social {
     }
 
     func serve(text: String, photos: [Data] = [], video: Data? = nil, matchID: UUID? = nil) async -> Bool {
-        guard let userID else { return false }
+        guard let userID else {
+            notice = BackendError.notConfigured.localizedDescription
+            return false
+        }
         var body: String?
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
@@ -40,7 +43,10 @@ extension Social {
             paths.append(path)
         }
         let kind: ServeKind = matchID != nil ? .result : video != nil ? .video : paths.isEmpty ? .text : .photo
-        guard body != nil || !paths.isEmpty || matchID != nil else { return false }
+        guard body != nil || !paths.isEmpty || matchID != nil else {
+            notice = "Write something or add a photo first."
+            return false
+        }
         let draft = ServeDraft(authorID: userID, kind: kind, body: body, mediaPaths: paths, matchID: matchID)
         let ok = await run { try await $0.createServe(draft) }
         if ok { await refreshFeed() }
@@ -56,7 +62,10 @@ extension Social {
     // MARK: Returns
 
     func sendReturn(_ kind: ReturnKind, text: String? = nil, photo: Data? = nil, to serve: ServeRow) async {
-        guard let userID else { return }
+        guard let userID else {
+            notice = BackendError.notConfigured.localizedDescription
+            return
+        }
         var body = text?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let raw = body, !raw.isEmpty {
             guard let cleaned = ContentFilter.standard.cleaned(raw) else {

@@ -391,14 +391,16 @@ final class WatchStatsViewModel {
 
 // MARK: - Theme
 
+/// The app's surfaces, so this screen follows light and dark like the rest.
 private enum WatchStatsTheme {
-    static let darkBg = Color(red: 0.07, green: 0.08, blue: 0.12)
-    static let card = Color(red: 0.12, green: 0.13, blue: 0.18)
-    static let navyText = Color(red: 0.92, green: 0.93, blue: 0.96)
-    static let muted = Color.white.opacity(0.45)
-    static let lime = DS.Palette.lime
-    static let stroke = Color.white.opacity(0.08)
-    static let loss = Color(red: 1.0, green: 0.38, blue: 0.38)
+    static let darkBg = Court.ground
+    static let card = Court.raised
+    static let navyText = Court.text
+    static let muted = Court.dim
+    /// Highlights stay in ink; the sport colour is kept for the tab bar.
+    static let lime = Court.text
+    static let stroke = Court.hairline
+    static let loss = DS.Palette.loss
 }
 
 // MARK: - View
@@ -437,9 +439,7 @@ struct WatchStatsDetailView: View {
             }
             .refreshable { await viewModel.refresh() }
         }
-        .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
-        .preferredColorScheme(.dark)
         .task {
             Haptics.warm()
             await viewModel.load()
@@ -451,23 +451,23 @@ struct WatchStatsDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("WATCH")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .tracking(2)
-                    .foregroundStyle(WatchStatsTheme.muted)
+                CourtBackButton()
                 Spacer()
                 Image(systemName: "applewatch.side.right")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(Court.text.opacity(0.75))
                     .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.white.opacity(0.1)))
+                    .background(Circle().fill(Court.text.opacity(0.1)))
                     .accessibilityHidden(true)
             }
             .padding(.top, 12)
-            
+
+            Text("Watch").courtEyebrow()
+                .padding(.top, 8)
             Text("Performance")
-                .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
+                .font(.system(size: 38, weight: .semibold))
+                .tracking(-1.1)
+                .foregroundStyle(Court.text)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Watch performance")
@@ -502,10 +502,10 @@ struct WatchStatsDetailView: View {
                         .font(.system(size: 56, weight: .black, design: .rounded))
                         .monospacedDigit()
                         .contentTransition(.numericText())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Court.text)
                     Text("%")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(Court.text.opacity(0.65))
                 }
                 Text(hold.subtitle)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -515,7 +515,7 @@ struct WatchStatsDetailView: View {
                     Text("\(snap.allTime.maxRallyLength)")
                         .font(.system(size: 56, weight: .black, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Court.text)
                     Text("shots")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(WatchStatsTheme.muted)
@@ -568,7 +568,7 @@ struct WatchStatsDetailView: View {
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(m.didWin == true ? WatchStatsTheme.lime.opacity(0.85)
                                       : m.didWin == false ? WatchStatsTheme.loss.opacity(0.7)
-                                      : Color.white.opacity(0.2))
+                                      : Court.text.opacity(0.2))
                                 .frame(width: 14, height: h)
                         }
                         .frame(maxWidth: .infinity)
@@ -603,7 +603,7 @@ struct WatchStatsDetailView: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
                 .monospacedDigit()
             Text(LocalizedStringKey(label))
                 .font(.system(size: 11, weight: .medium, design: .rounded))
@@ -643,11 +643,11 @@ struct WatchStatsDetailView: View {
         HStack(spacing: 12) {
             Text(name)
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
                 .frame(width: 108, alignment: .leading)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.08))
+                    Capsule().fill(Court.text.opacity(0.08))
                     Capsule()
                         .fill(WatchStatsTheme.lime.opacity(0.9))
                         .frame(width: max(4, geo.size.width * CGFloat(percent) / 100.0))
@@ -695,7 +695,7 @@ struct WatchStatsDetailView: View {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .monospacedDigit()
                 Text(unit)
                     .font(.system(size: 11, weight: .medium, design: .rounded))
@@ -726,11 +726,11 @@ struct WatchStatsDetailView: View {
                         } label: {
                             Text(f.rawValue)
                                 .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .foregroundStyle(recentFilter == f ? .black : WatchStatsTheme.muted)
+                                .foregroundStyle(recentFilter == f ? Court.ground : WatchStatsTheme.muted)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(
-                                    Capsule().fill(recentFilter == f ? WatchStatsTheme.lime : Color.white.opacity(0.06))
+                                    Capsule().fill(recentFilter == f ? WatchStatsTheme.lime : Court.text.opacity(0.06))
                                 )
                         }
                         .buttonStyle(.plain)
@@ -798,7 +798,7 @@ struct WatchStatsDetailView: View {
                         }
                         Text("\(m.yourScoreText)–\(m.opponentScoreText)")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Court.text)
                             .monospacedDigit()
                         Text("vs \(m.opponentLabel)")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -847,7 +847,7 @@ struct WatchStatsDetailView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(isExpanded ? WatchStatsTheme.card : Color.white.opacity(0.04))
+                .fill(isExpanded ? WatchStatsTheme.card : Court.text.opacity(0.04))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -887,7 +887,7 @@ struct WatchStatsDetailView: View {
         VStack(spacing: 12) {
             ForEach(0..<3, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Court.text.opacity(0.06))
                     .frame(height: 88)
             }
         }
@@ -901,7 +901,7 @@ struct WatchStatsDetailView: View {
                 .foregroundStyle(WatchStatsTheme.muted)
             Text("Enable Watch tracking")
                 .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
             Text("Workout data is read only when you play — heart-rate zones, calories and beta shot counts. Nothing is shared.")
                 .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(WatchStatsTheme.muted)
@@ -937,7 +937,7 @@ struct WatchStatsDetailView: View {
                 .foregroundStyle(WatchStatsTheme.muted)
             Text("No Watch data yet")
                 .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
             Text("Play a session with your Apple Watch to see performance here.")
                 .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(WatchStatsTheme.muted)
@@ -987,7 +987,7 @@ struct MatchDetailExpanded: View {
                 Spacer()
                 Text("\(model.maxRallyLength) shots")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .monospacedDigit()
             }
             .padding(.horizontal, 16)
@@ -1000,12 +1000,12 @@ struct MatchDetailExpanded: View {
                     Spacer()
                     Text("\(Int(model.hardZonePercent * 100))%")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Court.text)
                         .monospacedDigit()
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.08))
+                        Capsule().fill(Court.text.opacity(0.08))
                         Capsule()
                             .fill(WatchStatsTheme.lime.opacity(0.85))
                             .frame(width: geo.size.width * CGFloat(model.hardZonePercent))
@@ -1028,14 +1028,14 @@ struct ShotStatRing: View {
     var body: some View {
         VStack(spacing: 5) {
             ZStack {
-                Circle().stroke(.white.opacity(0.1), lineWidth: 4)
+                Circle().stroke(Court.text.opacity(0.1), lineWidth: 4)
                 Circle()
                     .trim(from: 0, to: max(0.02, min(1, percent)))
                     .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(Int(percent * 100))")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .monospacedDigit()
             }
             .frame(width: 48, height: 48)

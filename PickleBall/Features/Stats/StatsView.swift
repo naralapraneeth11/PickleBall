@@ -66,6 +66,14 @@ struct StatsView: View {
         matchStore.recentMatches(limit: 15)
     }
 
+    /// Share of points won on your own serve, from live-scored matches.
+    private var serveWinPercent: String {
+        let played = matches.reduce(0) { $0 + ($1.servePointsPlayed ?? 0) }
+        let won = matches.reduce(0) { $0 + ($1.servePointsWon ?? 0) }
+        guard played > 0 else { return "—" }
+        return "\(Int((Double(won) / Double(played) * 100).rounded()))%"
+    }
+
     private var pointWinPercent: String {
         guard !matches.isEmpty else { return "—" }
         var myTotal = 0
@@ -192,6 +200,8 @@ struct StatsView: View {
             StatsMetricCard(title: "Avg Points", value: "\(Int(averagePoints.rounded()))", icon: "chart.bar.fill", navy: navy)
             StatsMetricCard(title: "Best Win", value: bestWinScore, icon: "flag.fill", navy: navy)
             StatsMetricCard(title: "Points Won", value: pointWinPercent, icon: "percent", navy: navy)
+            StatsMetricCard(title: "Won on Serve", value: serveWinPercent, icon: "tennisball.fill", navy: navy)
+            StatsMetricCard(title: "Matches", value: "\(matches.count)", icon: "list.number", navy: navy)
         }
         .padding(.horizontal, 20)
     }
@@ -227,7 +237,15 @@ struct StatsView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(recentMatches.enumerated()), id: \.element.id) { index, match in
-                        StatsMatchRow(match: match, navy: navy)
+                        if let record = matchStore.record(id: match.id) {
+                            NavigationLink { MatchDetailView(record: record) } label: {
+                                StatsMatchRow(match: match, navy: navy)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            StatsMatchRow(match: match, navy: navy)
+                        }
                         if index < recentMatches.count - 1 {
                             Divider()
                                 .padding(.leading, 56)

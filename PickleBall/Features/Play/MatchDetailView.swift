@@ -40,6 +40,17 @@ struct MatchDetailView: View {
                     .listRowBackground(Color.clear)
             }
 
+            if let rules = record.rules, !record.rallies.isEmpty {
+                let insights = MatchInsights.compute(scorer: MatchScorer(rules: rules, rallies: record.rallyLog))
+                if !insights.isEmpty {
+                    Section {
+                        MatchStatsCard(insights: insights, lineup: record.lineup, rules: rules)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                    }
+                }
+            }
+
             Section {
                 Group {
                     LabeledContent("Status") { StatusBadge(confirmation: record.confirmation) }
