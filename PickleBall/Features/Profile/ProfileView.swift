@@ -71,7 +71,9 @@ struct ProfileView: View {
     private var profile: ProfileRow? {
         isMe ? social.profile : social.profiles[me.id.rawValue]
     }
-    private var accent: Color { (filter.sport ?? sportMode.sport).theme.accent }
+    /// Charts and highlights stay in ink: the sport colour is kept for the
+    /// tab bar. Good news (a rising level) uses the win green.
+    private var accent: Color { Court.text }
 
     private var results: [MatchResult] {
         guard let sport = filter.sport else { return matchStore.results }
@@ -146,7 +148,7 @@ struct ProfileView: View {
             if me.kind == .user, social.phase == .ready {
                 ProfileAvatar(userID: me.id.rawValue, size: 52)
             } else {
-                Avatar(name: me.displayName, color: accent, size: 52)
+                Avatar(name: me.displayName, color: ProfileAvatar.color(for: me.id.rawValue), size: 52)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(me.displayName)
@@ -355,7 +357,7 @@ struct ProfileView: View {
                     if let change {
                         Text("\(change >= 0 ? "▲" : "▼") \(String(format: "%.1f", abs(change)))")
                             .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(change >= 0 ? accent : Court.text.opacity(0.55))
+                            .foregroundStyle(change >= 0 ? DS.Palette.win : Court.muted)
                     }
                     Text(caption(for: point))
                         .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -416,10 +418,10 @@ struct ProfileView: View {
         } label: {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(isOn ? Color.black : Court.muted)
+                .foregroundStyle(isOn ? Court.ground : Court.muted)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(isOn ? accent : Court.raised))
+                .background(Capsule().fill(isOn ? Court.text : Court.raised))
         }
         .buttonStyle(.press)
         .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -488,7 +490,7 @@ struct ProfileView: View {
                             if let change = item.change, abs(change) >= 0.01 {
                                 Text("\(change >= 0 ? "▲" : "▼")\(String(format: "%.2f", abs(change)))")
                                     .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
-                                    .foregroundStyle(change >= 0 ? item.sport.theme.accent : Court.text.opacity(0.55))
+                                    .foregroundStyle(change >= 0 ? DS.Palette.win : Court.muted)
                             }
                         }
                         if item.provisional {
@@ -540,7 +542,7 @@ struct ProfileView: View {
 
     private func rivalRow(_ rival: OpponentSummary) -> some View {
         HStack(spacing: 12) {
-            Avatar(name: rival.opponent.displayName, color: Court.raised, size: 38)
+            Avatar(name: rival.opponent.displayName, color: ProfileAvatar.color(for: rival.opponent.id.rawValue), size: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(rival.opponent.displayName)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -559,7 +561,7 @@ struct ProfileView: View {
                     .foregroundStyle(Court.text)
                 Text(rival.trend > 0 ? "▲ won last" : "▼ lost last")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(rival.trend > 0 ? accent : Court.text.opacity(0.5))
+                    .foregroundStyle(rival.trend > 0 ? DS.Palette.win : Court.muted)
             }
             .frame(minWidth: 70, alignment: .trailing)
         }
@@ -577,7 +579,7 @@ struct ProfileView: View {
             Text("BEST PARTNERS").eyebrowStyle(Court.muted)
             ForEach(partners.prefix(5)) { record in
                 HStack(spacing: 12) {
-                    Avatar(name: record.partner.displayName, color: Court.raised, size: 32)
+                    Avatar(name: record.partner.displayName, color: ProfileAvatar.color(for: record.partner.id.rawValue), size: 32)
                     Text(record.partner.displayName)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundStyle(Court.text)

@@ -218,27 +218,31 @@ struct MyServesView: View {
 
     var body: some View {
         List {
-            ForEach(social.myServes) { serve in
-                NavigationLink {
-                    ServeDetailView(serveID: serve.id)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(serve.body ?? (serve.kind == .result ? "Result" : "Photo"))
-                            .lineLimit(2)
-                        HStack(spacing: 6) {
-                            Text(serve.createdAt.formatted(date: .abbreviated, time: .shortened))
-                            Text("· Rally \(serve.rallyCount)")
-                            if !serve.isInPlay() { Text("· Dead ball") }
+            Group {
+                ForEach(social.myServes) { serve in
+                    NavigationLink {
+                        ServeDetailView(serveID: serve.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(serve.body ?? (serve.kind == .result ? "Result" : "Photo"))
+                                .lineLimit(2)
+                            HStack(spacing: 6) {
+                                Text(serve.createdAt.formatted(date: .abbreviated, time: .shortened))
+                                Text("· Rally \(serve.rallyCount)")
+                                if !serve.isInPlay() { Text("· Dead ball") }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    }
+                    .swipeActions {
+                        Button("Delete", role: .destructive) { Task { await social.deleteServe(serve) } }
                     }
                 }
-                .swipeActions {
-                    Button("Delete", role: .destructive) { Task { await social.deleteServe(serve) } }
-                }
             }
+            .courtRows()
         }
+        .courtList()
         .navigationTitle("Your Serves")
         .overlay {
             if social.myServes.isEmpty {

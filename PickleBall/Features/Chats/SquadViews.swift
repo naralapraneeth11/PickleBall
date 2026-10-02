@@ -21,30 +21,37 @@ struct CreateSquadView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Squad name", text: $name)
+                    Group {
+                        TextField("Squad name", text: $name)
+                    }
+                    .courtRows()
                 } footer: {
                     Text("Your squad gets a chat, a squad belt and tournaments.")
                 }
                 Section("Friends") {
-                    if social.friends.isEmpty {
-                        Text("Add friends first; you can also invite people with a squad link later.").foregroundStyle(.secondary)
-                    }
-                    ForEach(social.friends) { friend in
-                        Button {
-                            if members.contains(friend.id) { members.remove(friend.id) } else { members.insert(friend.id) }
-                            Haptics.selection()
-                        } label: {
-                            HStack {
-                                ProfileAvatar(userID: friend.id, size: 32)
-                                Text(friend.displayName).foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: members.contains(friend.id) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(members.contains(friend.id) ? DS.Palette.electricBlue : Color.secondary)
+                    Group {
+                        if social.friends.isEmpty {
+                            Text("Add friends first; you can also invite people with a squad link later.").foregroundStyle(.secondary)
+                        }
+                        ForEach(social.friends) { friend in
+                            Button {
+                                if members.contains(friend.id) { members.remove(friend.id) } else { members.insert(friend.id) }
+                                Haptics.selection()
+                            } label: {
+                                HStack {
+                                    ProfileAvatar(userID: friend.id, size: 32)
+                                    Text(friend.displayName).foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: members.contains(friend.id) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(members.contains(friend.id) ? DS.Palette.electricBlue : Color.secondary)
+                                }
                             }
                         }
                     }
+                    .courtRows()
                 }
             }
+            .courtList()
             .navigationTitle("New squad")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -86,31 +93,37 @@ struct SquadInfoView: View {
     var body: some View {
         List {
             Section {
-                ForEach(social.members(of: squadID), id: \.self) { member in
-                    NavigationLink {
-                        ProfileView(playerID: PlayerID(rawValue: member))
-                    } label: {
-                        HStack(spacing: 12) {
-                            ProfileAvatar(userID: member, size: 36)
-                            Text(social.name(of: member))
-                            if member == social.userID { Text("You").font(.caption).foregroundStyle(.secondary) }
-                            Spacer()
-                            if MatchStore.shared.belts.squadBelts(squadID).contains(where: { $0.isHeld(by: PlayerID(rawValue: member)) }) {
-                                BeltBadge(tier: .gold, size: 18)
+                Group {
+                    ForEach(social.members(of: squadID), id: \.self) { member in
+                        NavigationLink {
+                            ProfileView(playerID: PlayerID(rawValue: member))
+                        } label: {
+                            HStack(spacing: 12) {
+                                ProfileAvatar(userID: member, size: 36)
+                                Text(social.name(of: member))
+                                if member == social.userID { Text("You").font(.caption).foregroundStyle(.secondary) }
+                                Spacer()
+                                if MatchStore.shared.belts.squadBelts(squadID).contains(where: { $0.isHeld(by: PlayerID(rawValue: member)) }) {
+                                    BeltBadge(tier: .gold, size: 18)
+                                }
                             }
                         }
                     }
+                    Button { showAdd = true } label: { Label("Add friends", systemImage: "person.badge.plus") }
+                    Button { Task { await makeInvite() } } label: { Label("Share squad link", systemImage: "link") }
                 }
-                Button { showAdd = true } label: { Label("Add friends", systemImage: "person.badge.plus") }
-                Button { Task { await makeInvite() } } label: { Label("Share squad link", systemImage: "link") }
+                .courtRows()
             } header: {
                 Text("Members")
             }
 
             Section {
-                NavigationLink { SquadLadderView(squadID: squadID) } label: {
-                    Label("Ladder", systemImage: "chart.bar.xaxis.ascending")
+                Group {
+                    NavigationLink { SquadLadderView(squadID: squadID) } label: {
+                        Label("Ladder", systemImage: "chart.bar.xaxis.ascending")
+                    }
                 }
+                .courtRows()
             } footer: {
                 Text("Beat someone above you and take their rung.")
             }
@@ -118,28 +131,38 @@ struct SquadInfoView: View {
             let belts = MatchStore.shared.belts.squadBelts(squadID)
             if !belts.isEmpty {
                 Section("Squad belts") {
-                    ForEach(belts) { belt in
-                        NavigationLink { BeltDetailView(belt: belt) } label: { BeltChip(belt: belt) }
+                    Group {
+                        ForEach(belts) { belt in
+                            NavigationLink { BeltDetailView(belt: belt) } label: { BeltChip(belt: belt) }
+                        }
                     }
+                    .courtRows()
                 }
             }
 
             Section {
-                Button { showChant = true } label: {
-                    Label(squad?.signatureChant == nil ? "Create the squad chant" : "Edit the squad chant", systemImage: "waveform")
+                Group {
+                    Button { showChant = true } label: {
+                        Label(squad?.signatureChant == nil ? "Create the squad chant" : "Edit the squad chant", systemImage: "waveform")
+                    }
                 }
+                .courtRows()
             } footer: {
                 Text("A haptic rhythm only squadmates can send during live matches.")
             }
 
             Section {
-                Button("Rename squad") {
-                    newName = squad?.name ?? ""
-                    renaming = true
+                Group {
+                    Button("Rename squad") {
+                        newName = squad?.name ?? ""
+                        renaming = true
+                    }
+                    Button("Leave squad", role: .destructive) { confirmLeave = true }
                 }
-                Button("Leave squad", role: .destructive) { confirmLeave = true }
+                .courtRows()
             }
         }
+        .courtList()
         .navigationTitle(squad?.name ?? "Squad")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -195,6 +218,7 @@ private struct AddToSquadView: View {
                     }
                 }
             }
+            .courtList()
             .navigationTitle("Add friends")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -220,7 +244,7 @@ struct ChantEditorView: View {
                 HStack(spacing: 6) {
                     ForEach(0..<Chant.maxBeats, id: \.self) { index in
                         Circle()
-                            .fill(index < beats.count ? DS.Palette.electricBlue : DS.Palette.fieldGrey)
+                            .fill(index < beats.count ? Court.text : Court.sunken)
                             .frame(width: 14, height: 14)
                     }
                 }
@@ -228,9 +252,11 @@ struct ChantEditorView: View {
                     tap()
                 } label: {
                     Circle()
-                        .fill(DS.Palette.royalBlue)
+                        .fill(Court.raised)
+                        .shadow(Court.raisedDark)
+                        .shadow(Court.raisedLight)
                         .frame(width: 200, height: 200)
-                        .overlay(Image(systemName: "hand.tap.fill").font(.system(size: 52)).foregroundStyle(.white))
+                        .overlay(Image(systemName: "hand.tap").font(.system(size: 52, weight: .semibold)).foregroundStyle(Court.text))
                 }
                 .buttonStyle(.press)
                 .accessibilityLabel("Tap to add a beat")

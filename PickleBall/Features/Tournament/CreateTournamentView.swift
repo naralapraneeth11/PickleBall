@@ -82,30 +82,36 @@ struct CreateTournamentView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Squad", selection: $selectedSquad) {
-                        ForEach(social.squads) { Text($0.name).tag(UUID?.some($0.id)) }
+                    Group {
+                        Picker("Squad", selection: $selectedSquad) {
+                            ForEach(social.squads) { Text($0.name).tag(UUID?.some($0.id)) }
+                        }
+                        TextField("Name", text: $name, prompt: Text(defaultName))
                     }
-                    TextField("Name", text: $name, prompt: Text(defaultName))
+                    .courtRows()
                 }
 
                 Section {
-                    Picker("Sport", selection: $sport) {
-                        ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                    Group {
+                        Picker("Sport", selection: $sport) {
+                            ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        Picker("Format", selection: $format) {
+                            ForEach(TournamentFormat.available(for: sport)) { Text($0.title).tag($0) }
+                        }
+                        if !format.ranksByPoints {
+                            Toggle("Doubles", isOn: $isDoubles)
+                        }
+                        if format == .mexicano {
+                            Stepper("Rounds: \(mexicanoRounds)", value: $mexicanoRounds, in: 3...12)
+                        }
+                        if format == .pools {
+                            Stepper("Pools: \(poolCount)", value: $poolCount, in: 1...max(1, entrantCount / 3))
+                            Stepper("Through from each pool: \(advancing)", value: $advancing, in: 1...max(1, entrantCount / max(poolCount, 1)))
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    Picker("Format", selection: $format) {
-                        ForEach(TournamentFormat.available(for: sport)) { Text($0.title).tag($0) }
-                    }
-                    if !format.ranksByPoints {
-                        Toggle("Doubles", isOn: $isDoubles)
-                    }
-                    if format == .mexicano {
-                        Stepper("Rounds: \(mexicanoRounds)", value: $mexicanoRounds, in: 3...12)
-                    }
-                    if format == .pools {
-                        Stepper("Pools: \(poolCount)", value: $poolCount, in: 1...max(1, entrantCount / 3))
-                        Stepper("Through from each pool: \(advancing)", value: $advancing, in: 1...max(1, entrantCount / max(poolCount, 1)))
-                    }
+                    .courtRows()
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(format.blurb)
@@ -117,32 +123,35 @@ struct CreateTournamentView: View {
                 }
 
                 Section {
-                    ForEach(members, id: \.self) { member in
-                        Button {
-                            if entrants.contains(member) { entrants.remove(member) } else { entrants.insert(member) }
-                        } label: {
-                            HStack {
-                                ProfileAvatar(userID: member, size: 30)
-                                Text(social.name(of: member)).foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: entrants.contains(member) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(entrants.contains(member) ? DS.Palette.electricBlue : Color.secondary)
+                    Group {
+                        ForEach(members, id: \.self) { member in
+                            Button {
+                                if entrants.contains(member) { entrants.remove(member) } else { entrants.insert(member) }
+                            } label: {
+                                HStack {
+                                    ProfileAvatar(userID: member, size: 30)
+                                    Text(social.name(of: member)).foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: entrants.contains(member) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(entrants.contains(member) ? DS.Palette.electricBlue : Color.secondary)
+                                }
                             }
                         }
-                    }
-                    ForEach(guests) { guest in
+                        ForEach(guests) { guest in
+                            HStack {
+                                Avatar(name: guest.displayName, color: DS.Palette.textMuted, size: 30)
+                                Text(guest.displayName)
+                                Text("Guest").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .onDelete { guests.remove(atOffsets: $0) }
                         HStack {
-                            Avatar(name: guest.displayName, color: DS.Palette.textMuted, size: 30)
-                            Text(guest.displayName)
-                            Text("Guest").font(.caption).foregroundStyle(.secondary)
+                            TextField("Add a guest", text: $guestName)
+                                .onSubmit(addGuest)
+                            Button("Add", action: addGuest).disabled(guestName.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                     }
-                    .onDelete { guests.remove(atOffsets: $0) }
-                    HStack {
-                        TextField("Add a guest", text: $guestName)
-                            .onSubmit(addGuest)
-                        Button("Add", action: addGuest).disabled(guestName.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
+                    .courtRows()
                 } header: {
                     Text("Players (\(players.count))")
                 } footer: {
@@ -150,14 +159,18 @@ struct CreateTournamentView: View {
                 }
 
                 Section("Schedule") {
-                    Stepper("Courts: \(courts)", value: $courts, in: 1...8)
-                    Toggle("Set a start time", isOn: $hasDate)
-                    if hasDate {
-                        DatePicker("Starts", selection: $startsAt)
+                    Group {
+                        Stepper("Courts: \(courts)", value: $courts, in: 1...8)
+                        Toggle("Set a start time", isOn: $hasDate)
+                        if hasDate {
+                            DatePicker("Starts", selection: $startsAt)
+                        }
+                        CourtPickerRow(court: $court)
                     }
-                    CourtPickerRow(court: $court)
+                    .courtRows()
                 }
             }
+            .courtList()
             .navigationTitle("New tournament")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

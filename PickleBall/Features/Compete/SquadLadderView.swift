@@ -41,13 +41,17 @@ struct SquadLadderView: View {
             }
 
             Section {
-                ForEach(rungs) { rung in
-                    row(rung)
+                Group {
+                    ForEach(rungs) { rung in
+                        row(rung)
+                    }
                 }
+                .courtRows()
             } footer: {
                 Text("Beat someone above you and you take their rung; everyone in between steps down one. Squad matches only.")
             }
         }
+        .courtList()
         .navigationTitle("Ladder")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { sport = sportMode.sport }

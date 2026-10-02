@@ -41,30 +41,36 @@ struct MatchDetailView: View {
             }
 
             Section {
-                LabeledContent("Status") { StatusBadge(confirmation: record.confirmation) }
-                LabeledContent("Scored", value: sourceText)
-                if let court = record.court { LabeledContent("Court", value: court.name) }
-                if let squad = social.squad(record.squadID) { LabeledContent("Squad", value: squad.name) }
-                if let recorder = record.createdByID, recorder != social.userID {
-                    LabeledContent("Recorded by", value: social.name(of: recorder))
+                Group {
+                    LabeledContent("Status") { StatusBadge(confirmation: record.confirmation) }
+                    LabeledContent("Scored", value: sourceText)
+                    if let court = record.court { LabeledContent("Court", value: court.name) }
+                    if let squad = social.squad(record.squadID) { LabeledContent("Squad", value: squad.name) }
+                    if let recorder = record.createdByID, recorder != social.userID {
+                        LabeledContent("Recorded by", value: social.name(of: recorder))
+                    }
                 }
+                .courtRows()
             } footer: {
                 Text(statusExplanation)
             }
 
             if needsMyAnswer {
                 Section {
-                    Button {
-                        answer(true)
-                    } label: {
-                        Label("Confirm result", systemImage: "checkmark.seal.fill")
-                            .fontWeight(.semibold)
+                    Group {
+                        Button {
+                            answer(true)
+                        } label: {
+                            Label("Confirm result", systemImage: "checkmark.seal.fill")
+                                .fontWeight(.semibold)
+                        }
+                        Button(role: .destructive) {
+                            answer(false)
+                        } label: {
+                            Label("Dispute", systemImage: "exclamationmark.bubble")
+                        }
                     }
-                    Button(role: .destructive) {
-                        answer(false)
-                    } label: {
-                        Label("Dispute", systemImage: "exclamationmark.bubble")
-                    }
+                    .courtRows()
                 } footer: {
                     Text("Confirming makes it count for records and the Belt.")
                 }
@@ -74,40 +80,49 @@ struct MatchDetailView: View {
             let events = MatchStore.shared.belts.events(for: record.id)
             if !events.isEmpty {
                 Section("Belt") {
-                    ForEach(Array(events.enumerated()), id: \.offset) { _, event in
-                        Label(social.beltLine(event), systemImage: "crown.fill")
-                            .foregroundStyle(DS.Palette.gold)
+                    Group {
+                        ForEach(Array(events.enumerated()), id: \.offset) { _, event in
+                            Label(social.beltLine(event), systemImage: "crown.fill")
+                                .foregroundStyle(DS.Palette.gold)
+                        }
                     }
+                    .courtRows()
                 }
             }
 
             if social.phase == .ready, record.lineup?.team(of: me ?? PlayerID()) != nil {
                 Section("Share") {
-                    Button {
-                        Task { await postReplay() }
-                    } label: {
-                        Label(postedReplay == nil ? "Post Replay" : "Replay posted", systemImage: "play.rectangle.on.rectangle")
+                    Group {
+                        Button {
+                            Task { await postReplay() }
+                        } label: {
+                            Label(postedReplay == nil ? "Post Replay" : "Replay posted", systemImage: "play.rectangle.on.rectangle")
+                        }
+                        .disabled(postedReplay != nil || isWorking || record.confirmation == .disputed)
+                        Button {
+                            showServe = true
+                        } label: {
+                            Label("Serve this result", systemImage: "arrow.up.forward.circle")
+                        }
+                        .disabled(record.confirmation == .disputed)
                     }
-                    .disabled(postedReplay != nil || isWorking || record.confirmation == .disputed)
-                    Button {
-                        showServe = true
-                    } label: {
-                        Label("Serve this result", systemImage: "arrow.up.forward.circle")
-                    }
-                    .disabled(record.confirmation == .disputed)
+                    .courtRows()
                 }
             }
 
             let guests = record.lineup?.allPlayers.filter { $0.kind == .guest } ?? []
             if isMine, social.phase == .ready, !guests.isEmpty {
                 Section {
-                    ForEach(guests) { guest in
-                        Button {
-                            Task { await makeClaimLink(for: guest) }
-                        } label: {
-                            Label("Send \(guest.shortName) a claim link", systemImage: "link")
+                    Group {
+                        ForEach(guests) { guest in
+                            Button {
+                                Task { await makeClaimLink(for: guest) }
+                            } label: {
+                                Label("Send \(guest.shortName) a claim link", systemImage: "link")
+                            }
                         }
                     }
+                    .courtRows()
                 } header: {
                     Text("Guests")
                 } footer: {
@@ -117,16 +132,23 @@ struct MatchDetailView: View {
 
             if isMine, record.confirmation == .pending || record.confirmation == .disputed {
                 Section {
-                    Button("Withdraw result", role: .destructive) { confirmWithdraw = true }
+                    Group {
+                        Button("Withdraw result", role: .destructive) { confirmWithdraw = true }
+                    }
+                    .courtRows()
                 }
             } else if !isMine, social.phase == .ready {
                 Section {
-                    Button("Report", role: .destructive) {
-                        Task { _ = await social.report(.match, id: record.id, reason: "Incorrect or abusive match") }
+                    Group {
+                        Button("Report", role: .destructive) {
+                            Task { _ = await social.report(.match, id: record.id, reason: "Incorrect or abusive match") }
+                        }
                     }
+                    .courtRows()
                 }
             }
         }
+        .courtList()
         .navigationTitle(record.sport.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showServe) {
@@ -202,7 +224,7 @@ struct MatchScoreCard: View {
             if let headline {
                 Text(headline)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(record.sport.theme.accent)
+                    .foregroundStyle(Court.muted)
             }
             if let lineup = record.lineup {
                 ForEach(Team.allCases, id: \.self) { team in

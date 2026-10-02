@@ -26,79 +26,98 @@ struct FriendsView: View {
         List {
             if !query.isEmpty {
                 Section("Results") {
-                    if results.isEmpty {
-                        Text("No one with that username yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(results) { card in
-                        PersonRow(userID: card.id, name: card.displayName, username: card.username) {
-                            relationshipButton(card.id)
+                    Group {
+                        if results.isEmpty {
+                            Text("No one with that username yet.").foregroundStyle(.secondary)
+                        }
+                        ForEach(results) { card in
+                            PersonRow(userID: card.id, name: card.displayName, username: card.username) {
+                                relationshipButton(card.id)
+                            }
                         }
                     }
+                    .courtRows()
                 }
             } else {
                 Section {
-                    Button { Task { await makeInvite() } } label: {
-                        Label("Share my invite link", systemImage: "link")
+                    Group {
+                        Button { Task { await makeInvite() } } label: {
+                            Label("Share my invite link", systemImage: "link")
+                        }
+                        Button { showQR = true } label: { Label("Show my QR code", systemImage: "qrcode") }
+                        Button { showScanner = true } label: { Label("Scan a QR code", systemImage: "qrcode.viewfinder") }
+                        Button { showCode = true } label: { Label("Enter an invite code", systemImage: "keyboard") }
                     }
-                    Button { showQR = true } label: { Label("Show my QR code", systemImage: "qrcode") }
-                    Button { showScanner = true } label: { Label("Scan a QR code", systemImage: "qrcode.viewfinder") }
-                    Button { showCode = true } label: { Label("Enter an invite code", systemImage: "keyboard") }
+                    .courtRows()
                 } footer: {
                     Text("Friends see your matches, Serves and belts. Nothing is ever public.")
                 }
 
                 if !social.incomingRequests.isEmpty {
                     Section("Requests") {
-                        ForEach(social.incomingRequests) { profile in
-                            PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) {
-                                HStack(spacing: 6) {
-                                    PillButton(title: "Accept", prominent: true, tint: DS.Palette.win) {
-                                        Task { await social.respondToRequest(from: profile.id, accept: true) }
-                                    }
-                                    PillButton(title: "Ignore", tint: DS.Palette.textMuted) {
-                                        Task { await social.respondToRequest(from: profile.id, accept: false) }
+                        Group {
+                            ForEach(social.incomingRequests) { profile in
+                                PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) {
+                                    HStack(spacing: 6) {
+                                        PillButton(title: "Accept", prominent: true, tint: DS.Palette.win) {
+                                            Task { await social.respondToRequest(from: profile.id, accept: true) }
+                                        }
+                                        PillButton(title: "Ignore", tint: DS.Palette.textMuted) {
+                                            Task { await social.respondToRequest(from: profile.id, accept: false) }
+                                        }
                                     }
                                 }
                             }
                         }
+                        .courtRows()
                     }
                 }
 
                 if !social.outgoingRequests.isEmpty {
                     Section("Sent") {
-                        ForEach(social.outgoingRequests) { profile in
-                            PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) {
-                                Text("Pending").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Group {
+                            ForEach(social.outgoingRequests) { profile in
+                                PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) {
+                                    Text("Pending").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                }
                             }
                         }
+                        .courtRows()
                     }
                 }
 
                 Section("Friends") {
-                    if social.friends.isEmpty {
-                        Text("Search a username above, or share your link with the people you play.").foregroundStyle(.secondary)
-                    }
-                    ForEach(social.friends) { profile in
-                        NavigationLink {
-                            ProfileView(playerID: PlayerID(rawValue: profile.id))
-                        } label: {
-                            PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) { EmptyView() }
+                    Group {
+                        if social.friends.isEmpty {
+                            Text("Search a username above, or share your link with the people you play.").foregroundStyle(.secondary)
+                        }
+                        ForEach(social.friends) { profile in
+                            NavigationLink {
+                                ProfileView(playerID: PlayerID(rawValue: profile.id))
+                            } label: {
+                                PersonRow(userID: profile.id, name: profile.displayName, username: profile.username) { EmptyView() }
+                            }
                         }
                     }
+                    .courtRows()
                 }
 
                 let guests = PlayerDirectory.shared.guests
                 if !guests.isEmpty {
                     Section {
-                        NavigationLink {
-                            GuestsView()
-                        } label: {
-                            Label("Guests you’ve played (\(guests.count))", systemImage: "person.fill.questionmark")
+                        Group {
+                            NavigationLink {
+                                GuestsView()
+                            } label: {
+                                Label("Guests you’ve played (\(guests.count))", systemImage: "person.fill.questionmark")
+                            }
                         }
+                        .courtRows()
                     }
                 }
             }
         }
+        .courtList()
         .navigationTitle("Friends")
         .searchable(text: $query, prompt: "Search usernames")
         .textInputAutocapitalization(.never)
@@ -205,24 +224,28 @@ struct GuestsView: View {
     var body: some View {
         List {
             Section {
-                ForEach(directory.guests) { guest in
-                    HStack {
-                        Avatar(name: guest.displayName, color: DS.Palette.textMuted, size: 36)
-                        Text(guest.displayName)
-                        Spacer()
-                        PillButton(title: "Claim link", systemImage: "link") {
-                            Task {
-                                if let link = await social.inviteLink(.guestClaim, target: guest.id.rawValue) {
-                                    shareURL = social.shareURL(for: link)
+                Group {
+                    ForEach(directory.guests) { guest in
+                        HStack {
+                            Avatar(name: guest.displayName, color: DS.Palette.textMuted, size: 36)
+                            Text(guest.displayName)
+                            Spacer()
+                            PillButton(title: "Claim link", systemImage: "link") {
+                                Task {
+                                    if let link = await social.inviteLink(.guestClaim, target: guest.id.rawValue) {
+                                        shareURL = social.shareURL(for: link)
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                .courtRows()
             } footer: {
                 Text("A guest who signs up with their link gets every match you played together, and becomes your friend.")
             }
         }
+        .courtList()
         .navigationTitle("Guests")
         .sheet(item: Binding(get: { shareURL.map(IdentifiedURL.init) }, set: { shareURL = $0?.url })) { item in
             ShareSheet(items: ["Claim our matches on PickleBall: \(item.url.absoluteString)", item.url])

@@ -65,7 +65,7 @@ struct RootView: View {
 private struct LaunchView: View {
     var body: some View {
         ZStack {
-            DS.Palette.navy.ignoresSafeArea()
+            Court.ground.ignoresSafeArea()
             BallIcon(sport: .pickleball, size: 56)
                 .accessibilityLabel("PickleBall")
         }

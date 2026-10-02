@@ -131,36 +131,46 @@ struct BeltDetailView: View {
             }
 
             Section("Reign") {
-                if let current = belt.currentReign {
-                    LabeledContent("Current reign", value: "\(current.days(asOf: now)) day\(current.days(asOf: now) == 1 ? "" : "s")")
-                    LabeledContent("Defenses", value: "\(current.defenses)")
+                Group {
+                    if let current = belt.currentReign {
+                        LabeledContent("Current reign", value: "\(current.days(asOf: now)) day\(current.days(asOf: now) == 1 ? "" : "s")")
+                        LabeledContent("Defenses", value: "\(current.defenses)")
+                    }
+                    if let longest = belt.longestReign(asOf: now) {
+                        LabeledContent("Longest reign", value: "\(names(longest.holder)) · \(longest.days(asOf: now))d")
+                    }
+                    LabeledContent("Most defenses", value: "\(belt.mostDefenses)")
                 }
-                if let longest = belt.longestReign(asOf: now) {
-                    LabeledContent("Longest reign", value: "\(names(longest.holder)) · \(longest.days(asOf: now))d")
-                }
-                LabeledContent("Most defenses", value: "\(belt.mostDefenses)")
+                .courtRows()
             }
 
             Section("Total reigns") {
-                let holders = Set(belt.reigns.flatMap(\.holder))
-                ForEach(Array(holders).sorted { belt.totalReigns(of: $0) > belt.totalReigns(of: $1) }, id: \.self) { player in
-                    let record = belt.record(of: player)
-                    LabeledContent(social.name(of: player.rawValue), value: "\(belt.totalReigns(of: player)) · \(record.wins)–\(record.losses)")
+                Group {
+                    let holders = Set(belt.reigns.flatMap(\.holder))
+                    ForEach(Array(holders).sorted { belt.totalReigns(of: $0) > belt.totalReigns(of: $1) }, id: \.self) { player in
+                        let record = belt.record(of: player)
+                        LabeledContent(social.name(of: player.rawValue), value: "\(belt.totalReigns(of: player)) · \(record.wins)–\(record.losses)")
+                    }
                 }
+                .courtRows()
             }
 
             Section("Title matches") {
-                ForEach(belt.bouts.reversed(), id: \.matchID) { bout in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(names(bout.winners)) beat \(names(bout.losers))")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        Text("\(outcome(bout.outcome)) · \(bout.date.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                Group {
+                    ForEach(belt.bouts.reversed(), id: \.matchID) { bout in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(names(bout.winners)) beat \(names(bout.losers))")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Text("\(outcome(bout.outcome)) · \(bout.date.formatted(date: .abbreviated, time: .omitted))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+                .courtRows()
             }
         }
+        .courtList()
         .navigationTitle(BeltNaming.title(belt, social: social))
         .navigationBarTitleDisplayMode(.inline)
     }

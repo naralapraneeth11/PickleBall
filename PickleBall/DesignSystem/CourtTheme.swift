@@ -7,8 +7,9 @@
 //  on its own, so screens use `Court.text`, `Court.raised` and so on and
 //  never branch on the colour scheme.
 //
-//  The sport's accent (yellow for pickleball, blue for padel) is used
-//  sparingly: the selected tab, the page dot. Nowhere else by default.
+//  The sport's accent (yellow for pickleball, blue for padel) appears in
+//  exactly two places: the selected tab and the active page dot. Not on
+//  buttons, not on the sport switch, not on Start match.
 //
 //  An optional Glass appearance (Settings → Appearance) swaps the solid
 //  surfaces for frosted material. Standard is the default.
@@ -203,9 +204,39 @@ extension View {
         modifier(GroundBackground())
     }
 
-    /// Lists and forms on the page background.
+    /// Lists and forms on the page background. Pair with `courtRows()` on
+    /// each section's rows: iOS's default dark row colour is almost the same
+    /// as the night ground.
     func courtList() -> some View {
         scrollContentBackground(.hidden).courtGround()
+    }
+
+    /// List rows on the raised surface.
+    func courtRows() -> some View {
+        listRowBackground(Court.raised)
+    }
+
+    /// The small mono label over a title or section ("HOME", "YOUR SIDE").
+    func courtEyebrow() -> some View {
+        textCase(.uppercase)
+            .font(.system(size: 11, weight: .medium, design: .monospaced))
+            .tracking(1.8)
+            .foregroundStyle(Court.dim)
+    }
+
+    /// A big soft raised button (Start match). Ink on the raised surface;
+    /// the sport colour stays on the tab bar and the page dot.
+    func courtBigButton() -> some View {
+        font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(Court.text)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .courtRaised(cornerRadius: Court.Metrics.tileRadius)
+    }
+
+    /// A text field or chip pressed into the surface.
+    func courtField(cornerRadius: CGFloat = DS.Radius.control) -> some View {
+        background(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(Court.pressedFill))
     }
 }
 
@@ -247,16 +278,15 @@ private struct SunkenSurface: ViewModifier {
 
 private struct GroundBackground: ViewModifier {
     @Environment(\.appearanceStyle) private var style
-    @Environment(SportMode.self) private var sportMode
 
     func body(content: Content) -> some View {
         content.background {
             ZStack {
                 Court.ground
                 if style == .glass {
-                    // Glass needs something behind it to frost: a soft wash
-                    // of the sport's colour from the top.
-                    LinearGradient(colors: [Court.accent(sportMode.sport).opacity(0.18), .clear],
+                    // Glass needs something behind it to frost: a soft,
+                    // neutral light from the top.
+                    LinearGradient(colors: [Court.raised, Court.ground.opacity(0)],
                                    startPoint: .top, endPoint: .center)
                 }
             }

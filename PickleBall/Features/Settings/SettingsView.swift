@@ -18,9 +18,8 @@ struct SettingsView: View {
     @AppStorage(AppearanceStyle.storageKey) private var appearance: AppearanceStyle = .standard
     private let social = Social.shared
 
-    let royalBlue    = Court.muted
+    let iconTint    = Court.muted
     let lightGrey    = Court.ground
-    let cardWhite    = Court.raised
     let destructiveRed = DS.Palette.loss
     let versionGrey  = Color(red: 0.627, green: 0.627, blue: 0.627)
 
@@ -40,33 +39,33 @@ struct SettingsView: View {
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("ACCOUNT")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(royalBlue)
-                .tracking(0.5)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundColor(Court.dim)
+                .tracking(1.8)
                 .padding(.horizontal, 20)
 
             VStack(spacing: 8) {
                 if let profile = social.profile {
-                    settingsRow(title: "@\(profile.username)", systemImage: "person.crop.circle", tint: royalBlue) {}
+                    settingsRow(title: "@\(profile.username)", systemImage: "person.crop.circle", tint: iconTint) {}
                         .disabled(true)
                 }
                 Button {
                     showBlocked = true
                 } label: {
-                    rowLabel(title: "Blocked", systemImage: "hand.raised", tint: royalBlue, detail: social.blocked.isEmpty ? nil : "\(social.blocked.count)")
+                    rowLabel(title: "Blocked", systemImage: "hand.raised", tint: iconTint, detail: social.blocked.isEmpty ? nil : "\(social.blocked.count)")
                 }
                 .buttonStyle(.press)
                 Button { showNudges = true } label: {
-                    rowLabel(title: String(localized: "Nudges"), systemImage: "bell", tint: royalBlue, detail: Nudger.isEnabled ? nil : String(localized: "Off"))
+                    rowLabel(title: String(localized: "Nudges"), systemImage: "bell", tint: iconTint, detail: Nudger.isEnabled ? nil : String(localized: "Off"))
                 }
                 .buttonStyle(.press)
                 Button { showPrivacy = true } label: {
-                    rowLabel(title: String(localized: "Privacy"), systemImage: "lock.shield", tint: royalBlue, detail: nil)
+                    rowLabel(title: String(localized: "Privacy"), systemImage: "lock.shield", tint: iconTint, detail: nil)
                 }
                 .buttonStyle(.press)
                 if social.isAdmin {
                     Button { showAdmin = true } label: {
-                        rowLabel(title: String(localized: "Moderation"), systemImage: "shield.lefthalf.filled", tint: royalBlue, detail: nil)
+                        rowLabel(title: String(localized: "Moderation"), systemImage: "shield.lefthalf.filled", tint: iconTint, detail: nil)
                     }
                     .buttonStyle(.press)
                 }
@@ -75,7 +74,7 @@ struct SettingsView: View {
                         Task { await social.drainOutbox() }
                     }
                 }
-                settingsRow(title: "Sign out", systemImage: "rectangle.portrait.and.arrow.right", tint: royalBlue) {
+                settingsRow(title: "Sign out", systemImage: "rectangle.portrait.and.arrow.right", tint: iconTint) {
                     confirmSignOut = true
                 }
                 settingsRow(title: isDeleting ? "Deleting…" : "Delete account", systemImage: "trash", tint: destructiveRed) {
@@ -142,67 +141,38 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(cardWhite))
+        .courtRaised(cornerRadius: 16)
     }
 
     // MARK: - Header
 
-    private var courtStripHeader: some View {
-        GeometryReader { geo in
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(DS.Palette.courtBlue)
-                    .frame(width: geo.size.width * 0.375)
-
-                Rectangle()
-                    .fill(.white)
-                    .frame(width: 3)
-
-                Rectangle()
-                    .fill(DS.Palette.navy)
-                    .frame(width: geo.size.width * 0.249)
-
-                Rectangle()
-                    .fill(.white)
-                    .frame(width: 3)
-
-                Rectangle()
-                    .fill(DS.Palette.courtBlueMid)
-                    .frame(width: geo.size.width * 0.375)
+    /// Same header language as Home: a small mono label over a big title.
+    private var header: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("ME")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .tracking(1.8)
+                    .foregroundStyle(Court.dim)
+                Text("Settings")
+                    .font(.system(size: 38, weight: .semibold))
+                    .tracking(-1.1)
+                    .foregroundStyle(Court.text)
             }
-            .frame(height: 150)
-            .ignoresSafeArea(edges: .top)
-            .overlay(
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(12)
-                            .frame(minWidth: 44, minHeight: 44)
-                    }
-                    .padding(.leading, 16)
-                    .accessibilityLabel("Go back")
-
-                    Spacer()
-
-                    Text("SETTINGS")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .tracking(2)
-                        .foregroundColor(.white)
-
-                    Spacer()
-
-                    // Invisible spacer to keep the title centered
-                    Color.clear
-                        .frame(width: 44, height: 44)
-                        .padding(.trailing, 16)
-                }
-                .padding(.top, 10),
-                alignment: .topLeading
-            )
+            Spacer()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Court.text)
+                    .frame(width: Court.Metrics.pillHeight, height: Court.Metrics.pillHeight)
+                    .courtRaisedCapsule()
+            }
+            .buttonStyle(.press)
+            .accessibilityLabel("Close")
         }
-        .frame(height: 150)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 4)
     }
 
     // MARK: - Body
@@ -212,7 +182,7 @@ struct SettingsView: View {
             lightGrey.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                courtStripHeader
+                header
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -225,9 +195,9 @@ struct SettingsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("APPEARANCE")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(royalBlue)
-                                .tracking(0.5)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundColor(Court.dim)
+                                .tracking(1.8)
                                 .padding(.horizontal, 20)
                             Picker("Appearance", selection: $appearance) {
                                 ForEach(AppearanceStyle.allCases) { Text($0.title).tag($0) }
@@ -244,9 +214,9 @@ struct SettingsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("ABOUT US")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(royalBlue)
-                                .tracking(0.5)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundColor(Court.dim)
+                                .tracking(1.8)
                                 .padding(.horizontal, 20)
 
                             VStack(spacing: 8) {
@@ -269,9 +239,9 @@ struct SettingsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("DATA")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(royalBlue)
-                                .tracking(0.5)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundColor(Court.dim)
+                                .tracking(1.8)
                                 .padding(.horizontal, 20)
 
                             // Reset All Data — honest about what it does.
@@ -294,11 +264,7 @@ struct SettingsView: View {
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(cardWhite)
-                                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-                                )
+                                .courtRaised(cornerRadius: 16)
                             }
                             .padding(.horizontal, 20)
                             .accessibilityLabel("Reset all app data")
@@ -310,16 +276,19 @@ struct SettingsView: View {
                         Button(action: {
                             UIApplication.shared.open(feedbackURL)
                         }) {
-                            Text("FEEDBACK")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
-                                .tracking(0.5)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(royalBlue)
-                                )
+                            HStack(spacing: 12) {
+                                Image(systemName: "envelope").foregroundColor(iconTint).frame(width: 22)
+                                Text("Send feedback")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(Court.text)
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .foregroundColor(Court.muted)
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .courtRaised(cornerRadius: 16)
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
@@ -359,19 +328,15 @@ struct SettingsView: View {
             HStack {
                 Text(LocalizedStringKey(title))
                     .font(.system(size: 16))
-                    .foregroundColor(royalBlue)
+                    .foregroundColor(Court.text)
                 Spacer()
                 Image(systemName: "arrow.up.right.square")
-                    .foregroundColor(royalBlue.opacity(0.7))
+                    .foregroundColor(Court.muted)
                     .font(.system(size: 14, weight: .semibold))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(cardWhite)
-                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-            )
+            .courtRaised(cornerRadius: 16)
         }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens in browser")

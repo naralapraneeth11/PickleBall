@@ -63,6 +63,7 @@ struct ContentView: View {
             if !isKeyboardVisible {
                 TileTabBar(selectedTab: $selectedTab, badges: badges)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .ignoresSafeArea(edges: .bottom)
             }
         }
         .ignoresSafeArea(.keyboard)
@@ -120,8 +121,19 @@ private struct TileTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.top, 18)
+        // Fixed distance from the bottom edge on every iPhone, above the
+        // home indicator.
+        .padding(.bottom, Court.Metrics.tabBarBottom)
+        .background(alignment: .bottom) {
+            // Content scrolling underneath fades out instead of showing
+            // through the gaps between tiles.
+            LinearGradient(stops: [.init(color: Court.ground.opacity(0), location: 0),
+                                   .init(color: Court.ground.opacity(0.92), location: 0.45),
+                                   .init(color: Court.ground, location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+                .allowsHitTesting(false)
+        }
     }
 }
 
@@ -194,18 +206,19 @@ private struct TabTile: View {
     @ViewBuilder
     private var icon: some View {
         if tab == .me {
+            // Your photo, or a neutral silhouette. No ring.
             Group {
-                if let id = social.userID, social.phase == .ready {
-                    ProfileAvatar(userID: id, size: Court.Metrics.avatar)
-                } else {
-                    Circle()
-                        .fill(Court.avatarBackground)
-                        .overlay(alignment: .bottom) {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(Court.avatarForeground)
-                                .offset(y: 4)
+                if let path = social.profile?.avatarPath,
+                   let url = social.backend?.publicURL(for: path, in: .avatars) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            silhouette
                         }
+                    }
+                } else {
+                    silhouette
                 }
             }
             .frame(width: Court.Metrics.avatar, height: Court.Metrics.avatar)
@@ -215,6 +228,17 @@ private struct TabTile: View {
                 .font(.system(size: Court.Metrics.tileIcon, weight: .semibold))
                 .foregroundStyle(solid ? Court.onAccent : Court.text)
         }
+    }
+
+    private var silhouette: some View {
+        Circle()
+            .fill(Court.avatarBackground)
+            .overlay(alignment: .bottom) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Court.avatarForeground)
+                    .offset(y: 4)
+            }
     }
 }
 

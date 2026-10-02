@@ -63,7 +63,7 @@ struct PlayerSlotField: View {
             } else {
                 TextField(placeholder, text: typedText)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(DS.Palette.royalBlue)
+                    .foregroundStyle(Court.text)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                     .submitLabel(.done)
@@ -71,13 +71,10 @@ struct PlayerSlotField: View {
                     .onSubmit(commitTyped)
                     .padding(.horizontal, 14)
                     .frame(height: 46)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                            .fill(DS.Palette.fieldGrey)
-                    )
+                    .courtField()
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                            .stroke(focused ? accent : DS.Palette.stroke, lineWidth: focused ? 2 : 1)
+                            .stroke(focused ? Court.text.opacity(0.5) : .clear, lineWidth: 1.5)
                     )
                     .accessibilityLabel(placeholder)
 
@@ -97,16 +94,16 @@ struct PlayerSlotField: View {
                 .font(.system(size: 13, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(player.id == directory.me.id ? accent : DS.Palette.royalBlue))
+                .background(Circle().fill(ProfileAvatar.color(for: player.id.rawValue)))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(player.id == directory.me.id ? "\(player.displayName) (you)" : player.displayName)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(DS.Palette.royalBlue)
+                    .foregroundStyle(Court.text)
                     .lineLimit(1)
                 Text(player.kind == .guest ? "Guest" : "Player")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(DS.Palette.textSecondary)
+                    .foregroundStyle(Court.muted)
             }
 
             Spacer(minLength: 0)
@@ -118,7 +115,7 @@ struct PlayerSlotField: View {
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(DS.Palette.textSecondary.opacity(0.6))
+                    .foregroundStyle(Court.muted.opacity(0.7))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.press)
@@ -126,10 +123,7 @@ struct PlayerSlotField: View {
         }
         .padding(.leading, 8)
         .frame(height: 46)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                .fill(DS.Palette.fieldGrey)
-        )
+        .courtField()
     }
 
     private var suggestions: some View {
@@ -145,11 +139,11 @@ struct PlayerSlotField: View {
                     } label: {
                         Text(player.id == directory.me.id ? "You" : player.displayName)
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(DS.Palette.royalBlue)
+                            .foregroundStyle(Court.text)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Capsule().fill(Color.white))
-                            .overlay(Capsule().stroke(DS.Palette.stroke, lineWidth: 1))
+                            .background(Capsule().fill(Court.raised))
+                            .overlay(Capsule().stroke(Court.hairline, lineWidth: 1))
                     }
                     .buttonStyle(.press)
                 }
@@ -161,10 +155,10 @@ struct PlayerSlotField: View {
                     } label: {
                         Label("New guest “\(typed)”", systemImage: "plus")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Court.ground)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Capsule().fill(DS.Palette.royalBlue))
+                            .background(Capsule().fill(Court.text))
                     }
                     .buttonStyle(.press)
                 }
