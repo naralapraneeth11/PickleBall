@@ -14,16 +14,20 @@ struct BlockedUsersView: View {
 
     var body: some View {
         List {
-            ForEach(Array(social.blocked), id: \.self) { id in
-                HStack {
-                    ProfileAvatar(userID: id, size: 34)
-                    Text(social.name(of: id))
-                    Spacer()
-                    Button("Unblock") { Task { await social.unblock(id) } }
-                        .buttonStyle(.bordered)
+            Group {
+                ForEach(Array(social.blocked), id: \.self) { id in
+                    HStack {
+                        ProfileAvatar(userID: id, size: 34)
+                        Text(social.name(of: id))
+                        Spacer()
+                        Button("Unblock") { Task { await social.unblock(id) } }
+                            .buttonStyle(.bordered)
+                    }
                 }
             }
+            .courtRows()
         }
+        .courtList()
         .navigationTitle("Blocked")
         .overlay {
             if social.blocked.isEmpty {

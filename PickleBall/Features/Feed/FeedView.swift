@@ -35,7 +35,7 @@ struct FeedView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 110)
         }
-        .background(DS.Palette.pageGrey.ignoresSafeArea())
+        .courtGround()
         .navigationTitle("Feed")
         .navigationDestination(for: ServeRow.self) { serve in
             ServeDetailView(serveID: serve.id)
@@ -160,7 +160,7 @@ struct ServeCard: View {
             .foregroundStyle(serve.rallyCount > 0 ? DS.Palette.electricBlue : .secondary)
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
     }
 }
 
@@ -202,7 +202,7 @@ private struct ExampleServe: View {
                 .foregroundStyle(DS.Palette.electricBlue)
             }
             .padding(16)
-            .cardSurface()
+            .courtRaised()
             .opacity(0.7)
             Text("Serves are posts only your friends see. Friends Return them with a comment, a chant or a photo. Every Return keeps the ball in play; no Returns for a day and it’s a dead ball.")
                 .font(DS.Typography.caption)
@@ -218,27 +218,31 @@ struct MyServesView: View {
 
     var body: some View {
         List {
-            ForEach(social.myServes) { serve in
-                NavigationLink {
-                    ServeDetailView(serveID: serve.id)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(serve.body ?? (serve.kind == .result ? "Result" : "Photo"))
-                            .lineLimit(2)
-                        HStack(spacing: 6) {
-                            Text(serve.createdAt.formatted(date: .abbreviated, time: .shortened))
-                            Text("· Rally \(serve.rallyCount)")
-                            if !serve.isInPlay() { Text("· Dead ball") }
+            Group {
+                ForEach(social.myServes) { serve in
+                    NavigationLink {
+                        ServeDetailView(serveID: serve.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(serve.body ?? (serve.kind == .result ? "Result" : "Photo"))
+                                .lineLimit(2)
+                            HStack(spacing: 6) {
+                                Text(serve.createdAt.formatted(date: .abbreviated, time: .shortened))
+                                Text("· Rally \(serve.rallyCount)")
+                                if !serve.isInPlay() { Text("· Dead ball") }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    }
+                    .swipeActions {
+                        Button("Delete", role: .destructive) { Task { await social.deleteServe(serve) } }
                     }
                 }
-                .swipeActions {
-                    Button("Delete", role: .destructive) { Task { await social.deleteServe(serve) } }
-                }
             }
+            .courtRows()
         }
+        .courtList()
         .navigationTitle("Your Serves")
         .overlay {
             if social.myServes.isEmpty {

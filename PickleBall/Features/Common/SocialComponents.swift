@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CourtKit
 import CourtNet
 
@@ -56,7 +57,7 @@ struct AvatarStack: View {
         HStack(spacing: -size * 0.32) {
             ForEach(Array(userIDs.prefix(limit)), id: \.self) { id in
                 ProfileAvatar(userID: id, size: size)
-                    .overlay(Circle().stroke(Color(.systemBackground), lineWidth: 2))
+                    .overlay(Circle().stroke(Court.raised, lineWidth: 2))
             }
         }
     }
@@ -140,23 +141,28 @@ struct PillButton: View {
     let title: String
     var systemImage: String?
     var prominent = false
-    var tint: Color = DS.Palette.royalBlue
+    var tint: Color?
     let action: () -> Void
 
+    /// Navy by day, a lighter blue at night so it stays readable.
+    private static let defaultTint = Color(light: UIColor(DS.Palette.royalBlue), dark: UIColor(red: 0.62, green: 0.72, blue: 1, alpha: 1))
+    private static let onDefaultTint = Color(light: .white, dark: UIColor(white: 0.07, alpha: 1))
+
     var body: some View {
+        let color = tint ?? Self.defaultTint
         Button {
             Haptics.light()
             action()
         } label: {
             HStack(spacing: 6) {
                 if let systemImage { Image(systemName: systemImage) }
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
             .font(.system(size: 14, weight: .semibold, design: .rounded))
-            .foregroundStyle(prominent ? .white : tint)
+            .foregroundStyle(prominent ? (tint == nil ? Self.onDefaultTint : .white) : color)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(Capsule().fill(prominent ? tint : tint.opacity(0.1)))
+            .background(Capsule().fill(prominent ? color : color.opacity(0.12)))
         }
         .buttonStyle(.press)
     }

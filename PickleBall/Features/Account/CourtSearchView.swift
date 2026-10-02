@@ -22,28 +22,32 @@ struct CourtSearchView: View {
     var body: some View {
         NavigationStack {
             List {
-                if !query.trimmingCharacters(in: .whitespaces).isEmpty {
-                    Button {
-                        pick(CourtTag(name: query.trimmingCharacters(in: .whitespaces)))
-                    } label: {
-                        Label("Use “\(query.trimmingCharacters(in: .whitespaces))”", systemImage: "text.cursor")
+                Group {
+                    if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                        Button {
+                            pick(CourtTag(name: query.trimmingCharacters(in: .whitespaces)))
+                        } label: {
+                            Label("Use “\(query.trimmingCharacters(in: .whitespaces))”", systemImage: "text.cursor")
+                        }
                     }
-                }
-                ForEach(results, id: \.self) { item in
-                    Button {
-                        let coordinate = item.location.coordinate
-                        pick(CourtTag(name: item.name ?? query, latitude: coordinate.latitude, longitude: coordinate.longitude,
-                                      mapItemID: item.identifier?.rawValue))
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name ?? "Court").foregroundStyle(.primary)
-                            if let address = item.address?.shortAddress ?? item.address?.fullAddress {
-                                Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    ForEach(results, id: \.self) { item in
+                        Button {
+                            let coordinate = item.location.coordinate
+                            pick(CourtTag(name: item.name ?? query, latitude: coordinate.latitude, longitude: coordinate.longitude,
+                                          mapItemID: item.identifier?.rawValue))
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name ?? "Court").foregroundStyle(.primary)
+                                if let address = item.address?.shortAddress ?? item.address?.fullAddress {
+                                    Text(address).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
                             }
                         }
                     }
                 }
+                .courtRows()
             }
+            .courtList()
             .overlay {
                 if isSearching { ProgressView() }
                 else if results.isEmpty && query.isEmpty {

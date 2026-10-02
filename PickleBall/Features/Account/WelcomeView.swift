@@ -17,55 +17,72 @@ struct WelcomeView: View {
     @State private var isSigningIn = false
     private let social = Social.shared
 
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [sportMode.theme.courtSurfaceAlt, DS.Palette.navy], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            CourtArtView(sport: sportMode.sport, lineWidth: 1.5, lineOpacity: 0.22, showsSurface: false)
-                .padding(40)
-                .allowsHitTesting(false)
+    @Environment(\.colorScheme) private var scheme
 
-            VStack(spacing: 0) {
-                Spacer()
-                BallIcon(sport: sportMode.sport, size: 64)
-                    .padding(.bottom, 22)
+    var body: some View {
+        GeometryReader { geo in
+            let compact = geo.size.height < 700
+            content(courtHeight: compact ? 150 : min(240, geo.size.height * 0.28),
+                    topRoom: compact ? 88 : min(150, geo.size.height * 0.16),
+                    titleSize: compact ? 32 : 38)
+        }
+        .courtGround()
+        .noticeToast()
+    }
+
+    private func content(courtHeight: CGFloat, topRoom: CGFloat, titleSize: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            // The court is the picture: the same one Home opens on. Room
+            // above it for the far half fading out.
+            CourtHome(sport: sportMode.sport, height: courtHeight)
+                .padding(.horizontal, Court.Metrics.sideInset + 20)
+                .padding(.top, topRoom)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+
+            VStack(spacing: 14) {
                 Text("Your court.\nYour crew.\nYour belt.")
-                    .font(.system(size: 40, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .font(.system(size: titleSize, weight: .semibold))
+                    .tracking(-1.1)
+                    .foregroundStyle(Court.text)
                     .multilineTextAlignment(.center)
-                    .lineSpacing(2)
                 Text("Score on your Watch or type it in later. Friends confirm every result, and the Belt goes to whoever beats the holder.")
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Court.muted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
-                    .padding(.top, 16)
-                Spacer()
-
-                SignInWithAppleButton(.continue) { request in
-                    rawNonce = Self.randomNonce()
-                    request.requestedScopes = [.fullName]
-                    request.nonce = Self.sha256(rawNonce)
-                } onCompletion: { result in
-                    handle(result)
-                }
-                .signInWithAppleButtonStyle(.white)
-                .frame(height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
-                .padding(.horizontal, 24)
-                .disabled(isSigningIn)
-                .overlay {
-                    if isSigningIn { ProgressView().tint(.black) }
-                }
-
-                Text("Friends only. Nothing you post is ever public.")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.top, 14)
-                    .padding(.bottom, 24)
             }
+            .padding(.top, 28)
+
+            Spacer(minLength: 16)
+
+            SignInWithAppleButton(.continue) { request in
+                rawNonce = Self.randomNonce()
+                request.requestedScopes = [.fullName]
+                request.nonce = Self.sha256(rawNonce)
+            } onCompletion: { result in
+                handle(result)
+            }
+            // Black on light, white on dark (Apple's guidelines).
+            .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
+            .id(scheme)
+            .frame(height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal, 24)
+            .disabled(isSigningIn)
+            .overlay {
+                if isSigningIn { ProgressView() }
+            }
+
+            Text("Friends only. Nothing you post is ever public.")
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(Court.dim)
+                .multilineTextAlignment(.center)
+                .padding(.top, 14)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
         }
-        .noticeToast()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func handle(_ result: Result<ASAuthorization, Error>) {

@@ -28,18 +28,18 @@ struct PlayInboxItem: Identifiable {
         var items: [PlayInboxItem] = []
         for record in social.awaitingMyConfirmation {
             let names = record.lineup.map { "\($0.shortName(of: .a)) vs \($0.shortName(of: .b))" } ?? "A result"
-            items.append(PlayInboxItem(id: "confirm-\(record.id)", title: "Confirm: \(names)", symbol: "checkmark.seal.fill", kind: .confirm(record)))
+            items.append(PlayInboxItem(id: "confirm-\(record.id)", title: String(localized: "Confirm: \(names)"), symbol: "checkmark.seal.fill", kind: .confirm(record)))
         }
         for callOut in social.callOutsAwaitingMe {
             let who = callOut.challengers.map(social.firstName(of:)).joined(separator: " & ")
-            items.append(PlayInboxItem(id: "callout-\(callOut.id)", title: "\(who) called you out", symbol: "flag.2.crossed.fill", kind: .callOut(callOut)))
+            items.append(PlayInboxItem(id: "callout-\(callOut.id)", title: String(localized: "\(who) called you out"), symbol: "flag.2.crossed.fill", kind: .callOut(callOut)))
         }
         for live in social.liveMatches {
-            items.append(PlayInboxItem(id: "live-\(live.matchID)", title: "Live: \(live.lineup.shortName(of: .a)) vs \(live.lineup.shortName(of: .b))",
+            items.append(PlayInboxItem(id: "live-\(live.matchID)", title: String(localized: "Live: \(live.lineup.shortName(of: .a)) vs \(live.lineup.shortName(of: .b))"),
                                        symbol: "dot.radiowaves.left.and.right", kind: .live(live)))
         }
         if let next = social.upcoming.first {
-            items.append(PlayInboxItem(id: "upcoming-\(next.id)", title: "Next: \(next.title)", symbol: "calendar", kind: .upcoming(next)))
+            items.append(PlayInboxItem(id: "upcoming-\(next.id)", title: String(localized: "Next: \(next.title)"), symbol: "calendar", kind: .upcoming(next)))
         }
         return items
     }
@@ -57,57 +57,72 @@ struct PlayInboxView: View {
             let confirm = social.awaitingMyConfirmation
             if !confirm.isEmpty {
                 Section("Confirm results") {
-                    ForEach(confirm) { record in
-                        NavigationLink {
-                            MatchDetailView(record: record)
-                        } label: {
-                            ResultRow(record: record)
+                    Group {
+                        ForEach(confirm) { record in
+                            NavigationLink {
+                                MatchDetailView(record: record)
+                            } label: {
+                                ResultRow(record: record)
+                            }
                         }
                     }
+                    .courtRows()
                 }
             }
 
             let callOuts = social.activeCallOuts
             if !callOuts.isEmpty {
                 Section("Call outs") {
-                    ForEach(callOuts) { callOut in
-                        CallOutCard(callOut: callOut, onPlay: { prefill = MatchPrefill(callOut: callOut, social: social) },
-                                    onEnterScore: { enterPrefill = MatchPrefill(callOut: callOut, social: social) })
+                    Group {
+                        ForEach(callOuts) { callOut in
+                            CallOutCard(callOut: callOut, onPlay: { prefill = MatchPrefill(callOut: callOut, social: social) },
+                                        onEnterScore: { enterPrefill = MatchPrefill(callOut: callOut, social: social) })
+                        }
                     }
+                    .courtRows()
                 }
             }
 
             if !social.liveMatches.isEmpty {
                 Section("Live now") {
-                    ForEach(social.liveMatches) { live in
-                        Button { following = live } label: { LiveRow(live: live) }
+                    Group {
+                        ForEach(social.liveMatches) { live in
+                            Button { following = live } label: { LiveRow(live: live) }
+                        }
                     }
+                    .courtRows()
                 }
             }
 
             let upcoming = social.upcoming
             if !upcoming.isEmpty {
                 Section("Upcoming") {
-                    ForEach(upcoming) { match in
-                        UpcomingRow(match: match) {
-                            prefill = MatchPrefill(upcoming: match, social: social)
-                        } onEnterScore: {
-                            enterPrefill = MatchPrefill(upcoming: match, social: social)
+                    Group {
+                        ForEach(upcoming) { match in
+                            UpcomingRow(match: match) {
+                                prefill = MatchPrefill(upcoming: match, social: social)
+                            } onEnterScore: {
+                                enterPrefill = MatchPrefill(upcoming: match, social: social)
+                            }
                         }
                     }
+                    .courtRows()
                 }
             }
 
             let waiting = social.awaitingTheirConfirmation
             if !waiting.isEmpty {
                 Section("Waiting on them") {
-                    ForEach(waiting) { record in
-                        NavigationLink {
-                            MatchDetailView(record: record)
-                        } label: {
-                            ResultRow(record: record)
+                    Group {
+                        ForEach(waiting) { record in
+                            NavigationLink {
+                                MatchDetailView(record: record)
+                            } label: {
+                                ResultRow(record: record)
+                            }
                         }
                     }
+                    .courtRows()
                 }
             }
 
@@ -116,6 +131,7 @@ struct PlayInboxView: View {
                                        description: Text("Results to confirm, call outs and upcoming matches show up here."))
             }
         }
+        .courtList()
         .navigationTitle("Play")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

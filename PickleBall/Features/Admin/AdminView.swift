@@ -106,6 +106,7 @@ private struct ReportsQueue: View {
                 .padding(.vertical, 4)
             }
         }
+        .courtList()
         .overlay { if loading { ProgressView() } }
         .refreshable { await load() }
         .task(id: openOnly) { await load() }
@@ -167,6 +168,7 @@ private struct BanList: View {
                 }
             }
         }
+        .courtList()
         .overlay { if loading { ProgressView() } }
         .refreshable { await load() }
         .task { await load() }
@@ -189,54 +191,67 @@ private struct LaunchNumbers: View {
         List {
             if let stats {
                 Section {
-                    LabeledContent("Installs (all time)", value: "\(stats.installs)")
-                    if let week = stats.weeks.first {
-                        LabeledContent("Active this week", value: "\(week.active)")
-                        if let retention = stats.weeks.dropFirst().first?.retention ?? week.retention {
-                            LabeledContent("Weekly return rate", value: retention.formatted(.percent.precision(.fractionLength(0))))
+                    Group {
+                        LabeledContent("Installs (all time)", value: "\(stats.installs)")
+                        if let week = stats.weeks.first {
+                            LabeledContent("Active this week", value: "\(week.active)")
+                            if let retention = stats.weeks.dropFirst().first?.retention ?? week.retention {
+                                LabeledContent("Weekly return rate", value: retention.formatted(.percent.precision(.fractionLength(0))))
+                            }
                         }
                     }
+                    .courtRows()
                 }
                 Section("Top countries · last 30 days") {
-                    ForEach(Array(stats.countries.enumerated()), id: \.offset) { index, country in
-                        HStack {
-                            Text("\(index + 1).").foregroundStyle(.secondary).frame(width: 26, alignment: .leading)
-                            Text(flag(country.country) + " " + (Locale.current.localizedString(forRegionCode: country.country) ?? country.country))
-                            Spacer()
-                            Text("\(country.installs)").monospacedDigit().bold()
+                    Group {
+                        ForEach(Array(stats.countries.enumerated()), id: \.offset) { index, country in
+                            HStack {
+                                Text("\(index + 1).").foregroundStyle(.secondary).frame(width: 26, alignment: .leading)
+                                Text(flag(country.country) + " " + (Locale.current.localizedString(forRegionCode: country.country) ?? country.country))
+                                Spacer()
+                                Text("\(country.installs)").monospacedDigit().bold()
+                            }
                         }
                     }
+                    .courtRows()
                 }
                 Section("Weeks") {
-                    ForEach(stats.weeks) { week in
-                        HStack {
-                            Text(week.week).monospacedDigit()
-                            Spacer()
-                            Text("\(week.active) active").monospacedDigit()
-                            Text(week.retention.map { $0.formatted(.percent.precision(.fractionLength(0))) } ?? "—")
-                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 50, alignment: .trailing)
+                    Group {
+                        ForEach(stats.weeks) { week in
+                            HStack {
+                                Text(week.week).monospacedDigit()
+                                Spacer()
+                                Text("\(week.active) active").monospacedDigit()
+                                Text(week.retention.map { $0.formatted(.percent.precision(.fractionLength(0))) } ?? "—")
+                                    .monospacedDigit().foregroundStyle(.secondary).frame(width: 50, alignment: .trailing)
+                            }
+                            .font(.subheadline)
                         }
-                        .font(.subheadline)
                     }
+                    .courtRows()
                 }
                 Section("Crashes · last 14 days") {
-                    if stats.crashes.isEmpty { Text("None. Nice.").foregroundStyle(.secondary) }
-                    ForEach(stats.crashes) { crash in
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text(crash.kind.capitalized).bold()
-                                Text(crash.appVersion ?? "").foregroundStyle(.secondary)
-                                Spacer()
-                                Text("×\(crash.count)").monospacedDigit().bold()
+                    Group {
+                        if stats.crashes.isEmpty { Text("None. Nice.").foregroundStyle(.secondary) }
+                        ForEach(stats.crashes) { crash in
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text(crash.kind.capitalized).bold()
+                                    Text(crash.appVersion ?? "").foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text("×\(crash.count)").monospacedDigit().bold()
+                                }
+                                if let summary = crash.summary { Text(summary).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
                             }
-                            if let summary = crash.summary { Text(summary).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
                         }
                     }
+                    .courtRows()
                 }
             } else {
                 ProgressView()
             }
         }
+        .courtList()
         .refreshable { stats = await social.adminStats() }
         .task { stats = await social.adminStats() }
     }

@@ -2,7 +2,7 @@
 //  Nudger.swift
 //  PickleBall
 //
-//  Teaser notifications, Snapchat-style: one short line ("👀 Sam's still
+//  Teaser notifications: one short line ("👀 Sam's still
 //  wearing your belt"), the rest only in the app. At most one a day, never
 //  at night, each kind mutable, all of it switchable off.
 //

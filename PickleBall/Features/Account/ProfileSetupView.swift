@@ -54,20 +54,26 @@ struct ProfileSetupView: View {
                 }
 
                 Section("Name") {
-                    TextField("Your name", text: $displayName)
-                        .textContentType(.name)
-                        .submitLabel(.next)
+                    Group {
+                        TextField("Your name", text: $displayName)
+                            .textContentType(.name)
+                            .submitLabel(.next)
+                    }
+                    .courtRows()
                 }
 
                 Section {
-                    HStack(spacing: 4) {
-                        Text("@").foregroundStyle(.secondary)
-                        TextField("username", text: $username)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .textContentType(.username)
-                        availabilityBadge
+                    Group {
+                        HStack(spacing: 4) {
+                            Text("@").foregroundStyle(.secondary)
+                            TextField("username", text: $username)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .textContentType(.username)
+                            availabilityBadge
+                        }
                     }
+                    .courtRows()
                 } header: {
                     Text("Username")
                 } footer: {
@@ -75,33 +81,40 @@ struct ProfileSetupView: View {
                 }
 
                 Section("Sports") {
-                    ForEach(Sport.allCases) { sport in
-                        Toggle(isOn: Binding(
-                            get: { sports.contains(sport) },
-                            set: { on in if on { sports.insert(sport) } else { sports.remove(sport) } }
-                        )) {
-                            Label(sport.displayName, systemImage: sport.symbolName)
+                    Group {
+                        ForEach(Sport.allCases) { sport in
+                            Toggle(isOn: Binding(
+                                get: { sports.contains(sport) },
+                                set: { on in if on { sports.insert(sport) } else { sports.remove(sport) } }
+                            )) {
+                                Label(sport.displayName, systemImage: sport.symbolName)
+                            }
+                            .tint(Court.text)
                         }
-                        .tint(sport.theme.accent)
                     }
+                    .courtRows()
                 }
 
                 Section {
-                    ForEach(homeCourts, id: \.self) { court in
-                        Label(court.name, systemImage: "mappin.and.ellipse")
+                    Group {
+                        ForEach(homeCourts, id: \.self) { court in
+                            Label(court.name, systemImage: "mappin.and.ellipse")
+                        }
+                        .onDelete { homeCourts.remove(atOffsets: $0) }
+                        Button {
+                            showCourtSearch = true
+                        } label: {
+                            Label("Add a court", systemImage: "plus")
+                        }
                     }
-                    .onDelete { homeCourts.remove(atOffsets: $0) }
-                    Button {
-                        showCourtSearch = true
-                    } label: {
-                        Label("Add a court", systemImage: "plus")
-                    }
+                    .courtRows()
                 } header: {
                     Text("Home courts")
                 } footer: {
                     Text("Optional. Helps friends know where you play.")
                 }
             }
+            .courtList()
             .navigationTitle(isEditing ? "Edit profile" : "Set up your profile")
             .toolbar {
                 if isEditing {

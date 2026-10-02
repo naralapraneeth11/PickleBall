@@ -26,11 +26,10 @@ struct StatsView: View {
     @State private var heroMinY: CGFloat = 0
 
     // Design tokens
-    private let pageBg     = DS.Palette.pageGrey
-    private let cardBg     = Color.white
-    private let navy       = DS.Palette.ink
-    private let stroke     = Color.black.opacity(0.06)
-    private let limeAccent = DS.Palette.lime
+    private let pageBg     = Court.ground
+    private let cardBg     = Court.raised
+    private let navy       = Court.text
+    private let stroke     = Court.hairline
 
     private var trimmedFirstName: String {
         firstName.trimmingCharacters(in: .whitespaces)
@@ -89,19 +88,6 @@ struct StatsView: View {
         heroMinY < -48
     }
 
-    private var shutterDarkBackground: AnyShapeStyle {
-        AnyShapeStyle(
-            LinearGradient(
-                colors: [
-                    DS.Palette.navy,
-                    DS.Palette.night
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-    }
-
     // MARK: Body
 
     var body: some View {
@@ -109,7 +95,7 @@ struct StatsView: View {
             pageBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                courtStripHeader
+                header
 
                 ZStack(alignment: .top) {
                     ScrollView {
@@ -130,9 +116,8 @@ struct StatsView: View {
                 .onPreferenceChange(StatsHeroFrameKey.self) { heroMinY = $0 }
             }
 
-            ShutterPanel(backgroundOverride: shutterDarkBackground)
         }
-        .preferredColorScheme(.light)
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
@@ -317,59 +302,29 @@ struct StatsView: View {
 
     // MARK: - Court Header
 
-    private var courtStripHeader: some View {
-        GeometryReader { geo in
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(DS.Palette.courtBlue)
-                    .frame(width: geo.size.width * 0.625)
-                Rectangle()
-                    .fill(.white)
-                    .frame(width: 8)
-                Rectangle()
-                    .fill(DS.Palette.navy)
-                    .frame(width: geo.size.width * 0.359)
+    private var header: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(trimmedFirstName.isEmpty ? String(localized: "Me") : trimmedFirstName).courtEyebrow()
+                Text("Stats")
+                    .font(.system(size: 38, weight: .semibold))
+                    .tracking(-1.1)
+                    .foregroundStyle(Court.text)
             }
-            .frame(height: 132)
-            .ignoresSafeArea(edges: .top)
-            .overlay(
-                HStack(alignment: .center) {
-                    Button { showSettings = true } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(Circle().fill(Color.white.opacity(0.16)))
-                    }
-                    .accessibilityLabel("Open settings")
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 1) {
-                        if trimmedFirstName.isEmpty {
-                            Text("Stats")
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                        } else {
-                            Text(trimmedFirstName)
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(limeAccent)
-                            Text("Stats")
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundColor(.white.opacity(0.85))
-                        }
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(
-                        trimmedFirstName.isEmpty ? "Stats" : "\(trimmedFirstName)'s stats"
-                    )
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 44),
-                alignment: .top
-            )
+            Spacer()
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Court.text)
+                    .frame(width: Court.Metrics.pillHeight, height: Court.Metrics.pillHeight)
+                    .courtRaisedCapsule()
+            }
+            .buttonStyle(.press)
+            .accessibilityLabel("Open settings")
         }
-        .frame(height: 132)
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Empty: No Profile Name
@@ -395,7 +350,7 @@ struct StatsView: View {
             Button { showSettings = true } label: {
                 Text("Open Profile")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(Court.ground)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 11)
                     .background(Capsule(style: .continuous).fill(navy))
@@ -455,10 +410,10 @@ private struct StatsMetricCard: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white)
+                .fill(Court.raised)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                        .stroke(Court.hairline, lineWidth: 1)
                 )
         )
         .accessibilityElement(children: .combine)

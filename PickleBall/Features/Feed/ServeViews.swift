@@ -30,32 +30,38 @@ struct ServeComposerView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField(matchID == nil ? "What’s happening on court?" : "Say something about it", text: $text, axis: .vertical)
-                        .lineLimit(3...8)
-                    if let matchSummary {
-                        Label(matchSummary, systemImage: "sportscourt.fill")
-                            .font(.subheadline.weight(.semibold))
+                    Group {
+                        TextField(matchID == nil ? "What’s happening on court?" : "Say something about it", text: $text, axis: .vertical)
+                            .lineLimit(3...8)
+                        if let matchSummary {
+                            Label(matchSummary, systemImage: "sportscourt.fill")
+                                .font(.subheadline.weight(.semibold))
+                        }
                     }
+                    .courtRows()
                 }
                 if matchID == nil {
                     Section {
-                        PhotosPicker(selection: $items, maxSelectionCount: 4, matching: .any(of: [.images, .videos])) {
-                            Label("Photos or a video", systemImage: "photo.on.rectangle.angled")
-                        }
-                        if !photos.isEmpty {
-                            ScrollView(.horizontal) {
-                                HStack {
-                                    ForEach(Array(photos.enumerated()), id: \.offset) { _, data in
-                                        if let image = UIImage(data: data) {
-                                            Image(uiImage: image).resizable().scaledToFill()
-                                                .frame(width: 80, height: 80)
-                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        Group {
+                            PhotosPicker(selection: $items, maxSelectionCount: 4, matching: .any(of: [.images, .videos])) {
+                                Label("Photos or a video", systemImage: "photo.on.rectangle.angled")
+                            }
+                            if !photos.isEmpty {
+                                ScrollView(.horizontal) {
+                                    HStack {
+                                        ForEach(Array(photos.enumerated()), id: \.offset) { _, data in
+                                            if let image = UIImage(data: data) {
+                                                Image(uiImage: image).resizable().scaledToFill()
+                                                    .frame(width: 80, height: 80)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                            }
                                         }
                                     }
                                 }
                             }
+                            if video != nil { Label("Video attached", systemImage: "video.fill") }
                         }
-                        if video != nil { Label("Video attached", systemImage: "video.fill") }
+                        .courtRows()
                     }
                 }
                 Section {
@@ -63,6 +69,7 @@ struct ServeComposerView: View {
                     Text("Only your friends see Serves. Never public.")
                 }
             }
+            .courtList()
             .navigationTitle(matchID == nil ? "New Serve" : "Serve this result")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -179,7 +186,7 @@ struct ServeDetailView: View {
                 }
                 returnBar(serve)
             }
-            .background(DS.Palette.pageGrey.ignoresSafeArea())
+            .courtGround()
             .navigationTitle("Serve")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -244,7 +251,7 @@ struct ServeDetailView: View {
                     .lineLimit(1...4)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color(.secondarySystemBackground)))
+                    .courtRaised(cornerRadius: 20)
                 Button {
                     let body = text
                     text = ""

@@ -81,7 +81,7 @@ struct RemotePhoto: View {
                     .foregroundStyle(.white)
                 }
             } else {
-                Rectangle().fill(DS.Palette.fieldGrey)
+                Rectangle().fill(Court.sunken)
                 ProgressView()
             }
         }

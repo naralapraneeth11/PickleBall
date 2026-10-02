@@ -19,19 +19,26 @@ struct TournamentsView: View {
             let done = social.tournaments.filter { $0.status == .completed }
             if !active.isEmpty {
                 Section("On now") {
-                    ForEach(active) { tournament in
-                        NavigationLink(value: tournament) { TournamentListRow(tournament: tournament) }
+                    Group {
+                        ForEach(active) { tournament in
+                            NavigationLink(value: tournament) { TournamentListRow(tournament: tournament) }
+                        }
                     }
+                    .courtRows()
                 }
             }
             if !done.isEmpty {
                 Section("Finished") {
-                    ForEach(done) { tournament in
-                        NavigationLink(value: tournament) { TournamentListRow(tournament: tournament) }
+                    Group {
+                        ForEach(done) { tournament in
+                            NavigationLink(value: tournament) { TournamentListRow(tournament: tournament) }
+                        }
                     }
+                    .courtRows()
                 }
             }
         }
+        .courtList()
         .navigationTitle("Tournaments")
         .navigationDestination(for: TournamentRow.self) { tournament in
             TournamentDetailView(tournamentID: tournament.id)
@@ -71,10 +78,10 @@ private struct TournamentListRow: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(tournament.status == .completed ? DS.Palette.gold.opacity(0.2) : tournament.sport.theme.accent.opacity(0.18))
+                    .fill(tournament.status == .completed ? DS.Palette.gold.opacity(0.2) : Court.sunken)
                     .frame(width: 44, height: 44)
                 Image(systemName: tournament.status == .completed ? "trophy.fill" : "calendar")
-                    .foregroundStyle(tournament.status == .completed ? DS.Palette.gold : tournament.sport.theme.accent)
+                    .foregroundStyle(tournament.status == .completed ? DS.Palette.gold : Court.text)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(tournament.name).font(.system(size: 16, weight: .semibold, design: .rounded))

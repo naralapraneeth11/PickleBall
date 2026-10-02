@@ -82,15 +82,18 @@ struct EnterScoreView: View {
             Form {
                 if prefill == nil {
                     Section {
-                        Picker("Sport", selection: $sport) {
-                            ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                        Group {
+                            Picker("Sport", selection: $sport) {
+                                ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            Picker("Format", selection: $isSingles) {
+                                Text("Singles").tag(true)
+                                Text("Doubles").tag(false)
+                            }
+                            .pickerStyle(.segmented)
                         }
-                        .pickerStyle(.segmented)
-                        Picker("Format", selection: $isSingles) {
-                            Text("Singles").tag(true)
-                            Text("Doubles").tag(false)
-                        }
-                        .pickerStyle(.segmented)
+                        .courtRows()
                     }
                 }
 
@@ -99,37 +102,41 @@ struct EnterScoreView: View {
                 scoresSection
 
                 Section {
-                    DatePicker("Played", selection: $playedAt, in: ...Date())
-                    Button {
-                        showCourtSearch = true
-                    } label: {
-                        LabeledContent("Court") {
-                            Text(court?.name ?? "Add").foregroundStyle(court == nil ? .secondary : .primary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                    if !social.squads.isEmpty {
-                        Picker("Squad", selection: $squadID) {
-                            Text("None").tag(UUID?.none)
-                            ForEach(social.squads) { squad in
-                                Text(squad.name).tag(UUID?.some(squad.id))
+                    Group {
+                        DatePicker("Played", selection: $playedAt, in: ...Date())
+                        Button {
+                            showCourtSearch = true
+                        } label: {
+                            LabeledContent("Court") {
+                                Text(court?.name ?? "Add").foregroundStyle(court == nil ? .secondary : .primary)
                             }
                         }
-                    }
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        LabeledContent("Photo") {
-                            if let photo, let image = UIImage(data: photo) {
-                                Image(uiImage: image).resizable().scaledToFill().frame(width: 36, height: 36).clipShape(RoundedRectangle(cornerRadius: 6))
-                            } else {
-                                Text("Optional").foregroundStyle(.secondary)
+                        .foregroundStyle(.primary)
+                        if !social.squads.isEmpty {
+                            Picker("Squad", selection: $squadID) {
+                                Text("None").tag(UUID?.none)
+                                ForEach(social.squads) { squad in
+                                    Text(squad.name).tag(UUID?.some(squad.id))
+                                }
                             }
                         }
+                        PhotosPicker(selection: $photoItem, matching: .images) {
+                            LabeledContent("Photo") {
+                                if let photo, let image = UIImage(data: photo) {
+                                    Image(uiImage: image).resizable().scaledToFill().frame(width: 36, height: 36).clipShape(RoundedRectangle(cornerRadius: 6))
+                                } else {
+                                    Text("Optional").foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .foregroundStyle(.primary)
                     }
-                    .foregroundStyle(.primary)
+                    .courtRows()
                 } footer: {
                     Text("A squad match counts for the squad belt and shows up in the squad chat.")
                 }
             }
+            .courtList()
             .navigationTitle("Enter a score")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -162,15 +169,18 @@ struct EnterScoreView: View {
 
     private var playersSection: some View {
         Section {
-            teamRows(.a, placeholders: ["You", "Partner"])
-            teamRows(.b, placeholders: ["Opponent", "Opponent 2"])
-            if !isSingles && prefill == nil {
-                Button {
-                    shuffle()
-                } label: {
-                    Label("Shuffle teams", systemImage: "shuffle")
+            Group {
+                teamRows(.a, placeholders: ["You", "Partner"])
+                teamRows(.b, placeholders: ["Opponent", "Opponent 2"])
+                if !isSingles && prefill == nil {
+                    Button {
+                        shuffle()
+                    } label: {
+                        Label("Shuffle teams", systemImage: "shuffle")
+                    }
                 }
             }
+            .courtRows()
         } header: {
             Text("Players")
         } footer: {
@@ -191,53 +201,59 @@ struct EnterScoreView: View {
     private var formatSection: some View {
         if prefill == nil {
             Section("Format") {
-                switch sport {
-                case .pickleball:
-                    Picker("Points to win", selection: $pointsToWin) {
-                        ForEach([11, 15, 21], id: \.self) { Text("\($0)").tag($0) }
-                    }
-                    Picker("Match", selection: $gamesToWin) {
-                        Text("1 game").tag(1)
-                        Text("Best of 3").tag(2)
-                        Text("Best of 5").tag(3)
-                    }
-                case .padel:
-                    Picker("Match", selection: $setsToWin) {
-                        Text("1 set").tag(1)
-                        Text("Best of 3").tag(2)
-                    }
-                    if setsToWin == 2 {
-                        Toggle("Match tiebreak instead of a third set", isOn: $superTiebreak)
+                Group {
+                    switch sport {
+                    case .pickleball:
+                        Picker("Points to win", selection: $pointsToWin) {
+                            ForEach([11, 15, 21], id: \.self) { Text("\($0)").tag($0) }
+                        }
+                        Picker("Match", selection: $gamesToWin) {
+                            Text("1 game").tag(1)
+                            Text("Best of 3").tag(2)
+                            Text("Best of 5").tag(3)
+                        }
+                    case .padel:
+                        Picker("Match", selection: $setsToWin) {
+                            Text("1 set").tag(1)
+                            Text("Best of 3").tag(2)
+                        }
+                        if setsToWin == 2 {
+                            Toggle("Match tiebreak instead of a third set", isOn: $superTiebreak)
+                        }
                     }
                 }
+                .courtRows()
             }
         }
     }
 
     private var scoresSection: some View {
         Section {
-            ForEach($units) { $unit in
-                let index = units.firstIndex(where: { $0.id == unit.id }) ?? 0
-                UnitScoreRow(title: unit.isSuperTiebreak ? "Match tiebreak" : "\(unitName) \(index + 1)",
-                             entry: $unit, teamA: sideName(.a), teamB: sideName(.b), showsTiebreak: sport == .padel)
-            }
-            .onDelete { offsets in
-                units.remove(atOffsets: offsets)
-                if units.isEmpty { units = [UnitEntry()] }
-            }
-            HStack {
-                Button {
-                    units.append(UnitEntry())
-                } label: {
-                    Label("Add \(unitName.lowercased())", systemImage: "plus")
+            Group {
+                ForEach($units) { $unit in
+                    let index = units.firstIndex(where: { $0.id == unit.id }) ?? 0
+                    UnitScoreRow(title: unit.isSuperTiebreak ? "Match tiebreak" : "\(unitName) \(index + 1)",
+                                 entry: $unit, teamA: sideName(.a), teamB: sideName(.b), showsTiebreak: sport == .padel)
                 }
-                if sport == .padel && superTiebreak && setsToWin == 2 && units.count == 2 {
-                    Spacer()
-                    Button("Add match tiebreak") {
-                        units.append(UnitEntry(isSuperTiebreak: true))
+                .onDelete { offsets in
+                    units.remove(atOffsets: offsets)
+                    if units.isEmpty { units = [UnitEntry()] }
+                }
+                HStack {
+                    Button {
+                        units.append(UnitEntry())
+                    } label: {
+                        Label("Add \(unitName.lowercased())", systemImage: "plus")
+                    }
+                    if sport == .padel && superTiebreak && setsToWin == 2 && units.count == 2 {
+                        Spacer()
+                        Button("Add match tiebreak") {
+                            units.append(UnitEntry(isSuperTiebreak: true))
+                        }
                     }
                 }
             }
+            .courtRows()
         } header: {
             Text("Score")
         } footer: {
@@ -389,7 +405,7 @@ private struct UnitScoreRow: View {
                 .font(DS.Typography.score(24))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(DS.Palette.fieldGrey))
+                .courtField(cornerRadius: 10)
                 .onChange(of: text.wrappedValue) { _, value in
                     let digits = String(value.filter(\.isNumber).prefix(2))
                     if digits != value { text.wrappedValue = digits }

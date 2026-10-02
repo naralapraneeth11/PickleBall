@@ -392,6 +392,29 @@
         }
       }
     },
+    "APPEARANCE": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APARIENCIA"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APARÊNCIA"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASPETTO"
+          }
+        }
+      }
+    },
     "AVG BPM": {
       "extractionState": "manual",
       "localizations": {
@@ -783,6 +806,29 @@
         }
       }
     },
+    "Appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apariencia"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparência"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aspetto"
+          }
+        }
+      }
+    },
     "As partners": {
       "extractionState": "manual",
       "localizations": {
@@ -848,6 +894,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Media punti"
+          }
+        }
+      }
+    },
+    "BACK COURT": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FONDO DE PISTA"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FUNDO DE QUADRA"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FONDO CAMPO"
           }
         }
       }
@@ -3474,6 +3543,29 @@
         }
       }
     },
+    "Glass": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cristal"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vetro"
+          }
+        }
+      }
+    },
     "Go back": {
       "extractionState": "manual",
       "localizations": {
@@ -3608,6 +3700,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ospiti con cui hai giocato (%lld)"
+          }
+        }
+      }
+    },
+    "HOME": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "INICIO"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "INÍCIO"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HOME"
           }
         }
       }
@@ -3796,6 +3911,29 @@
         }
       }
     },
+    "KITCHEN": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COCINA"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COZINHA"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KITCHEN"
+          }
+        }
+      }
+    },
     "Keep playing": {
       "extractionState": "manual",
       "localizations": {
@@ -3934,6 +4072,29 @@
         }
       }
     },
+    "LIVE ON APPLE WATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EN DIRECTO EN EL APPLE WATCH"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AO VIVO NO APPLE WATCH"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IN DIRETTA SU APPLE WATCH"
+          }
+        }
+      }
+    },
     "Ladder": {
       "extractionState": "manual",
       "localizations": {
@@ -4022,6 +4183,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giochiamo"
+          }
+        }
+      }
+    },
+    "Light and dark follow your iPhone. Glass swaps the soft surfaces for frosted ones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo claro y oscuro siguen a tu iPhone. Cristal cambia las superficies suaves por otras esmeriladas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claro e escuro seguem o seu iPhone. Vidro troca as superfícies suaves por superfícies foscas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiaro e scuro seguono il tuo iPhone. Vetro sostituisce le superfici morbide con superfici satinate."
           }
         }
       }
@@ -4229,6 +4413,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stimoli discreti."
+          }
+        }
+      }
+    },
+    "ME": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YO"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EU"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IO"
           }
         }
       }
@@ -4509,6 +4716,29 @@
         }
       }
     },
+    "NEW MATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUEVO PARTIDO"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA PARTIDA"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUOVA PARTITA"
+          }
+        }
+      }
+    },
     "Name": {
       "extractionState": "manual",
       "localizations": {
@@ -4574,6 +4804,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nuovo post"
+          }
+        }
+      }
+    },
+    "New activity": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novidades"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novità"
           }
         }
       }
@@ -6924,6 +7177,29 @@
         }
       }
     },
+    "Resume: %@ vs %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir: %1$@ vs %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar: %1$@ vs %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprendi: %1$@ vs %2$@"
+          }
+        }
+      }
+    },
     "Return it": {
       "extractionState": "manual",
       "localizations": {
@@ -8603,6 +8879,29 @@
         }
       }
     },
+    "Standard": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estándar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padrão"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        }
+      }
+    },
     "Standings": {
       "extractionState": "manual",
       "localizations": {
@@ -8829,6 +9128,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scambia i lati sullo schermo"
+          }
+        }
+      }
+    },
+    "Switch to %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar a %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mudar para %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passa a %@"
+          }
+        }
+      }
+    },
+    "TAP COURT TO START · HOLD TO SWITCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOCA PARA EMPEZAR · MANTÉN PARA CAMBIAR"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOQUE PARA COMEÇAR · SEGURE PARA TROCAR"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOCCA PER INIZIARE · TIENI PER CAMBIARE"
           }
         }
       }
@@ -9243,6 +9588,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Regni totali"
+          }
+        }
+      }
+    },
+    "Touch and hold to switch to %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantén pulsado para cambiar a %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque e segure para mudar para %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tieni premuto per passare a %@"
           }
         }
       }

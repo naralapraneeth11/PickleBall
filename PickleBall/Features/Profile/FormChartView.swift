@@ -47,7 +47,7 @@ struct FormChartView: View {
 
             if let selected = clampedSelection {
                 RuleMark(x: .value("Selected", selected))
-                    .foregroundStyle(Color.white.opacity(0.25))
+                    .foregroundStyle(Court.text.opacity(0.25))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 PointMark(
                     x: .value("Match", selected),
@@ -97,7 +97,7 @@ struct FormSparkline: View {
                     }
                 }
             }
-            .stroke(trendUp ? accent : Color.white.opacity(0.45), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+            .stroke(trendUp ? accent : Court.text.opacity(0.45), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
         }
         .accessibilityHidden(true)
     }

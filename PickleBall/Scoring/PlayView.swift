@@ -46,8 +46,6 @@ struct PlayView: View {
 
     var body: some View {
         ZStack {
-            DS.Palette.pageGrey.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 header
 
@@ -68,6 +66,7 @@ struct PlayView: View {
                 .scrollBounceBehavior(.basedOnSize)
             }
         }
+        .courtGround()
         .animation(DS.Motion.snappy, value: sport)
         .fullScreenCover(isPresented: $showScoreboard) {
             LiveMatchScreen()
@@ -85,60 +84,64 @@ struct PlayView: View {
     // MARK: Header
 
     private var header: some View {
-        ZStack(alignment: .bottom) {
-            LinearGradient(colors: [theme.courtSurfaceAlt, theme.courtSurface], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea(edges: .top)
-
-            CourtArtView(sport: sport, lineWidth: 1.5, lineOpacity: 0.35, showsSurface: false)
-                .rotationEffect(.degrees(90))
-                .frame(height: 260)
-                .opacity(0.8)
-                .offset(y: 40)
-                .allowsHitTesting(false)
-
-            HStack(alignment: .center) {
-                if onDismiss != nil {
-                    Button {
-                        Haptics.light()
-                        onDismiss?()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(Circle().fill(Color.white.opacity(0.14)))
-                    }
-                    .buttonStyle(.press)
-                    .accessibilityLabel("Go back")
+        HStack(alignment: .bottom, spacing: 12) {
+            if onDismiss != nil {
+                Button {
+                    Haptics.light()
+                    onDismiss?()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Court.text)
+                        .frame(width: Court.Metrics.pillHeight, height: Court.Metrics.pillHeight)
+                        .courtRaisedCapsule()
                 }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("New match")
-                        .font(.system(size: 26, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text(currentRules.summary)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .contentTransition(.opacity)
-                }
-
-                Spacer()
-
-                SportSwitchBadge(sport: sport, showsHint: sportMode.showsHint) {
-                    if let live = MatchCenter.shared.live, !live.isEnded {
-                        // Never switch mid-match: open it so it can be ended or parked.
-                        showScoreboard = true
-                    } else {
-                        sportMode.toggle()
-                        MatchCenter.shared.publishPreferences(sport: sportMode.sport)
-                    }
-                }
+                .buttonStyle(.press)
+                .accessibilityLabel("Go back")
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, 18)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("New match").courtEyebrow()
+                Text(sport.displayName)
+                    .font(.system(size: 34, weight: .semibold))
+                    .tracking(-1)
+                    .foregroundStyle(Court.text)
+                    .contentTransition(.opacity)
+                Text(currentRules.summary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Court.muted)
+                    .contentTransition(.opacity)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                if let live = MatchCenter.shared.live, !live.isEnded {
+                    // Never switch mid-match: open it so it can be ended or parked.
+                    showScoreboard = true
+                } else {
+                    sportMode.toggle()
+                    MatchCenter.shared.publishPreferences(sport: sportMode.sport)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(sport.toggled.displayName)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(Court.text)
+                .padding(.horizontal, 16)
+                .frame(height: Court.Metrics.pillHeight)
+                .courtRaisedCapsule()
+            }
+            .buttonStyle(.press)
+            .accessibilityLabel("Switch to \(sport.toggled.displayName)")
         }
-        .frame(height: 150)
-        .clipped()
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     // MARK: Players
@@ -150,10 +153,10 @@ struct PlayView: View {
                 selectedIndex: isSingles ? 0 : 1,
                 height: 40,
                 selectedFont: .system(size: 14, weight: .semibold),
-                selectedColor: DS.Palette.royalBlue,
-                unselectedColor: DS.Palette.textMuted,
-                trackColor: DS.Palette.fieldGrey,
-                pillColor: .white,
+                selectedColor: Court.text,
+                unselectedColor: Court.muted,
+                trackColor: Court.sunken,
+                pillColor: Court.raised,
                 pillShadow: true
             ) { index in
                 Haptics.selection()
@@ -164,17 +167,17 @@ struct PlayView: View {
             teamSection(.b, title: "OPPONENTS", placeholders: ["Opponent", "Opponent 2"])
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("SERVING FIRST").eyebrowStyle()
+                Text("SERVING FIRST").courtEyebrow()
                 OffsetPillSegment(
                     options: [teamLabel(.a), teamLabel(.b)],
                     selectedIndex: firstServer.rawValue,
                     height: 38,
                     selectedFont: .system(size: 12.5, weight: .semibold),
-                    selectedColor: DS.Palette.royalBlue,
-                    unselectedColor: DS.Palette.textMuted,
-                    trackColor: DS.Palette.fieldGrey,
-                    pillColor: .white,
-                    pillStroke: DS.Palette.stroke,
+                    selectedColor: Court.text,
+                    unselectedColor: Court.muted,
+                    trackColor: Court.sunken,
+                    pillColor: Court.raised,
+                    pillStroke: Court.hairline,
                     minScale: 0.7
                 ) { index in
                     Haptics.selection()
@@ -183,14 +186,14 @@ struct PlayView: View {
             }
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
         .padding(.horizontal, 16)
     }
 
     private func teamSection(_ team: Team, title: String, placeholders: [String]) -> some View {
         let base = team == .a ? 0 : 2
         return VStack(alignment: .leading, spacing: 8) {
-            Text(LocalizedStringKey(title)).eyebrowStyle()
+            Text(LocalizedStringKey(title)).courtEyebrow()
             PlayerSlotField(entry: $slots[base], placeholder: placeholders[0], accent: theme.accent, excluded: usedIDs(except: base))
             if !isSingles {
                 PlayerSlotField(entry: $slots[base + 1], placeholder: placeholders[1], accent: theme.accent, excluded: usedIDs(except: base + 1))
@@ -223,7 +226,7 @@ struct PlayView: View {
             }
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
         .padding(.horizontal, 16)
         .transition(.opacity)
     }
@@ -252,7 +255,7 @@ struct PlayView: View {
                  ? "Only the serving side scores. Doubles calls the server number: 4-2-1."
                  : "Every rally scores a point. The rally winner serves next.")
                 .font(DS.Typography.caption)
-                .foregroundStyle(DS.Palette.textSecondary)
+                .foregroundStyle(Court.muted)
         }
     }
 
@@ -275,7 +278,7 @@ struct PlayView: View {
 
             Text(deuceExplanation)
                 .font(DS.Typography.caption)
-                .foregroundStyle(DS.Palette.textSecondary)
+                .foregroundStyle(Court.muted)
         }
     }
 
@@ -289,17 +292,17 @@ struct PlayView: View {
 
     private func segmentRow(_ title: String, options: [String], selected: Int, onSelect: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(LocalizedStringKey(title)).eyebrowStyle()
+            Text(LocalizedStringKey(title)).courtEyebrow()
             OffsetPillSegment(
                 options: options,
                 selectedIndex: selected,
                 height: 38,
                 selectedFont: .system(size: 13, weight: .bold),
-                selectedColor: DS.Palette.royalBlue,
-                unselectedColor: DS.Palette.textMuted,
-                trackColor: DS.Palette.fieldGrey,
-                pillColor: .white,
-                pillStroke: DS.Palette.stroke,
+                selectedColor: Court.text,
+                unselectedColor: Court.muted,
+                trackColor: Court.sunken,
+                pillColor: Court.raised,
+                pillStroke: Court.hairline,
                 minScale: 0.75
             ) { index in
                 Haptics.selection()
@@ -380,18 +383,9 @@ struct PlayView: View {
         } label: {
             HStack(spacing: 10) {
                 BallIcon(sport: sport, size: 20)
-                Text("START \(sport.displayName.uppercased()) MATCH")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    .tracking(1)
+                Text("Start \(sport.displayName) match")
             }
-            .foregroundStyle(theme.onAccent)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 17)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                    .fill(theme.accent)
-                    .shadow(color: theme.accent.opacity(0.35), radius: 12, x: 0, y: 6)
-            )
+            .courtBigButton()
         }
         .buttonStyle(.press)
         .padding(.horizontal, 16)
@@ -402,18 +396,18 @@ struct PlayView: View {
 
     private var parkedSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("PARKED MATCHES").eyebrowStyle().padding(.horizontal, 16)
+            Text("PARKED MATCHES").courtEyebrow().padding(.horizontal, 16)
             ForEach(matchStore.parked) { setup in
                 HStack(spacing: 12) {
                     BallIcon(sport: setup.rules.sport, size: 22)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("\(setup.lineup.name(of: .a)) vs \(setup.lineup.name(of: .b))")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(DS.Palette.royalBlue)
+                            .foregroundStyle(Court.text)
                             .lineLimit(1)
                         Text("\(setup.rules.summary) · \(setup.startedAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))")
                             .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Palette.textSecondary)
+                            .foregroundStyle(Court.muted)
                             .lineLimit(1)
                     }
                     Spacer()
@@ -425,16 +419,16 @@ struct PlayView: View {
                     } label: {
                         Text("Resume")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Court.ground)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(DS.Palette.royalBlue))
+                            .background(Capsule().fill(Court.text))
                     }
                     .buttonStyle(.press)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .cardSurface(radius: DS.Radius.control)
+                .courtRaised(cornerRadius: DS.Radius.control)
                 .padding(.horizontal, 16)
             }
         }

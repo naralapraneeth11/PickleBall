@@ -21,51 +21,59 @@ struct FirstStepsView: View {
 
     private let lastPage = 3
 
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [DS.Palette.night, DS.Palette.royalBlue], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    Button("Skip") { finish() }
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding()
-                }
-                TabView(selection: $page) {
-                    card(symbol: "checkmark.seal.fill",
-                         title: "Score it. They confirm it.",
-                         text: "Score on your Watch or phone, or type it in after. The other side confirms, so every result counts.")
-                        .tag(0)
-                    card(symbol: "crown.fill",
-                         title: "Come for the belt.",
-                         text: "Beat whoever holds it and it’s yours. Climb your squad’s ladder, run brackets and Mexicano nights, and watch your level move.")
-                        .tag(1)
-                    crewCard.tag(2)
-                    nudgeCard.tag(3)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .always))
+    @Environment(SportMode.self) private var sportMode
+    @Environment(\.colorScheme) private var scheme
 
-                Button {
-                    if page < lastPage {
-                        withAnimation { page += 1 }
-                    } else {
-                        finish()
-                    }
-                } label: {
-                    (page < lastPage ? Text("Next") : Text("Let’s play"))
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(DS.Palette.royalBlue)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous).fill(.white))
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Button("Skip") { finish() }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Court.muted)
+                    .padding()
             }
+            TabView(selection: $page) {
+                card(symbol: "checkmark.seal",
+                     title: "Score it. They confirm it.",
+                     text: "Score on your Watch or phone, or type it in after. The other side confirms, so every result counts.")
+                    .tag(0)
+                card(symbol: "crown",
+                     title: "Come for the belt.",
+                     text: "Beat whoever holds it and it’s yours. Climb your squad’s ladder, run brackets and Mexicano nights, and watch your level move.")
+                    .tag(1)
+                crewCard.tag(2)
+                nudgeCard.tag(3)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+
+            // Same dots as Home.
+            HStack(spacing: 6) {
+                ForEach(0...lastPage, id: \.self) { index in
+                    Capsule()
+                        .fill(index == page ? Court.activeDot(sportMode.sport, scheme: scheme) : Court.dotOff)
+                        .frame(width: index == page ? 18 : 6, height: 6)
+                }
+            }
+            .animation(.snappy(duration: 0.25), value: page)
+            .padding(.bottom, 18)
+            .accessibilityHidden(true)
+
+            Button {
+                if page < lastPage {
+                    withAnimation { page += 1 }
+                } else {
+                    finish()
+                }
+            } label: {
+                (page < lastPage ? Text("Next") : Text("Let’s play"))
+                    .courtBigButton()
+            }
+            .buttonStyle(.press)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
-        .environment(\.colorScheme, .dark)
+        .courtGround()
         .sheet(item: $inviteURL) { item in
             ShareSheet(items: [String(localized: "Play me on PickleBall: \(item.url.absoluteString)"), item.url])
         }
@@ -74,18 +82,34 @@ struct FirstStepsView: View {
         }
     }
 
-    private func card(symbol: String, title: LocalizedStringKey, text: LocalizedStringKey) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
+    private func icon(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 30, weight: .semibold))
+            .foregroundStyle(Court.text)
+            .frame(width: 76, height: 76)
+            .courtRaisedCapsule()
+            .padding(.bottom, 6)
+    }
+
+    private func title(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.system(size: 34, weight: .semibold))
+            .tracking(-1)
+            .foregroundStyle(Court.text)
+    }
+
+    private func bodyText(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(Court.muted)
+    }
+
+    private func card(symbol: String, title text: LocalizedStringKey, text body: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
             Spacer()
-            Image(systemName: symbol)
-                .font(.system(size: 64, weight: .bold))
-                .foregroundStyle(DS.Palette.gold)
-            Text(title)
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-            Text(text)
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
+            icon(symbol)
+            title(text)
+            bodyText(body)
             Spacer()
             Spacer()
         }
@@ -94,18 +118,12 @@ struct FirstStepsView: View {
     }
 
     private var crewCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             Spacer()
-            Image(systemName: "person.3.fill")
-                .font(.system(size: 56, weight: .bold))
-                .foregroundStyle(DS.Palette.gold)
-            Text("Bring your crew.")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-            Text("PickleBall is friends only. Send your link to the people you play with.")
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
-            VStack(spacing: 10) {
+            icon("person.3")
+            title("Bring your crew.")
+            bodyText("PickleBall is friends only. Send your link to the people you play with.")
+            VStack(spacing: 12) {
                 pill("Share my invite link", symbol: "link") {
                     Task {
                         if let link = await social.inviteLink(.friend) { inviteURL = IdentifiedURL(url: social.shareURL(for: link)) }
@@ -113,7 +131,7 @@ struct FirstStepsView: View {
                 }
                 pill("Find friends by username", symbol: "magnifyingglass") { showFriends = true }
             }
-            .padding(.top, 6)
+            .padding(.top, 8)
             Spacer()
             Spacer()
         }
@@ -122,17 +140,11 @@ struct FirstStepsView: View {
     }
 
     private var nudgeCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             Spacer()
-            Image(systemName: "bell.badge.fill")
-                .font(.system(size: 56, weight: .bold))
-                .foregroundStyle(DS.Palette.gold)
-            Text("Low-key nudges.")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-            Text("One short line at most once a day, like “👀 Sam’s still wearing your belt”. Never at night. Mute any kind in Settings.")
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
+            icon("bell.badge")
+            title("Low-key nudges.")
+            bodyText("One short line at most once a day, like “👀 Sam’s still wearing your belt”. Never at night. Mute any kind in Settings.")
             pill(nudgesAsked ? "Nudges are set" : "Turn on nudges", symbol: nudgesAsked ? "checkmark" : "bell") {
                 Task {
                     _ = await Nudger.shared.requestPermission()
@@ -140,9 +152,10 @@ struct FirstStepsView: View {
                 }
             }
             .disabled(nudgesAsked)
+            .padding(.top, 8)
             Label("Add the Belt widget to your Home or Lock Screen to see who’s wearing it.", systemImage: "square.grid.2x2")
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Court.muted)
             Spacer()
             Spacer()
         }
@@ -153,12 +166,12 @@ struct FirstStepsView: View {
     private func pill(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Court.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
-                .frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous).fill(.white.opacity(0.12)))
+                .frame(height: 52)
+                .courtRaised(cornerRadius: 18)
         }
         .buttonStyle(.press)
     }

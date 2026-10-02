@@ -15,8 +15,8 @@ public enum Sport: String, Codable, CaseIterable, Hashable, Sendable, Identifiab
 
     public var displayName: String {
         switch self {
-        case .pickleball: return "Pickleball"
-        case .padel: return "Padel"
+        case .pickleball: return L("Pickleball")
+        case .padel: return L("Padel")
         }
     }
 

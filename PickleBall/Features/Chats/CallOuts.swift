@@ -38,43 +38,56 @@ struct CallOutComposerView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Sport", selection: $sport) {
-                        ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                    Group {
+                        Picker("Sport", selection: $sport) {
+                            ForEach(Sport.allCases) { Text($0.displayName).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        Picker("Format", selection: $isDoubles) {
+                            Text("Singles").tag(false)
+                            Text("Doubles").tag(true)
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
-                    Picker("Format", selection: $isDoubles) {
-                        Text("Singles").tag(false)
-                        Text("Doubles").tag(true)
-                    }
-                    .pickerStyle(.segmented)
+                    .courtRows()
                 } footer: {
                     Text(rules.summary)
                 }
 
                 if isDoubles {
                     Section("Your partner") {
-                        friendPicker(selection: Binding(get: { partner.map { [$0] } ?? [] }, set: { partner = $0.last }), limit: 1,
-                                     excluding: Set(challenged))
+                        Group {
+                            friendPicker(selection: Binding(get: { partner.map { [$0] } ?? [] }, set: { partner = $0.last }), limit: 1,
+                                         excluding: Set(challenged))
+                        }
+                        .courtRows()
                     }
                 }
 
                 Section(isDoubles ? "Call out a pair" : "Call out") {
-                    friendPicker(selection: $challenged, limit: isDoubles ? 2 : 1, excluding: Set([partner].compactMap { $0 }))
+                    Group {
+                        friendPicker(selection: $challenged, limit: isDoubles ? 2 : 1, excluding: Set([partner].compactMap { $0 }))
+                    }
+                    .courtRows()
                 }
 
                 Section {
-                    Toggle("Set a time", isOn: $hasTime)
-                    if hasTime {
-                        DatePicker("When", selection: $time, in: Date()...)
+                    Group {
+                        Toggle("Set a time", isOn: $hasTime)
+                        if hasTime {
+                            DatePicker("When", selection: $time, in: Date()...)
+                        }
+                        Button {
+                            showCourtSearch = true
+                        } label: {
+                            LabeledContent("Court") { Text(court?.name ?? "Optional").foregroundStyle(court == nil ? .secondary : .primary) }
+                        }
+                        .foregroundStyle(.primary)
                     }
-                    Button {
-                        showCourtSearch = true
-                    } label: {
-                        LabeledContent("Court") { Text(court?.name ?? "Optional").foregroundStyle(court == nil ? .secondary : .primary) }
-                    }
-                    .foregroundStyle(.primary)
+                    .courtRows()
                 }
             }
+            .courtList()
             .navigationTitle("Call out")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -184,6 +197,7 @@ struct CallOutCard: View {
                     DatePicker("When", selection: $counterTime, in: Date()...)
                     CourtPickerRow(court: $counterCourt)
                 }
+                .courtList()
                 .navigationTitle("Counter")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

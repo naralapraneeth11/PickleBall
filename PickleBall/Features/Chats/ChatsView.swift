@@ -19,39 +19,49 @@ struct ChatsView: View {
         List {
             if !social.incomingRequests.isEmpty {
                 Section {
-                    NavigationLink {
-                        FriendsView()
-                    } label: {
-                        HStack {
-                            AvatarStack(userIDs: social.incomingRequests.map(\.id), size: 30)
-                            Text("\(social.incomingRequests.count) friend request\(social.incomingRequests.count == 1 ? "" : "s")")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    Group {
+                        NavigationLink {
+                            FriendsView()
+                        } label: {
+                            HStack {
+                                AvatarStack(userIDs: social.incomingRequests.map(\.id), size: 30)
+                                Text("\(social.incomingRequests.count) friend request\(social.incomingRequests.count == 1 ? "" : "s")")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            }
                         }
                     }
+                    .courtRows()
                 }
             }
 
             let squadChats = social.conversations.filter { $0.kind == .squad }
             if !squadChats.isEmpty {
                 Section("Squads") {
-                    ForEach(squadChats) { conversation in
-                        NavigationLink(value: conversation) { ConversationRowView(conversation: conversation) }
+                    Group {
+                        ForEach(squadChats) { conversation in
+                            NavigationLink(value: conversation) { ConversationRowView(conversation: conversation) }
+                        }
                     }
+                    .courtRows()
                 }
             }
 
             let friendChats = social.conversations.filter { $0.kind == .direct && social.people(in: $0).allSatisfy { !social.blocked.contains($0) } }
             Section("Friends") {
-                ForEach(friendChats) { conversation in
-                    NavigationLink(value: conversation) { ConversationRowView(conversation: conversation) }
+                Group {
+                    ForEach(friendChats) { conversation in
+                        NavigationLink(value: conversation) { ConversationRowView(conversation: conversation) }
+                    }
+                    Button {
+                        showFriends = true
+                    } label: {
+                        Label(social.friends.isEmpty ? "Add your first friend" : "Friends", systemImage: "person.2.fill")
+                    }
                 }
-                Button {
-                    showFriends = true
-                } label: {
-                    Label(social.friends.isEmpty ? "Add your first friend" : "Friends", systemImage: "person.2.fill")
-                }
+                .courtRows()
             }
         }
+        .courtList()
         .navigationTitle("Chats")
         .navigationDestination(for: ConversationRow.self) { conversation in
             ChatView(conversationID: conversation.id)

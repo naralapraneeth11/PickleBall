@@ -16,12 +16,12 @@ struct ProfileEditView: View {
 
     @FocusState private var focusedField: Field?
     private enum Field { case firstName, lastName, email }
-    let lightGrey  = DS.Palette.pageGrey
-    let cardWhite  = Color.white
-    let royalBlue  = DS.Palette.royalBlue
-    let fieldGrey  = DS.Palette.fieldGrey
-    let textMuted  = DS.Palette.textSecondary
-    let stroke     = Color.black.opacity(0.08)
+    let lightGrey  = Court.ground
+    let cardWhite  = Court.raised
+    let royalBlue  = Court.text
+    let fieldGrey  = Court.sunken
+    let textMuted  = Court.muted
+    let stroke     = Court.hairline
     let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
     /// Birth years from current year back to 1940. Computed each render
     /// so the list never goes stale — the previous hardcoded "1940...2024"
@@ -55,7 +55,7 @@ struct ProfileEditView: View {
                     .fill(DS.Palette.courtBlue)
                     .frame(width: geo.size.width * 0.3)
                 Rectangle()
-                    .fill(.white)
+                    .fill(Court.raised)
                     .frame(width: 8)
                 Rectangle()
                     .fill(DS.Palette.courtBlue)
