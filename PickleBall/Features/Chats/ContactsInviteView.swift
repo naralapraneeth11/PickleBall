@@ -22,8 +22,8 @@ struct ContactsInviteView: View {
     @State private var query = ""
     @State private var isLoading = false
     @State private var link: URL?
-    @State private var composing: MessageDraft?
-    @State private var sharing: MessageDraft?
+    @State private var composing: InviteTextDraft?
+    @State private var sharing: InviteTextDraft?
     @State private var invited: Set<String> = []
 
     var body: some View {
@@ -94,7 +94,7 @@ struct ContactsInviteView: View {
             .buttonStyle(.press)
             .padding(.horizontal, 24)
             Button {
-                sharing = MessageDraft(contactID: "", recipients: [], body: inviteText(for: nil))
+                sharing = InviteTextDraft(contactID: "", recipients: [], body: inviteText(for: nil))
             } label: {
                 Text("Share my link instead")
                     .font(.system(size: 15, weight: .semibold))
@@ -208,7 +208,7 @@ struct ContactsInviteView: View {
 
     private func invite(_ contact: InviteContact) {
         Haptics.light()
-        let draft = MessageDraft(contactID: contact.id, recipients: [contact.phone], body: inviteText(for: contact))
+        let draft = InviteTextDraft(contactID: contact.id, recipients: [contact.phone], body: inviteText(for: contact))
         if MFMessageComposeViewController.canSendText() {
             composing = draft
         } else {
@@ -262,7 +262,7 @@ nonisolated struct InviteContact: Identifiable, Hashable, Sendable {
     }
 }
 
-struct MessageDraft: Identifiable {
+struct InviteTextDraft: Identifiable {
     let id = UUID()
     let contactID: String
     let recipients: [String]
@@ -271,7 +271,7 @@ struct MessageDraft: Identifiable {
 
 /// Messages, with the invite written and the number filled in.
 private struct MessageComposer: UIViewControllerRepresentable {
-    let draft: MessageDraft
+    let draft: InviteTextDraft
     let onFinish: (Bool) -> Void
 
     func makeUIViewController(context: Context) -> MFMessageComposeViewController {
