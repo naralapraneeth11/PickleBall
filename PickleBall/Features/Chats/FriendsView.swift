@@ -20,6 +20,7 @@ struct FriendsView: View {
     @State private var showQR = false
     @State private var showScanner = false
     @State private var showCode = false
+    @State private var showContacts = false
     @State private var code = ""
 
     var body: some View {
@@ -41,6 +42,9 @@ struct FriendsView: View {
             } else {
                 Section {
                     Group {
+                        Button { showContacts = true } label: {
+                            Label("Invite from contacts", systemImage: "person.crop.circle.badge.plus")
+                        }
                         Button { Task { await makeInvite() } } label: {
                             Label("Share my invite link", systemImage: "link")
                         }
@@ -129,6 +133,7 @@ struct FriendsView: View {
             ShareSheet(items: ["Play me on PickleBall. Tap to add me as a friend: \(item.url.absoluteString)", item.url])
         }
         .sheet(isPresented: $showQR) { MyQRCodeView() }
+        .sheet(isPresented: $showContacts) { ContactsInviteView() }
         .sheet(isPresented: $showScanner) {
             QRScannerView { link in
                 showScanner = false

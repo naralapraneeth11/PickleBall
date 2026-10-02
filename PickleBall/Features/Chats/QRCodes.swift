@@ -16,7 +16,19 @@ import CourtNet
 struct MyQRCodeView: View {
     @Environment(\.dismiss) private var dismiss
     private let social = Social.shared
-    @State private var url: URL?
+    @State private var url: URL? = MyQRCodeView.lastURL
+    @State private var failed = false
+
+    /// The last code made, so the QR shows instantly and with no signal.
+    /// Friend links last 30 days; an older one is dropped.
+    private static let lastURLKey = "qr.lastFriendLink"
+    private static let lastDateKey = "qr.lastFriendLinkDate"
+    private static var lastURL: URL? {
+        let defaults = UserDefaults.standard
+        guard let made = defaults.object(forKey: lastDateKey) as? Date,
+              Date().timeIntervalSince(made) < 25 * 86_400 else { return nil }
+        return defaults.string(forKey: lastURLKey).flatMap(URL.init(string:))
+    }
 
     var body: some View {
         NavigationStack {
@@ -35,6 +47,27 @@ struct MyQRCodeView: View {
                             .scaledToFit()
                             .padding(18)
                             .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.white))
+                    } else if failed {
+                        VStack(spacing: 12) {
+                            Image(systemName: "wifi.exclamationmark")
+                                .font(.system(size: 30, weight: .semibold))
+                                .foregroundStyle(Court.muted)
+                            Text(social.backend == nil
+                                 ? "Your code needs the PickleBall server. This build isn’t connected to one."
+                                 : "Couldn’t make your code. Check your connection.")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(Court.muted)
+                                .multilineTextAlignment(.center)
+                            if social.backend != nil {
+                                Button("Try again") { Task { await makeLink() } }
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Court.text)
+                                    .padding(.horizontal, 18)
+                                    .frame(height: 40)
+                                    .courtRaisedCapsule()
+                            }
+                        }
+                        .padding(20)
                     } else {
                         ProgressView()
                     }
@@ -49,9 +82,20 @@ struct MyQRCodeView: View {
             .padding(.top, 24)
             .frame(maxHeight: .infinity, alignment: .top)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .task {
-                if let link = await social.inviteLink(.friend) { url = social.shareURL(for: link) }
-            }
+            .courtGround()
+            .task { await makeLink() }
+        }
+    }
+
+    private func makeLink() async {
+        failed = false
+        if let link = await social.inviteLink(.friend) {
+            let fresh = social.shareURL(for: link)
+            url = fresh
+            UserDefaults.standard.set(fresh.absoluteString, forKey: Self.lastURLKey)
+            UserDefaults.standard.set(Date(), forKey: Self.lastDateKey)
+        } else if url == nil {
+            failed = true
         }
     }
 }
@@ -61,9 +105,17 @@ enum QRCode {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
         filter.correctionLevel = "M"
-        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)),
-              let cgImage = CIContext().createCGImage(output, from: output.extent) else { return nil }
+        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 12, y: 12)),
+              let cgImage = context.createCGImage(output, from: output.extent) else { return nil }
         return UIImage(cgImage: cgImage)
+    }
+
+    private static let context = CIContext()
+
+    /// Clears the cached code (on sign-out).
+    static func forget() {
+        UserDefaults.standard.removeObject(forKey: "qr.lastFriendLink")
+        UserDefaults.standard.removeObject(forKey: "qr.lastFriendLinkDate")
     }
 }
 

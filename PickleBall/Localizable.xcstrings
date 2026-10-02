@@ -116,6 +116,29 @@
         }
       }
     },
+    "%lld s per rally": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld s por punto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld s por ponto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld s per scambio"
+          }
+        }
+      }
+    },
     "%lld tournaments won": {
       "extractionState": "manual",
       "localizations": {
@@ -434,6 +457,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "BPM MEDI"
+          }
+        }
+      }
+    },
+    "About %lld rounds · %@ on %lld courts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unas %1$lld rondas · %2$@ en %3$lld pistas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca de %1$lld rodadas · %2$@ em %3$lld quadras"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circa %1$lld turni · %2$@ su %3$lld campi"
           }
         }
       }
@@ -829,6 +875,29 @@
         }
       }
     },
+    "As listed": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En orden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na ordem"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In ordine"
+          }
+        }
+      }
+    },
     "As partners": {
       "extractionState": "manual",
       "localizations": {
@@ -1032,6 +1101,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rovescio"
+          }
+        }
+      }
+    },
+    "Balanced": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equilibradas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equilibradas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equilibrate"
           }
         }
       }
@@ -1358,6 +1450,98 @@
         }
       }
     },
+    "Big points saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntos clave salvados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pontos decisivos salvos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punti decisivi salvati"
+          }
+        }
+      }
+    },
+    "Big points won": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntos clave ganados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pontos decisivos ganhos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punti decisivi vinti"
+          }
+        }
+      }
+    },
+    "Biggest comeback (games)": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mayor remontada (juegos)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior virada (games)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimonta più grande (game)"
+          }
+        }
+      }
+    },
+    "Biggest comeback (points)": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mayor remontada (puntos)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior virada (pontos)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimonta più grande (punti)"
+          }
+        }
+      }
+    },
     "Block": {
       "extractionState": "manual",
       "localizations": {
@@ -1473,6 +1657,29 @@
         }
       }
     },
+    "Breaks of serve": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roturas de saque"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quebras de saque"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Break"
+          }
+        }
+      }
+    },
     "Bring your crew.": {
       "extractionState": "manual",
       "localizations": {
@@ -1492,6 +1699,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porta il tuo gruppo."
+          }
+        }
+      }
+    },
+    "Bring your people": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trae a tu gente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traga sua turma"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porta la tua gente"
           }
         }
       }
@@ -2113,6 +2343,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copia"
+          }
+        }
+      }
+    },
+    "Couldn’t make your code. Check your connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear tu código. Revisa tu conexión."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível criar seu código. Verifique sua conexão."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile creare il codice. Controlla la connessione."
           }
         }
       }
@@ -3497,6 +3750,29 @@
         }
       }
     },
+    "Friends, squads, chats, call outs and your QR code are shared through it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los amigos, grupos, chats, retos y tu código QR pasan por él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amigos, grupos, conversas, desafios e seu código QR passam por ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amici, gruppi, chat, sfide e il tuo codice QR passano da lì."
+          }
+        }
+      }
+    },
     "GENDER": {
       "extractionState": "manual",
       "localizations": {
@@ -3796,6 +4072,29 @@
         }
       }
     },
+    "Hey %@! ": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Hola, %@! "
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oi, %@! "
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciao %@! "
+          }
+        }
+      }
+    },
     "Home courts": {
       "extractionState": "manual",
       "localizations": {
@@ -3865,6 +4164,29 @@
         }
       }
     },
+    "Invite": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convidar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invita"
+          }
+        }
+      }
+    },
     "Invite code": {
       "extractionState": "manual",
       "localizations": {
@@ -3888,6 +4210,75 @@
         }
       }
     },
+    "Invite contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitar contactos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convidar contatos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invita contatti"
+          }
+        }
+      }
+    },
+    "Invite from contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitar desde contactos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convidar dos contatos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invita dai contatti"
+          }
+        }
+      }
+    },
+    "Invites go out as a normal text from your phone. Contacts are never uploaded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las invitaciones salen como un mensaje normal desde tu móvil. Los contactos nunca se suben."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os convites saem como uma mensagem normal do seu celular. Os contatos nunca são enviados."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli inviti partono come un normale messaggio dal tuo telefono. I contatti non vengono mai caricati."
+          }
+        }
+      }
+    },
     "It’s decided. Time to crown the champion.": {
       "extractionState": "manual",
       "localizations": {
@@ -3907,6 +4298,75 @@
           "stringUnit": {
             "state": "translated",
             "value": "È deciso. È ora di incoronare il campione."
+          }
+        }
+      }
+    },
+    "I’m keeping score on PickleBall. Get it here and add me%@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevo los marcadores en PickleBall. Descárgala aquí y añádeme%1$@: %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estou marcando os placares no PickleBall. Baixe aqui e me adicione%1$@: %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tengo i punteggi su PickleBall. Scaricala qui e aggiungimi%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "I’m keeping score on PickleBall. Get it on the App Store and let’s play.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevo los marcadores en PickleBall. Descárgala en la App Store y jugamos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estou marcando os placares no PickleBall. Baixe na App Store e bora jogar."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tengo i punteggi su PickleBall. Scaricala dall’App Store e giochiamo."
+          }
+        }
+      }
+    },
+    "I’m keeping score on PickleBall. Tap to add me and let’s play: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llevo los marcadores en PickleBall. Toca para añadirme y jugamos: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estou marcando os placares no PickleBall. Toque para me adicionar e bora jogar: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tengo i punteggi su PickleBall. Tocca per aggiungermi e giochiamo: %@"
           }
         }
       }
@@ -3976,6 +4436,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Campo del re"
+          }
+        }
+      }
+    },
+    "King of the Court runs as long as you like: end it from the tournament screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rey de la pista dura lo que queráis: termínalo desde la pantalla del torneo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rei da quadra dura o quanto vocês quiserem: encerre na tela do torneio."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re del campo dura quanto volete: chiudilo dalla schermata del torneo."
           }
         }
       }
@@ -4114,6 +4597,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Classifica"
+          }
+        }
+      }
+    },
+    "Lead changed hands %lld times": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El liderazgo cambió %lld veces"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A liderança mudou %lld vezes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il vantaggio è passato di mano %lld volte"
           }
         }
       }
@@ -4298,6 +4804,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Regno più lungo"
+          }
+        }
+      }
+    },
+    "Longest run": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mejor racha"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior sequência"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie più lunga"
           }
         }
       }
@@ -4505,6 +5034,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Storico"
+          }
+        }
+      }
+    },
+    "Match stats": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadísticas del partido"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estatísticas da partida"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statistiche della partita"
           }
         }
       }
@@ -4758,6 +5310,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nome"
+          }
+        }
+      }
+    },
+    "Needs the PickleBall server": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necesita el servidor de PickleBall"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precisa do servidor do PickleBall"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serve il server di PickleBall"
           }
         }
       }
@@ -5057,6 +5632,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ancora nessuna chat"
+          }
+        }
+      }
+    },
+    "No contacts with a phone number": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay contactos con teléfono"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum contato com telefone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun contatto con numero"
           }
         }
       }
@@ -5659,6 +6257,29 @@
         }
       }
     },
+    "Open Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Impostazioni"
+          }
+        }
+      }
+    },
     "Open profile settings": {
       "extractionState": "manual",
       "localizations": {
@@ -5958,6 +6579,75 @@
         }
       }
     },
+    "Pairs": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parejas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coppie"
+          }
+        }
+      }
+    },
+    "Pairs are drawn at random when you tap Create.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las parejas se sortean al tocar Crear."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As duplas são sorteadas quando você toca em Criar."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le coppie vengono sorteggiate quando tocchi Crea."
+          }
+        }
+      }
+    },
+    "Pairs stay together in the order listed: first and second, third and fourth.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las parejas van en el orden de la lista: primero con segundo, tercero con cuarto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As duplas seguem a ordem da lista: primeiro com segundo, terceiro com quarto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le coppie seguono l’ordine della lista: primo con secondo, terzo con quarto."
+          }
+        }
+      }
+    },
     "Pairs stay together, in the order entered.": {
       "extractionState": "manual",
       "localizations": {
@@ -6211,6 +6901,52 @@
         }
       }
     },
+    "Pick who you play with and text them an invite. Your contacts stay on your iPhone and are never uploaded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige con quién juegas y mándales una invitación por mensaje. Tus contactos se quedan en tu iPhone y nunca se suben."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha com quem você joga e mande um convite por mensagem. Seus contatos ficam no iPhone e nunca são enviados."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli con chi giochi e mandagli un invito via messaggio. I tuoi contatti restano sull’iPhone e non vengono mai caricati."
+          }
+        }
+      }
+    },
+    "PickleBall can’t see your contacts. You can turn it on in Settings, or share your link instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PickleBall no puede ver tus contactos. Puedes activarlo en Ajustes o compartir tu enlace."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O PickleBall não pode ver seus contatos. Ative em Ajustes ou compartilhe seu link."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PickleBall non può vedere i tuoi contatti. Puoi attivarlo in Impostazioni o condividere il tuo link."
+          }
+        }
+      }
+    },
     "PickleBall is friends only. Send your link to the people you play with.": {
       "extractionState": "manual",
       "localizations": {
@@ -6322,6 +7058,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giocata"
+          }
+        }
+      }
+    },
+    "Player": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jugador"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jogador"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giocatore"
           }
         }
       }
@@ -6717,6 +7476,29 @@
         }
       }
     },
+    "Rallies won": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntos ganados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pontos ganhos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scambi vinti"
+          }
+        }
+      }
+    },
     "Rally won by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -6736,6 +7518,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Punto a %@"
+          }
+        }
+      }
+    },
+    "Random": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al azar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aleatórias"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Casuali"
           }
         }
       }
@@ -7315,6 +8120,29 @@
         }
       }
     },
+    "Run it again": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repetir"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repetir"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rifallo"
+          }
+        }
+      }
+    },
     "SAVE MATCH": {
       "extractionState": "manual",
       "localizations": {
@@ -7752,6 +8580,29 @@
         }
       }
     },
+    "Scoring, stats and your player card work without it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El marcador, las estadísticas y tu ficha funcionan sin él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O placar, as estatísticas e seu cartão funcionam sem ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punteggio, statistiche e la tua scheda funzionano anche senza."
+          }
+        }
+      }
+    },
     "Search Apple Maps for a park, club or court.": {
       "extractionState": "manual",
       "localizations": {
@@ -7794,6 +8645,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cerca un nome utente qui sopra o condividi il tuo link con chi gioca con te."
+          }
+        }
+      }
+    },
+    "Search contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar contactos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar contatos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca contatti"
           }
         }
       }
@@ -8074,6 +8948,29 @@
         }
       }
     },
+    "Serve by player": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saque por jugador"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saque por jogador"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servizio per giocatore"
+          }
+        }
+      }
+    },
     "Serve it": {
       "extractionState": "manual",
       "localizations": {
@@ -8166,6 +9063,29 @@
         }
       }
     },
+    "Serves, Returns and Replays go to your friends through it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las publicaciones, respuestas y Replays llegan a tus amigos a través de él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posts, respostas e Replays chegam aos seus amigos por ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post, risposte e Replay arrivano ai tuoi amici tramite lui."
+          }
+        }
+      }
+    },
     "Serves: friends only. Nothing is ever public.": {
       "extractionState": "manual",
       "localizations": {
@@ -8185,6 +9105,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Post: solo amici. Niente è mai pubblico."
+          }
+        }
+      }
+    },
+    "Service games held": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juegos de saque ganados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Games de saque confirmados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turni di servizio tenuti"
           }
         }
       }
@@ -8442,6 +9385,29 @@
         }
       }
     },
+    "Share my link instead": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir mi enlace"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhar meu link"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi il mio link"
+          }
+        }
+      }
+    },
     "Share my season": {
       "extractionState": "manual",
       "localizations": {
@@ -8534,6 +9500,29 @@
         }
       }
     },
+    "Share your link instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte tu enlace."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhe seu link."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi il tuo link."
+          }
+        }
+      }
+    },
     "Show": {
       "extractionState": "manual",
       "localizations": {
@@ -8580,6 +9569,29 @@
         }
       }
     },
+    "Show my contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar mis contactos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar meus contatos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra i miei contatti"
+          }
+        }
+      }
+    },
     "Shuffle teams": {
       "extractionState": "manual",
       "localizations": {
@@ -8599,6 +9611,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mescola squadre"
+          }
+        }
+      }
+    },
+    "Side outs won": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saques recuperados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saques recuperados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambi palla vinti"
           }
         }
       }
@@ -8971,6 +10006,29 @@
         }
       }
     },
+    "Start a squad": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear un grupo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Criar um grupo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un gruppo"
+          }
+        }
+      }
+    },
     "Start match": {
       "extractionState": "manual",
       "localizations": {
@@ -9293,6 +10351,52 @@
         }
       }
     },
+    "Team A": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equipo A"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time A"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Squadra A"
+          }
+        }
+      }
+    },
+    "Team B": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equipo B"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time B"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Squadra B"
+          }
+        }
+      }
+    },
     "Terms of Service": {
       "extractionState": "manual",
       "localizations": {
@@ -9335,6 +10439,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "L’eliminazione diretta inizia quando tutte le partite dei gironi sono concluse."
+          }
+        }
+      }
+    },
+    "The strongest player is paired with the weakest, and so on, by level.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El jugador más fuerte va con el más flojo, y así sucesivamente, por nivel."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O jogador mais forte joga com o mais fraco, e assim por diante, por nível."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il giocatore più forte fa coppia con il più debole, e così via, per livello."
           }
         }
       }
@@ -9661,6 +10788,75 @@
         }
       }
     },
+    "Tournaments belong to a squad, and everyone’s phone follows the same draw through it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los torneos son de un grupo, y todos los móviles siguen el mismo cuadro gracias a él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os torneios pertencem a um grupo, e todos os celulares acompanham a mesma chave por ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I tornei appartengono a un gruppo e tutti i telefoni seguono lo stesso tabellone grazie a lui."
+          }
+        }
+      }
+    },
+    "Tournaments belong to a squad. Start one with the people you play, then run a tournament here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los torneos son de un grupo. Crea uno con la gente con la que juegas y organiza aquí el torneo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os torneios pertencem a um grupo. Crie um com quem você joga e organize o torneio aqui."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I tornei appartengono a un gruppo. Creane uno con chi giochi, poi organizza qui il torneo."
+          }
+        }
+      }
+    },
+    "Try again": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tentar de novo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova"
+          }
+        }
+      }
+    },
     "Turn on nudges": {
       "extractionState": "manual",
       "localizations": {
@@ -9956,6 +11152,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "In attesa dell’altra parte"
+          }
+        }
+      }
+    },
+    "Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch"
           }
         }
       }
@@ -10282,6 +11501,98 @@
         }
       }
     },
+    "Won on Serve": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganados al saque"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganhos no saque"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinti al servizio"
+          }
+        }
+      }
+    },
+    "Won on return": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganados al resto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganhos na devolução"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinti in risposta"
+          }
+        }
+      }
+    },
+    "Won on serve": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganados al saque"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganhos no saque"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinti al servizio"
+          }
+        }
+      }
+    },
+    "Write something or add a photo first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe algo o añade una foto primero."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escreva algo ou adicione uma foto primeiro."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrivi qualcosa o aggiungi prima una foto."
+          }
+        }
+      }
+    },
     "YOUR SIDE": {
       "extractionState": "manual",
       "localizations": {
@@ -10439,6 +11750,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "I tuoi post"
+          }
+        }
+      }
+    },
+    "Your code needs the PickleBall server. This build isn’t connected to one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu código necesita el servidor de PickleBall. Esta versión no está conectada a ninguno."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu código precisa do servidor do PickleBall. Esta versão não está conectada a nenhum."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo codice ha bisogno del server di PickleBall. Questa versione non è collegata a nessuno."
           }
         }
       }
@@ -10646,6 +11980,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sei aggiornato"
+          }
+        }
+      }
+    },
+    "You’re sharing some contacts with PickleBall. Change which ones in Settings → Apps → PickleBall → Contacts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartes algunos contactos con PickleBall. Cámbialos en Ajustes → Apps → PickleBall → Contactos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você compartilha alguns contatos com o PickleBall. Altere em Ajustes → Apps → PickleBall → Contatos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi alcuni contatti con PickleBall. Cambiali in Impostazioni → App → PickleBall → Contatti."
           }
         }
       }

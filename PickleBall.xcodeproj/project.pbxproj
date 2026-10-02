@@ -906,6 +906,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PickleBall-Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "PickleBall uses the camera to scan a friend’s code and to take photos at changeovers.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "PickleBall shows your contacts so you can text them an invite. They stay on your iPhone and are never uploaded.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "PickleBall reads your workouts, heart rate and energy from Apple Watch to show match stats such as heart-rate zones, duration and calories.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "PickleBall saves your matches to Health as workouts so your Apple Watch can track them.";
@@ -949,6 +950,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PickleBall-Info.plist";
 				INFOPLIST_KEY_NSCameraUsageDescription = "PickleBall uses the camera to scan a friend’s code and to take photos at changeovers.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "PickleBall shows your contacts so you can text them an invite. They stay on your iPhone and are never uploaded.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "PickleBall reads your workouts, heart rate and energy from Apple Watch to show match stats such as heart-rate zones, duration and calories.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "PickleBall saves your matches to Health as workouts so your Apple Watch can track them.";

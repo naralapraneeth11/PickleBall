@@ -167,3 +167,57 @@ struct PillButton: View {
         .buttonStyle(.press)
     }
 }
+
+/// Chats, Tournaments and the Feed in a build with no server: says so
+/// instead of showing buttons that can't do anything.
+struct ServerNeededView: View {
+    let eyebrow: LocalizedStringKey
+    let title: LocalizedStringKey
+    let symbol: String
+    let message: LocalizedStringKey
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(eyebrow).courtEyebrow()
+            Text(title)
+                .font(.system(size: 38, weight: .semibold))
+                .tracking(-1.1)
+                .foregroundStyle(Court.text)
+                .padding(.top, 4)
+            Spacer()
+            VStack(spacing: 16) {
+                Image(systemName: symbol)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Court.text)
+                    .frame(width: 76, height: 76)
+                    .courtRaised(cornerRadius: 24)
+                Text("Needs the PickleBall server")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Court.text)
+                Text(message)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Court.muted)
+                    .multilineTextAlignment(.center)
+                Text("Scoring, stats and your player card work without it.")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(Court.dim)
+                    .multilineTextAlignment(.center)
+                #if DEBUG
+                Text(verbatim: "Developer: add PickleBall/Secrets.plist (docs/LAUNCH_CHECKLIST.md, steps 1–2).")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(Court.dim)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+                #endif
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 12)
+            Spacer()
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, Court.Metrics.tabBarClearance)
+        .courtGround()
+    }
+}

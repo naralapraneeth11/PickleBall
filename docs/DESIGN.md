@@ -55,8 +55,8 @@ the light ground); the sport colour otherwise.
   half is mirrored 6pt above the net and fades from 85% to 0 over 136pt.
 - **Header:** an 11pt mono label (tracking 1.8), then a 38pt semibold title
   (tracking −1.1). The switch pill is 44pt tall and fully rounded.
-- **Tab bar:** five 56×56 tiles, radius 18, centred with 8pt gaps, 34pt
-  from the bottom edge, icons about 24pt.
+- **Tab bar:** five 56×56 tiles, radius 18, centred with 8pt gaps, 26pt
+  from the screen's bottom edge (14pt on iPhones with a Home button), icons about 24pt.
   - Selected by day: solid sport colour with a `#111111` icon.
   - Selected at night: pressed in, with a 3pt sport-colour line along the
     inside bottom edge.

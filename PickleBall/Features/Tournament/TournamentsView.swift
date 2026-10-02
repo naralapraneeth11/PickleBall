@@ -12,6 +12,7 @@ import CourtNet
 struct TournamentsView: View {
     private let social = Social.shared
     @State private var showCreate = false
+    @State private var showCreateSquad = false
 
     var body: some View {
         List {
@@ -45,12 +46,17 @@ struct TournamentsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showCreate = true } label: { Image(systemName: "plus") }
+                Button {
+                    if social.squads.isEmpty { showCreateSquad = true } else { showCreate = true }
+                } label: { Image(systemName: "plus") }
                     .accessibilityLabel("New tournament")
-                    .disabled(social.squads.isEmpty)
             }
         }
         .sheet(isPresented: $showCreate) { CreateTournamentView() }
+        .sheet(isPresented: $showCreateSquad, onDismiss: {
+            // Straight on to the tournament once the squad exists.
+            if !social.squads.isEmpty { showCreate = true }
+        }) { CreateSquadView() }
         .refreshable { await social.refreshTournaments() }
         .overlay {
             if social.tournaments.isEmpty {
@@ -58,12 +64,20 @@ struct TournamentsView: View {
                     Label("No tournaments yet", systemImage: "trophy")
                 } description: {
                     Text(social.squads.isEmpty
-                         ? "Tournaments belong to a squad. Start a squad in Chats, then run one here."
+                         ? "Tournaments belong to a squad. Start one with the people you play, then run a tournament here."
                          : "Round robin, King of the Court or padel Americano, straight from your squad.")
                 } actions: {
-                    if !social.squads.isEmpty {
-                        Button("New tournament") { showCreate = true }.buttonStyle(.borderedProminent)
+                    Button {
+                        if social.squads.isEmpty { showCreateSquad = true } else { showCreate = true }
+                    } label: {
+                        Text(social.squads.isEmpty ? "Start a squad" : "New tournament")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Court.text)
+                            .padding(.horizontal, 22)
+                            .frame(height: 48)
+                            .courtRaisedCapsule()
                     }
+                    .buttonStyle(.press)
                 }
             }
         }

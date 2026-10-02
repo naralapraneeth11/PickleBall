@@ -37,12 +37,18 @@ struct SeasonRecapView: View {
         let current = self.recap
         let pages = cards(for: current)
         return ZStack {
-            LinearGradient(colors: [DS.Palette.night, Color(red: 0.08, green: 0.1, blue: 0.22)], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            Color(hex: 0x1C1D1F).ignoresSafeArea()
             if current.isEmpty {
-                ContentUnavailableView("No matches yet in \(season.title)", systemImage: "sparkles",
-                                       description: Text("Your season story fills in as friends confirm your results."))
-                    .foregroundStyle(.white)
+                ContentUnavailableView {
+                    Label {
+                        Text("No matches yet in \(season.title)")
+                    } icon: {
+                        SeasonBadge(year: season.year, size: 56)
+                    }
+                } description: {
+                    Text("Your season story fills in as friends confirm your results.")
+                }
+                .foregroundStyle(.white)
             } else {
                 TabView(selection: $page) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { index, card in
@@ -85,8 +91,11 @@ struct SeasonRecapView: View {
 
     private func cards(for recap: SeasonRecap) -> [AnyView] {
         var list: [AnyView] = []
-        list.append(AnyView(RecapCard(eyebrow: "Your \(season.title)", big: "\(recap.matches)", caption: recap.matches == 1 ? "match played" : "matches played",
-                                      footnote: String(localized: "against \(recap.peoplePlayed) people"))))
+        list.append(AnyView(VStack(alignment: .leading, spacing: 0) {
+            SeasonBadge(year: season.year, size: 72).padding(.top, 40)
+            RecapCard(eyebrow: "Your \(season.title)", big: "\(recap.matches)", caption: recap.matches == 1 ? "match played" : "matches played",
+                      footnote: String(localized: "against \(recap.peoplePlayed) people"))
+        }))
         list.append(AnyView(RecapCard(eyebrow: "Record", big: "\(recap.wins)–\(recap.losses)",
                                       caption: String(localized: "\(Int((recap.winRate * 100).rounded()))% won"),
                                       footnote: recap.longestWinStreak > 1 ? String(localized: "Longest streak: \(recap.longestWinStreak) in a row") : nil)))
@@ -114,10 +123,8 @@ struct SeasonRecapView: View {
             if let shareImage {
                 ShareLink(item: Image(uiImage: shareImage), preview: SharePreview(String(localized: "My \(season.title) season"), image: Image(uiImage: shareImage))) {
                     Label("Share my season", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(width: 300, height: 52)
-                        .background(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous).fill(DS.Palette.royalBlue))
+                        .courtBigButton()
+                        .frame(width: 300)
                 }
             }
         }))
@@ -151,20 +158,20 @@ private struct RecapCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Spacer()
-            Text(eyebrow).eyebrowStyle(DS.Palette.nightMuted)
+            Text(eyebrow).font(.system(size: 11, weight: .medium, design: .monospaced)).tracking(1.8).textCase(.uppercase).foregroundStyle(Color(hex: 0xA9AAAB))
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 if let symbol {
                     Image(systemName: symbol).font(.system(size: 44, weight: .bold)).foregroundStyle(DS.Palette.gold)
                 }
                 Text(big)
-                    .font(DS.Typography.hero(big.count > 6 ? 56 : 96))
+                    .font(.system(size: big.count > 6 ? 56 : 96, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.4)
                     .lineLimit(1)
             }
-            Text(caption).font(.system(size: 22, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
+            Text(caption).font(.system(size: 22, weight: .semibold)).foregroundStyle(.white.opacity(0.85))
             if let footnote {
-                Text(footnote).font(.system(size: 16, weight: .medium, design: .rounded)).foregroundStyle(DS.Palette.nightMuted)
+                Text(footnote).font(.system(size: 16, weight: .medium)).foregroundStyle(DS.Palette.nightMuted)
             }
             Spacer()
             Spacer()
@@ -182,18 +189,18 @@ private struct RecapPersonCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Spacer()
-            Text(eyebrow).eyebrowStyle(DS.Palette.nightMuted)
+            Text(eyebrow).font(.system(size: 11, weight: .medium, design: .monospaced)).tracking(1.8).textCase(.uppercase).foregroundStyle(Color(hex: 0xA9AAAB))
             if person.player.kind == .user {
                 ProfileAvatar(userID: person.player.id.rawValue, size: 120)
             } else {
-                Avatar(name: person.player.displayName, color: DS.Palette.electricBlue, size: 120)
+                Avatar(name: person.player.displayName, color: ProfileAvatar.color(for: person.player.id.rawValue), size: 120)
             }
             Text(person.player.displayName)
-                .font(DS.Typography.hero(44))
+                .font(.system(size: 44, weight: .semibold))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
-            Text(line).font(.system(size: 22, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
+            Text(line).font(.system(size: 22, weight: .semibold)).foregroundStyle(.white.opacity(0.85))
             Spacer()
             Spacer()
         }
@@ -209,16 +216,21 @@ struct RecapShareCard: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [DS.Palette.royalBlue, DS.Palette.night], startPoint: .topLeading, endPoint: .bottomTrailing)
+            Color(hex: 0x1C1D1F)
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    BallIcon(sport: .pickleball, size: 26)
-                    Text("PickleBall").font(.system(size: 16, weight: .heavy, design: .rounded)).foregroundStyle(.white)
+                    SeasonBadge(year: recap.season.year, size: 44, night: true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: "SEASON \(recap.season.title)")
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .tracking(1.8)
+                            .foregroundStyle(Color(hex: 0xA9AAAB))
+                        Text(verbatim: "PickleBall").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                    }
                     Spacer()
-                    Text(recap.season.title).font(.system(size: 16, weight: .heavy, design: .rounded)).foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer()
-                Text(name).font(.system(size: 30, weight: .heavy, design: .rounded)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.5)
+                Text(name).font(.system(size: 30, weight: .heavy)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.5)
                 row("Matches", "\(recap.matches)")
                 row("Record", "\(recap.wins)–\(recap.losses)")
                 if recap.beltsWon > 0 { row("Belts won", "\(recap.beltsWon)") }
@@ -226,7 +238,7 @@ struct RecapShareCard: View {
                 if let nemesis = recap.nemesis { row("Nemesis", nemesis.player.shortName) }
                 if let partner = recap.bestPartner { row("Best partner", partner.player.shortName) }
                 Spacer()
-                Text("Come for the belt.").font(.system(size: 15, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.7))
+                Text("Come for the belt.").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white.opacity(0.7))
             }
             .padding(26)
         }
@@ -234,9 +246,55 @@ struct RecapShareCard: View {
 
     private func row(_ title: LocalizedStringKey, _ value: String) -> some View {
         HStack {
-            Text(title).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white.opacity(0.7))
+            Text(title).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white.opacity(0.7))
             Spacer()
-            Text(value).font(.system(size: 20, weight: .heavy, design: .rounded).monospacedDigit()).foregroundStyle(.white)
+            Text(value).font(.system(size: 20, weight: .heavy).monospacedDigit()).foregroundStyle(.white)
         }
     }
+}
+
+/// The season mark: a small court seen from above on a raised patch, with
+/// the year's last two digits on the net. Ours, not a borrowed symbol.
+struct SeasonBadge: View {
+    let year: Int
+    var size: CGFloat = 28
+    /// Fixed night colours (for share images) instead of the adaptive ones.
+    var night = false
+
+    var body: some View {
+        let corner = size * 0.3
+        let line = max(1, size * 0.045)
+        ZStack {
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .fill(night ? Color(hex: 0x26282B) : Court.raised)
+                .shadow(color: .black.opacity(night ? 0.5 : 0.12), radius: size * 0.08, x: size * 0.05, y: size * 0.07)
+            // The court: outline, kitchen lines either side of the net, centre line.
+            ZStack {
+                RoundedRectangle(cornerRadius: corner * 0.45, style: .continuous)
+                    .fill(night ? Color(hex: 0x17181A) : Court.sunken)
+                RoundedRectangle(cornerRadius: corner * 0.45, style: .continuous)
+                    .strokeBorder(ink.opacity(0.55), lineWidth: line)
+                VStack(spacing: 0) {
+                    Rectangle().fill(ink.opacity(0.4)).frame(width: line).frame(maxHeight: .infinity)
+                    Spacer().frame(height: size * 0.36)
+                    Rectangle().fill(ink.opacity(0.4)).frame(width: line).frame(maxHeight: .infinity)
+                }
+                .padding(.vertical, line)
+                VStack(spacing: size * 0.3) {
+                    Rectangle().fill(ink.opacity(0.4)).frame(height: line)
+                    Rectangle().fill(ink.opacity(0.4)).frame(height: line)
+                }
+            }
+            .padding(size * 0.14)
+            Text(verbatim: "’" + String(format: "%02d", year % 100))
+                .font(.system(size: size * 0.3, weight: .bold, design: .monospaced))
+                .foregroundStyle(ink)
+                .padding(.horizontal, size * 0.05)
+                .background(Capsule().fill(night ? Color(hex: 0x26282B) : Court.raised))
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel(Text(verbatim: "\(year)"))
+    }
+
+    private var ink: Color { night ? Color(hex: 0xF2F2F0) : Court.text }
 }

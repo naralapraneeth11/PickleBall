@@ -204,6 +204,8 @@ private struct ExampleServe: View {
             .padding(16)
             .courtRaised()
             .opacity(0.7)
+            .allowsHitTesting(false)
+            .accessibilityElement(children: .combine)
             Text("Serves are posts only your friends see. Friends Return them with a comment, a chant or a photo. Every Return keeps the ball in play; no Returns for a day and it’s a dead ball.")
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
