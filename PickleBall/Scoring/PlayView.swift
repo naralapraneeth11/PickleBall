@@ -183,7 +183,7 @@ struct PlayView: View {
             }
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
         .padding(.horizontal, 16)
     }
 
@@ -223,7 +223,7 @@ struct PlayView: View {
             }
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
         .padding(.horizontal, 16)
         .transition(.opacity)
     }
@@ -434,7 +434,7 @@ struct PlayView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .cardSurface(radius: DS.Radius.control)
+                .courtRaised(cornerRadius: DS.Radius.control)
                 .padding(.horizontal, 16)
             }
         }

@@ -14,6 +14,7 @@ import CourtNet
 @main
 struct PickleBallApp: App {
     @State private var sportMode = SportMode()
+    @AppStorage(AppearanceStyle.storageKey) private var appearance: AppearanceStyle = .standard
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -36,6 +37,7 @@ struct PickleBallApp: App {
         WindowGroup {
             RootView()
                 .environment(sportMode)
+                .environment(\.appearanceStyle, appearance)
                 .onAppear {
                     MatchCenter.shared.publishPreferences(sport: sportMode.sport)
                 }

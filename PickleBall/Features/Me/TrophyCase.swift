@@ -29,16 +29,16 @@ struct TrophyCase: View {
                                 .foregroundStyle(trophy.kind == .tournament ? DS.Palette.gold : DS.Palette.electricBlue)
                             Text(trophy.title)
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Court.text)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                             Text(trophy.awardedAt.formatted(.dateTime.month(.abbreviated).year()))
                                 .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundStyle(DS.Palette.nightMuted)
+                                .foregroundStyle(Court.muted)
                         }
                         .frame(width: 130, alignment: .leading)
                         .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(DS.Palette.nightRaised))
+                        .courtRaised(cornerRadius: 16)
                     }
                     .buttonStyle(.press)
                 }

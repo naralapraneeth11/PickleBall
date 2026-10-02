@@ -22,11 +22,11 @@ enum AppTab: Int, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .play:        return "tennisball.circle.fill"
-        case .chats:       return "bubble.left.and.bubble.right.fill"
-        case .me:          return "person.crop.circle.fill"
-        case .tournaments: return "trophy.fill"
-        case .feed:        return "rectangle.stack.fill"
+        case .play:        return "tennisball"
+        case .chats:       return "bubble.left.and.bubble.right"
+        case .me:          return "person.crop.circle"
+        case .tournaments: return "trophy"
+        case .feed:        return "square.stack"
         }
     }
 }
@@ -61,12 +61,12 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !isKeyboardVisible {
-                GlassTabBar(selectedTab: $selectedTab, badges: badges)
+                TileTabBar(selectedTab: $selectedTab, badges: badges)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .ignoresSafeArea(.keyboard)
-        .background(Color(.systemBackground))
+        .courtGround()
         .noticeToast()
         .sharePromptHost()
         .fullScreenCover(isPresented: Binding(get: { social.phase == .ready && !firstStepsDone },
@@ -98,135 +98,123 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Glass Tab Bar
+// MARK: - Tab bar
 
-private struct GlassTabBar: View {
+/// Five same-size tiles, centred with fixed gaps. The selected tile is a
+/// solid sport-colour tile by day, pressed in with a thin sport-colour line
+/// along its bottom at night, and a frosted tile with the line in Glass.
+private struct TileTabBar: View {
     @Binding var selectedTab: AppTab
     var badges: Set<AppTab> = []
-    @Namespace private var tabNamespace
-
-    private let accent = DS.Palette.ink
-    private let inactive = DS.Palette.textMuted
+    @Environment(SportMode.self) private var sportMode
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: Court.Metrics.tileGap) {
             ForEach(AppTab.allCases) { tab in
-                TabBarButton(
-                    tab: tab,
-                    isSelected: selectedTab == tab,
-                    hasBadge: badges.contains(tab),
-                    namespace: tabNamespace,
-                    accent: accent,
-                    inactive: inactive,
-                    onPressStart: { Haptics.warm() },
-                    action: {
-                        guard selectedTab != tab else { return }
-                        Haptics.light()
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            selectedTab = tab
-                        }
-                    }
-                )
+                TabTile(tab: tab, sport: sportMode.sport, isSelected: selectedTab == tab,
+                        hasBadge: badges.contains(tab)) {
+                    guard selectedTab != tab else { return }
+                    Haptics.light()
+                    withAnimation(.snappy(duration: 0.28)) { selectedTab = tab }
+                }
             }
         }
-        .padding(.horizontal, 6)
-        .frame(height: 64)
-        .background(
-            Capsule(style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.55),
-                                    Color.white.opacity(0.12)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 6)
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
     }
 }
 
-// MARK: - Tab Bar Button
-
-private struct TabBarButton: View {
+private struct TabTile: View {
     let tab: AppTab
+    let sport: Sport
     let isSelected: Bool
     var hasBadge = false
-    let namespace: Namespace.ID
-    let accent: Color
-    let inactive: Color
-    let onPressStart: () -> Void
     let action: () -> Void
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.appearanceStyle) private var style
+    private let social = Social.shared
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Court.Metrics.tileRadius, style: .continuous)
+    }
+
+    /// Standard, day: solid accent fill. Night or Glass: the thin line.
+    private var solid: Bool { isSelected && scheme == .light && style == .standard }
+    private var line: Bool { isSelected && !solid }
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 20, weight: isSelected ? .semibold : .regular))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundColor(isSelected ? accent : inactive)
-                    .frame(height: 24)
-                    .scaleEffect(isSelected ? 1.08 : 1.0)
-                    .animation(.spring(response: 0.28, dampingFraction: 0.7), value: isSelected)
-                    .overlay(alignment: .topTrailing) {
-                        if hasBadge {
-                            Circle()
-                                .fill(DS.Palette.loss)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 5, y: -2)
-                        }
-                    }
-
-                Text(tab.label)
-                    .font(.system(size: 10,
-                                  weight: isSelected ? .semibold : .medium,
-                                  design: .rounded))
-                    .foregroundColor(isSelected ? accent : inactive)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .background(
-                // Single shared capsule that slides between buttons via
-                // matchedGeometryEffect. Only the SELECTED button renders it;
-                // SwiftUI animates the geometry transfer for us.
-                Group {
-                    if isSelected {
-                        Capsule(style: .continuous)
-                            .fill(accent.opacity(0.10))
-                            .overlay(
-                                Capsule(style: .continuous)
-                                    .strokeBorder(accent.opacity(0.18), lineWidth: 1)
-                            )
-                            .matchedGeometryEffect(id: "activeTabIndicator", in: namespace)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 2)
+            icon
+                .frame(width: Court.Metrics.tile, height: Court.Metrics.tile)
+                .background { background }
+                .overlay {
+                    if line {
+                        Rectangle()
+                            .fill(Court.accent(sport))
+                            .frame(height: Court.Metrics.selectedLine)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                            .clipShape(shape)
                     }
                 }
-            )
+                .overlay(alignment: .topTrailing) {
+                    if hasBadge {
+                        Circle()
+                            .fill(DS.Palette.loss)
+                            .frame(width: 9, height: 9)
+                            .overlay(Circle().stroke(Court.ground, lineWidth: 2))
+                            .offset(x: -7, y: 7)
+                    }
+                }
+                .contentShape(shape)
         }
-        // Pre-warm the haptic engine on touch-down rather than on tap.
-        // Touches don't fire until the finger lands, but landing → lift
-        // is ~50–100ms — enough for .prepare() to ready the actuator.
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in onPressStart() }
-        )
         .buttonStyle(.press)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(isSelected ? "\(tab.label) tab, selected" : "\(tab.label) tab")
-        .accessibilityValue(hasBadge ? "New activity" : "")
+        .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in Haptics.warm() })
+        .accessibilityLabel(tab.label)
+        .accessibilityValue(hasBadge ? String(localized: "New activity") : "")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if style == .glass {
+            shape.fill(.ultraThinMaterial)
+                .overlay(shape.strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8))
+                .shadow(color: .black.opacity(isSelected ? 0.04 : 0.08), radius: 8, x: 0, y: 4)
+        } else if line {
+            shape.fill(Court.pressedFill)
+        } else {
+            shape.fill(solid ? Court.accent(sport) : Court.raised)
+                .shadow(Court.raisedDark)
+                .shadow(Court.raisedLight)
+        }
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if tab == .me {
+            Group {
+                if let id = social.userID, social.phase == .ready {
+                    ProfileAvatar(userID: id, size: Court.Metrics.avatar)
+                } else {
+                    Circle()
+                        .fill(Court.avatarBackground)
+                        .overlay(alignment: .bottom) {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Court.avatarForeground)
+                                .offset(y: 4)
+                        }
+                }
+            }
+            .frame(width: Court.Metrics.avatar, height: Court.Metrics.avatar)
+            .clipShape(Circle())
+        } else {
+            Image(systemName: tab.icon)
+                .font(.system(size: Court.Metrics.tileIcon, weight: .semibold))
+                .foregroundStyle(solid ? Court.onAccent : Court.text)
+        }
     }
 }
 

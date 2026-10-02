@@ -229,7 +229,7 @@ struct MatchScoreCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding(18)
-        .cardSurface()
+        .courtRaised()
     }
 
     private func unitText(_ unit: CompletedUnit, team: Team) -> String {

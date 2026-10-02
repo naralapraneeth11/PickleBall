@@ -35,7 +35,7 @@ struct FeedView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 110)
         }
-        .background(DS.Palette.pageGrey.ignoresSafeArea())
+        .courtGround()
         .navigationTitle("Feed")
         .navigationDestination(for: ServeRow.self) { serve in
             ServeDetailView(serveID: serve.id)
@@ -160,7 +160,7 @@ struct ServeCard: View {
             .foregroundStyle(serve.rallyCount > 0 ? DS.Palette.electricBlue : .secondary)
         }
         .padding(16)
-        .cardSurface()
+        .courtRaised()
     }
 }
 
@@ -202,7 +202,7 @@ private struct ExampleServe: View {
                 .foregroundStyle(DS.Palette.electricBlue)
             }
             .padding(16)
-            .cardSurface()
+            .courtRaised()
             .opacity(0.7)
             Text("Serves are posts only your friends see. Friends Return them with a comment, a chant or a photo. Every Return keeps the ball in play; no Returns for a day and it’s a dead ball.")
                 .font(DS.Typography.caption)

@@ -32,6 +32,7 @@ struct TournamentsView: View {
                 }
             }
         }
+        .courtList()
         .navigationTitle("Tournaments")
         .navigationDestination(for: TournamentRow.self) { tournament in
             TournamentDetailView(tournamentID: tournament.id)

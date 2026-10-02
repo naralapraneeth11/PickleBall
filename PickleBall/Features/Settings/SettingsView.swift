@@ -15,11 +15,12 @@ struct SettingsView: View {
     @State private var showNudges = false
     @State private var showPrivacy = false
     @State private var showAdmin = false
+    @AppStorage(AppearanceStyle.storageKey) private var appearance: AppearanceStyle = .standard
     private let social = Social.shared
 
-    let royalBlue    = DS.Palette.royalBlue
-    let lightGrey    = Color(red: 0.973, green: 0.973, blue: 0.973)
-    let cardWhite    = Color.white
+    let royalBlue    = Court.muted
+    let lightGrey    = Court.ground
+    let cardWhite    = Court.raised
     let destructiveRed = DS.Palette.loss
     let versionGrey  = Color(red: 0.627, green: 0.627, blue: 0.627)
 
@@ -218,6 +219,25 @@ struct SettingsView: View {
 
                         if social.phase == .ready {
                             accountSection
+                        }
+
+                        // MARK: Appearance
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("APPEARANCE")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(royalBlue)
+                                .tracking(0.5)
+                                .padding(.horizontal, 20)
+                            Picker("Appearance", selection: $appearance) {
+                                ForEach(AppearanceStyle.allCases) { Text($0.title).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.horizontal, 20)
+                            Text("Light and dark follow your iPhone. Glass swaps the soft surfaces for frosted ones.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 20)
                         }
 
                         // MARK: About Us

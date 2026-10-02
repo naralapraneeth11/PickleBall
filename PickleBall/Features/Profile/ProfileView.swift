@@ -110,8 +110,7 @@ struct ProfileView: View {
             .padding(.top, 12)
             .padding(.bottom, 110)
         }
-        .background(DS.Palette.night.ignoresSafeArea())
-        .environment(\.colorScheme, .dark)
+        .courtGround()
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showEdit) {
             if social.phase == .ready {
@@ -152,10 +151,10 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(me.displayName)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                 Text(subtitle)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Palette.nightMuted)
+                    .foregroundStyle(Court.muted)
             }
             Spacer()
             if isMe {
@@ -182,9 +181,9 @@ struct ProfileView: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
                 .frame(width: 38, height: 38)
-                .background(Circle().fill(DS.Palette.nightRaised))
+                .background(Circle().fill(Court.raised).shadow(Court.raisedDark).shadow(Court.raisedLight))
         }
         .buttonStyle(.press)
         .accessibilityLabel(LocalizedStringKey(label))
@@ -224,9 +223,9 @@ struct ProfileView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Court.text)
                         .frame(width: 38, height: 38)
-                        .background(Circle().fill(DS.Palette.nightRaised))
+                        .background(Circle().fill(Court.raised).shadow(Court.raisedDark).shadow(Court.raisedLight))
                 }
                 .accessibilityLabel("More")
             }
@@ -240,10 +239,10 @@ struct ProfileView: View {
         } label: {
             Label(title, systemImage: symbol)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(.black)
+                .foregroundStyle(Court.text)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
-                .background(Capsule().fill(accent))
+                .courtRaisedCapsule()
         }
         .buttonStyle(.press)
     }
@@ -256,7 +255,7 @@ struct ProfileView: View {
         let involved = matchStore.belts.belts(involving: me.id).filter { !$0.isHeld(by: me.id) }
         if !held.isEmpty || !involved.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("BELTS").eyebrowStyle(DS.Palette.nightMuted)
+                Text("BELTS").eyebrowStyle(Court.muted)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(held + involved) { belt in
@@ -276,7 +275,7 @@ struct ProfileView: View {
         let trophies = social.trophies.filter { $0.ownerID == me.id.rawValue }
         if !trophies.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("TROPHY CASE").eyebrowStyle(DS.Palette.nightMuted)
+                Text("TROPHY CASE").eyebrowStyle(Court.muted)
                 TrophyCase(trophies: trophies)
             }
         }
@@ -293,16 +292,16 @@ struct ProfileView: View {
                 moreRow("Friends", "person.2.fill") { FriendsView() }
             }
         }
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(DS.Palette.nightRaised))
+        .courtRaised()
     }
 
     private func moreRow<Destination: View>(_ title: String, _ symbol: String, @ViewBuilder destination: () -> Destination) -> some View {
         NavigationLink(destination: destination()) {
             HStack(spacing: 12) {
                 Image(systemName: symbol).frame(width: 24).foregroundStyle(accent)
-                Text(LocalizedStringKey(title)).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                Text(LocalizedStringKey(title)).font(.system(size: 16, weight: .semibold, design: .rounded)).foregroundStyle(Court.text)
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(DS.Palette.nightMuted)
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Court.muted)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -337,17 +336,17 @@ struct ProfileView: View {
         }()
 
         return VStack(alignment: .leading, spacing: 6) {
-            Text("FORM").eyebrowStyle(DS.Palette.nightMuted)
+            Text("FORM").eyebrowStyle(Court.muted)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(point.map { String(format: "%.1f", $0.value) } ?? "—")
                     .font(DS.Typography.hero(64))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .contentTransition(.numericText())
                 if point != nil {
                     Text("%")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundStyle(DS.Palette.nightMuted)
+                        .foregroundStyle(Court.muted)
                 }
             }
 
@@ -356,18 +355,18 @@ struct ProfileView: View {
                     if let change {
                         Text("\(change >= 0 ? "▲" : "▼") \(String(format: "%.1f", abs(change)))")
                             .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(change >= 0 ? accent : Color.white.opacity(0.55))
+                            .foregroundStyle(change >= 0 ? accent : Court.text.opacity(0.55))
                     }
                     Text(caption(for: point))
                         .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(DS.Palette.nightMuted)
+                        .foregroundStyle(Court.muted)
                         .lineLimit(1)
                 }
                 .animation(DS.Motion.snappy, value: point.id)
             } else {
                 Text("Share of points you win, smoothed over recent matches. Finish a match to start your line.")
                     .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Palette.nightMuted)
+                    .foregroundStyle(Court.muted)
             }
         }
         .accessibilityElement(children: .combine)
@@ -389,12 +388,12 @@ struct ProfileView: View {
                     .frame(height: 190)
             } else {
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .fill(DS.Palette.nightRaised)
+                    .fill(Court.raised)
                     .frame(height: 120)
                     .overlay(
                         Text("Your form line appears after two matches.")
                             .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Palette.nightMuted)
+                            .foregroundStyle(Court.muted)
                     )
             }
 
@@ -417,10 +416,10 @@ struct ProfileView: View {
         } label: {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(isOn ? Color.black : DS.Palette.nightMuted)
+                .foregroundStyle(isOn ? Color.black : Court.muted)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(isOn ? accent : DS.Palette.nightRaised))
+                .background(Capsule().fill(isOn ? accent : Court.raised))
         }
         .buttonStyle(.press)
         .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -448,11 +447,11 @@ struct ProfileView: View {
             statCell("POINTS", share.map { "\($0)%" } ?? "—")
         }
         .padding(.vertical, 14)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(DS.Palette.nightRaised))
+        .courtRaised()
     }
 
     private var divider: some View {
-        Rectangle().fill(DS.Palette.hairline).frame(width: 1, height: 30)
+        Rectangle().fill(Court.hairline).frame(width: 1, height: 30)
     }
 
     // MARK: Level
@@ -481,19 +480,19 @@ struct ProfileView: View {
                         Text(item.sport == .padel ? "PADEL LEVEL" : "PICKLEBALL LEVEL")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .tracking(1.1)
-                            .foregroundStyle(DS.Palette.nightMuted)
+                            .foregroundStyle(Court.muted)
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(PlayerLevel.format(item.level))
                                 .font(.system(size: 22, weight: .heavy, design: .rounded).monospacedDigit())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Court.text)
                             if let change = item.change, abs(change) >= 0.01 {
                                 Text("\(change >= 0 ? "▲" : "▼")\(String(format: "%.2f", abs(change)))")
                                     .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
-                                    .foregroundStyle(change >= 0 ? item.sport.theme.accent : Color.white.opacity(0.55))
+                                    .foregroundStyle(change >= 0 ? item.sport.theme.accent : Court.text.opacity(0.55))
                             }
                         }
                         if item.provisional {
-                            Text("Provisional").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(DS.Palette.nightMuted)
+                            Text("Provisional").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(Court.muted)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -501,7 +500,7 @@ struct ProfileView: View {
                 }
             }
             .padding(.vertical, 14)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous).fill(DS.Palette.nightRaised))
+            .courtRaised()
         }
     }
 
@@ -510,10 +509,10 @@ struct ProfileView: View {
             Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.1)
-                .foregroundStyle(DS.Palette.nightMuted)
+                .foregroundStyle(Court.muted)
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
@@ -523,7 +522,7 @@ struct ProfileView: View {
 
     private var rivalsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("RIVALS").eyebrowStyle(DS.Palette.nightMuted)
+            Text("RIVALS").eyebrowStyle(Court.muted)
                 .padding(.bottom, 6)
             ForEach(rivals.prefix(12)) { rival in
                 NavigationLink {
@@ -533,7 +532,7 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.press)
                 if rival.id != rivals.prefix(12).last?.id {
-                    Rectangle().fill(DS.Palette.hairline).frame(height: 1).padding(.leading, 50)
+                    Rectangle().fill(Court.hairline).frame(height: 1).padding(.leading, 50)
                 }
             }
         }
@@ -541,15 +540,15 @@ struct ProfileView: View {
 
     private func rivalRow(_ rival: OpponentSummary) -> some View {
         HStack(spacing: 12) {
-            Avatar(name: rival.opponent.displayName, color: DS.Palette.nightRaised, size: 38)
+            Avatar(name: rival.opponent.displayName, color: Court.raised, size: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(rival.opponent.displayName)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .lineLimit(1)
                 Text("\(rival.played) match\(rival.played == 1 ? "" : "es") · \(rival.lastPlayed.formatted(.dateTime.month(.abbreviated).day()))")
                     .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Palette.nightMuted)
+                    .foregroundStyle(Court.muted)
             }
             Spacer(minLength: 8)
             FormSparkline(results: rival.recentForm, accent: accent)
@@ -557,10 +556,10 @@ struct ProfileView: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(rival.wins)–\(rival.losses)")
                     .font(.system(size: 16, weight: .bold, design: .rounded).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                 Text(rival.trend > 0 ? "▲ won last" : "▼ lost last")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(rival.trend > 0 ? accent : Color.white.opacity(0.5))
+                    .foregroundStyle(rival.trend > 0 ? accent : Court.text.opacity(0.5))
             }
             .frame(minWidth: 70, alignment: .trailing)
         }
@@ -575,20 +574,20 @@ struct ProfileView: View {
 
     private var partnersSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("BEST PARTNERS").eyebrowStyle(DS.Palette.nightMuted)
+            Text("BEST PARTNERS").eyebrowStyle(Court.muted)
             ForEach(partners.prefix(5)) { record in
                 HStack(spacing: 12) {
-                    Avatar(name: record.partner.displayName, color: DS.Palette.nightRaised, size: 32)
+                    Avatar(name: record.partner.displayName, color: Court.raised, size: 32)
                     Text(record.partner.displayName)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Court.text)
                     Spacer()
                     Text("\(Int((record.winRate * 100).rounded()))%")
                         .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
                         .foregroundStyle(accent)
                     Text("\(record.wins)–\(record.losses)")
                         .font(.system(size: 13, weight: .medium, design: .rounded).monospacedDigit())
-                        .foregroundStyle(DS.Palette.nightMuted)
+                        .foregroundStyle(Court.muted)
                         .frame(width: 44, alignment: .trailing)
                 }
                 .accessibilityElement(children: .combine)

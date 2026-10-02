@@ -68,16 +68,16 @@ struct BeltTile: View {
                 .opacity(isHeld ? 1 : 0.45)
             Text(title)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Court.text)
                 .lineLimit(2)
             Text(isHeld ? "\(belt.defenses) defense\(belt.defenses == 1 ? "" : "s")" : "Held by \(holderName)")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundStyle(DS.Palette.nightMuted)
+                .foregroundStyle(Court.muted)
                 .lineLimit(1)
         }
         .frame(width: 150, alignment: .leading)
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(DS.Palette.nightRaised))
+        .courtRaised(cornerRadius: 16)
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(isHeld && belt.tier != .plain ? DS.Palette.gold.opacity(0.5) : .clear))
     }
 

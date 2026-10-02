@@ -773,102 +773,70 @@ struct MainMenu: View {
 
     private var theme: SportTheme { sportMode.theme }
 
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         ZStack {
-            GeometryReader { geometry in
-                ZStack {
-                    courtBackground(height: geometry.size.height)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    header
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 20)
+                        .zIndex(1)
 
-                    // Top: settings + sport badge
-                    VStack {
-                        HStack {
-                            Button(action: { showSettings = true }) {
-                                Image(systemName: "gearshape.fill")
-                                    .font(.system(size: 26, weight: .regular))
-                                    .foregroundStyle(.white)
-                                    .padding()
-                            }
-                            .accessibilityLabel("Open settings")
-                            Spacer()
-                            SportSwitchBadge(sport: sportMode.sport, showsHint: sportMode.showsHint) {
-                                switchSport()
-                            }
-                            .padding(.trailing, 18)
+                    CourtHome(sport: sportMode.sport)
+                        .padding(.horizontal, Court.Metrics.sideInset)
+                        .onTapGesture {
+                            Haptics.medium()
+                            if let live = center.live, !live.isEnded { showScoreboard = true } else { showPlayView = true }
                         }
-                        Spacer()
-                    }
-                    .padding(.top, 84)
+                        .onLongPressGesture(minimumDuration: 0.45) { switchSport() }
+                        .accessibilityAction { showPlayView = true }
+                        .accessibilityAction(named: Text("Switch to \(sportMode.sport.toggled.displayName)")) { switchSport() }
 
-                    // Center actions
-                    VStack(spacing: 14) {
-                        Spacer()
+                    hint.padding(.top, 22)
 
+                    VStack(spacing: 12) {
                         if let live = center.live, !live.isEnded {
                             liveMatchCard(live)
-                                .padding(.horizontal, 28)
                                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         }
-
-                        Button(action: { showPlayView = true }) {
-                            Text("START MATCH")
-                                .font(.system(size: 25, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 32)
-                                .padding(.vertical, 24)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color.black.opacity(0.14))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                .stroke(theme.accent.opacity(0.6), lineWidth: 1.5)
-                                        )
-                                )
-                        }
-                        .buttonStyle(.press)
-                        .shadow(color: .black.opacity(0.25), radius: 12, x: 0, y: 8)
-                        .accessibilityLabel("Start a new \(sportMode.sport.displayName) match")
-
-                        VStack(spacing: 10) {
-                            ForEach(matchStore.parked.prefix(2)) { setup in
-                                menuSecondaryButton(
-                                    title: "Resume: \(setup.lineup.shortName(of: .a)) vs \(setup.lineup.shortName(of: .b))",
-                                    systemImage: "pause.circle.fill"
-                                ) {
-                                    if center.resume(matchID: setup.matchID) != nil { showScoreboard = true }
-                                }
-                            }
-
-                            menuSecondaryButton(title: "Enter a score", systemImage: "square.and.pencil") {
-                                showEnterScore = true
-                            }
-
-                            ForEach(inboxItems.prefix(3)) { item in
-                                menuSecondaryButton(title: item.title, systemImage: item.symbol) {
-                                    open(item)
-                                }
-                            }
-                            if inboxItems.count > 3 {
-                                menuSecondaryButton(title: "See all (\(inboxItems.count))", systemImage: "tray.full.fill") {
-                                    showInbox = true
-                                }
+                        ForEach(matchStore.parked.prefix(2)) { setup in
+                            menuSecondaryButton(
+                                title: "Resume: \(setup.lineup.shortName(of: .a)) vs \(setup.lineup.shortName(of: .b))",
+                                systemImage: "pause.circle"
+                            ) {
+                                if center.resume(matchID: setup.matchID) != nil { showScoreboard = true }
                             }
                         }
-                        .padding(.horizontal, 28)
-
-                        Spacer()
-                            .frame(height: geometry.size.height * 0.12)
+                        menuSecondaryButton(title: "Enter a score", systemImage: "square.and.pencil") {
+                            showEnterScore = true
+                        }
+                        ForEach(inboxItems.prefix(3)) { item in
+                            menuSecondaryButton(title: item.title, systemImage: item.symbol) {
+                                open(item)
+                            }
+                        }
+                        if inboxItems.count > 3 {
+                            menuSecondaryButton(title: "See all (\(inboxItems.count))", systemImage: "tray.full") {
+                                showInbox = true
+                            }
+                        }
                     }
+                    .padding(.horizontal, Court.Metrics.sideInset + 4)
+                    .padding(.top, 28)
                 }
+                .padding(.top, 8)
+                .padding(.bottom, Court.Metrics.tabBarClearance)
             }
-            .ignoresSafeArea()
-
-            ShutterPanel()
+            .courtGround()
 
             if showHealthPrompt {
                 healthAccessPrompt
                     .transition(.scale.combined(with: .opacity))
             }
         }
+        .sensoryFeedback(.selection, trigger: sportMode.sport)
         .animation(DS.Motion.snappy, value: sportMode.sport)
         .animation(DS.Motion.snappy, value: center.live?.id)
         .fullScreenCover(isPresented: $showPlayView) {
@@ -913,35 +881,58 @@ struct MainMenu: View {
         }
     }
 
-    // MARK: Court
+    // MARK: Header
 
-    private func courtBackground(height: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Rectangle().fill(theme.courtSurface)
-                Rectangle().fill(Color.white).frame(width: 5)
-                Rectangle().fill(theme.courtSurfaceAlt)
+    private var header: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("HOME")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .tracking(1.8)
+                    .foregroundStyle(Court.dim)
+                Text(sportMode.sport.displayName)
+                    .font(.system(size: 38, weight: .semibold))
+                    .tracking(-1.1)
+                    .foregroundStyle(Court.text)
+                    .contentTransition(.opacity)
             }
-            .frame(height: height * 0.375)
-
-            Rectangle().fill(Color.white).frame(height: 5)
-
-            Rectangle()
-                .fill(DS.Palette.navy)
-                .frame(height: height * 0.249)
-
-            Rectangle().fill(Color.white).frame(height: 5)
-
-            HStack(spacing: 0) {
-                Rectangle().fill(theme.courtSurface.opacity(0.95))
-                Rectangle().fill(Color.white).frame(width: 5)
-                Rectangle().fill(theme.courtSurfaceAlt.opacity(0.95))
+            Spacer()
+            Button(action: switchSport) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(sportMode.sport.toggled.displayName)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(Court.text)
+                .padding(.horizontal, 16)
+                .frame(height: Court.Metrics.pillHeight)
+                .courtRaisedCapsule()
             }
-            .frame(height: height * 0.375)
+            .buttonStyle(.press)
+            .accessibilityLabel("Switch to \(sportMode.sport.toggled.displayName)")
         }
-        .frame(height: height)
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+    }
+
+    // MARK: Hint and page dots
+
+    private var hint: some View {
+        VStack(spacing: 12) {
+            Text("TAP COURT TO START · HOLD TO SWITCH")
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .tracking(1.8)
+                .foregroundStyle(Court.muted)
+                .multilineTextAlignment(.center)
+            HStack(spacing: 6) {
+                ForEach(Sport.allCases) { s in
+                    Capsule()
+                        .fill(s == sportMode.sport ? Court.activeDot(s, scheme: scheme) : Court.dotOff)
+                        .frame(width: s == sportMode.sport ? 18 : 6, height: 6)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 16)
     }
 
     private func switchSport() {
@@ -963,37 +954,30 @@ struct MainMenu: View {
         } label: {
             HStack(spacing: 12) {
                 Circle()
-                    .fill(match.sport.theme.accent)
+                    .fill(DS.Palette.loss)
                     .frame(width: 8, height: 8)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(match.isWatchHosted ? "LIVE ON APPLE WATCH" : "LIVE")
-                        .font(.system(size: 10, weight: .heavy, design: .rounded))
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
                         .tracking(1.4)
-                        .foregroundStyle(match.sport.theme.accent)
+                        .foregroundStyle(DS.Palette.loss)
                     Text("\(match.lineup.shortName(of: .a)) vs \(match.lineup.shortName(of: .b))")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Court.text)
                         .lineLimit(1)
                 }
                 Spacer()
                 Text("\(match.display.points.a)–\(match.display.points.b)")
                     .font(DS.Typography.score(26))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Court.text)
                     .contentTransition(.numericText())
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(Court.muted)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.black.opacity(0.35))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(match.sport.theme.accent.opacity(0.5), lineWidth: 1)
-                    )
-            )
+            .courtRaised(cornerRadius: 20)
         }
         .buttonStyle(.press)
         .accessibilityLabel("Live match, \(match.lineup.name(of: .a)) versus \(match.lineup.name(of: .b)). Open scoreboard.")
@@ -1008,23 +992,20 @@ struct MainMenu: View {
             HStack(spacing: 10) {
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .semibold))
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .frame(width: 22)
+                Text(LocalizedStringKey(title))
+                    .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Court.muted)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Court.text)
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.black.opacity(0.18))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.white.opacity(0.22), lineWidth: 1)
-                    )
-            )
+            .frame(height: 54)
+            .courtRaised(cornerRadius: 18)
         }
         .buttonStyle(.press)
         .accessibilityLabel(title)
@@ -1080,4 +1061,105 @@ struct MainMenu: View {
 #Preview {
     MainMenu()
         .environment(SportMode())
+}
+
+// MARK: - Court
+
+/// The near half court on a raised plate, with the far half mirrored above
+/// the net and fading out. Pickleball: kitchen by the net. Padel: back court.
+struct CourtHome: View {
+    let sport: Sport
+
+    var body: some View {
+        CourtPlate(sport: sport)
+            .frame(height: Court.Metrics.courtHeight)
+            .background(alignment: .top) {
+                CourtPlate(sport: sport, mirrored: true, elevated: false, showLabel: false)
+                    .frame(height: Court.Metrics.courtHeight)
+                    .mask(fade)
+                    .offset(y: -(Court.Metrics.courtHeight + Court.Metrics.farHalfGap))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: Court.Metrics.courtRadius, style: .continuous))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Start a new \(sport.displayName) match"))
+            .accessibilityHint(Text("Touch and hold to switch to \(sport.toggled.displayName)"))
+            .accessibilityAddTraits(.isButton)
+    }
+
+    private var fade: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(Court.Metrics.farHalfOpacity), location: 0),
+                .init(color: .clear, location: Court.Metrics.farHalfFade / Court.Metrics.courtHeight)
+            ],
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
+}
+
+private struct CourtPlate: View {
+    let sport: Sport
+    var mirrored = false
+    var elevated = true
+    var showLabel = true
+    @Environment(\.appearanceStyle) private var style
+
+    /// The net is at the top of the near half (the bottom of the mirror).
+    private var bandOnTop: Bool { (sport == .pickleball) != mirrored }
+
+    var body: some View {
+        VStack(spacing: Court.Metrics.courtGap) {
+            if bandOnTop {
+                band
+                boxes
+            } else {
+                boxes
+                band
+            }
+        }
+        .padding(Court.Metrics.courtPadding)
+        .background { plate }
+    }
+
+    @ViewBuilder
+    private var plate: some View {
+        let shape = RoundedRectangle(cornerRadius: Court.Metrics.courtRadius, style: .continuous)
+        if style == .glass {
+            shape.fill(.ultraThinMaterial)
+                .overlay(shape.strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8))
+                .shadow(color: .black.opacity(elevated ? 0.10 : 0), radius: 16, x: 0, y: 10)
+        } else {
+            shape.fill(Court.plate)
+                .shadow(color: elevated ? Court.courtDrop.color : .clear, radius: Court.courtDrop.radius,
+                        x: Court.courtDrop.x, y: Court.courtDrop.y)
+                .shadow(color: elevated ? Court.courtLight.color : .clear, radius: Court.courtLight.radius,
+                        x: Court.courtLight.x, y: Court.courtLight.y)
+        }
+    }
+
+    private var band: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: Court.Metrics.bandHeight)
+            .courtSunken()
+            .overlay {
+                if showLabel {
+                    Text(sport == .pickleball ? "KITCHEN" : "BACK COURT")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .tracking(2.2)
+                        .foregroundStyle(Court.muted)
+                }
+            }
+    }
+
+    private var boxes: some View {
+        HStack(spacing: Court.Metrics.courtGap) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity).courtSunken()
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity).courtSunken()
+        }
+        .frame(maxHeight: .infinity)
+    }
 }

@@ -52,6 +52,7 @@ struct ChatsView: View {
                 }
             }
         }
+        .courtList()
         .navigationTitle("Chats")
         .navigationDestination(for: ConversationRow.self) { conversation in
             ChatView(conversationID: conversation.id)

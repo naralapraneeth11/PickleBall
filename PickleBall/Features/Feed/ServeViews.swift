@@ -179,7 +179,7 @@ struct ServeDetailView: View {
                 }
                 returnBar(serve)
             }
-            .background(DS.Palette.pageGrey.ignoresSafeArea())
+            .courtGround()
             .navigationTitle("Serve")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -244,7 +244,7 @@ struct ServeDetailView: View {
                     .lineLimit(1...4)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color(.secondarySystemBackground)))
+                    .courtRaised(cornerRadius: 20)
                 Button {
                     let body = text
                     text = ""
