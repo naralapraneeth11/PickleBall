@@ -50,10 +50,12 @@ public protocol SocialAPI: OutboxTransport {
     // Chats
     func conversations() async throws -> [ConversationRow]
     func messages(in conversationID: UUID, after: Date?, limit: Int) async throws -> [MessageRow]
+    func messages(in conversationID: UUID, before: Date, limit: Int) async throws -> [MessageRow]
+    func messageIDs(in conversationID: UUID, since: Date) async throws -> Set<UUID>
     func deleteMessage(_ id: UUID) async throws
 
     // Matches
-    func matches(updatedAfter: Date?) async throws -> [MatchRow]
+    func matches(updatedSince: Date?) async throws -> [MatchRow]
     func participants(matchIDs: [UUID]) async throws -> [ParticipantRow]
     func withdrawMatch(_ id: UUID) async throws
 
@@ -97,7 +99,7 @@ public protocol SocialAPI: OutboxTransport {
     func removeMedia(_ paths: [String], from bucket: MediaBucket) async throws
 
     // Account
-    func deleteAccount() async throws
+    func deleteAccount(appleAuthorizationCode: String?) async throws -> AccountDeletion
     func publishLevels(_ levels: [String: Double]) async throws
 
     // Watch and share
@@ -159,4 +161,21 @@ public struct TournamentDraft: Codable, Hashable, Sendable {
     }
 
     static let placeholder = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+}
+
+/// What deleting an account did.
+public struct AccountDeletion: Codable, Hashable, Sendable {
+    public var ok: Bool
+    public var filesRemoved: Int
+    /// Nil when no Apple code was sent; false when revoking failed or the
+    /// server function wasn't available.
+    public var appleRevoked: Bool?
+    public var error: String?
+
+    public init(ok: Bool, filesRemoved: Int, appleRevoked: Bool?, error: String? = nil) {
+        self.ok = ok
+        self.filesRemoved = filesRemoved
+        self.appleRevoked = appleRevoked
+        self.error = error
+    }
 }

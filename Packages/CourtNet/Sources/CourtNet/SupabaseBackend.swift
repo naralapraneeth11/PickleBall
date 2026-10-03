@@ -483,24 +483,15 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
 
     // MARK: Account
 
-    public struct DeletionResult: Decodable, Sendable {
-        public var ok: Bool
-        public var filesRemoved: Int
-        /// Nil when no Apple code was sent; false when revoking failed or
-        /// the server function wasn't available.
-        public var appleRevoked: Bool?
-        public var error: String?
-    }
-
     /// Deletes the signed-in account. Prefers the delete-account Edge
     /// Function (files removed with full rights, Sign in with Apple
     /// revoked); falls back to doing what the app can itself when the
     /// function isn't deployed.
-    public func deleteAccount(appleAuthorizationCode: String?) async throws -> DeletionResult {
+    public func deleteAccount(appleAuthorizationCode: String?) async throws -> AccountDeletion {
         _ = try me()
         struct Body: Encodable { let appleAuthorizationCode: String? }
         do {
-            let result: DeletionResult = try await client.functions.invoke(
+            let result: AccountDeletion = try await client.functions.invoke(
                 "delete-account",
                 options: FunctionInvokeOptions(body: Body(appleAuthorizationCode: appleAuthorizationCode))
             )
@@ -515,7 +506,7 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     }
 
     /// Fallback: the app removes its own files (page by page), then the data.
-    private func deleteAccountFromDevice() async throws -> DeletionResult {
+    private func deleteAccountFromDevice() async throws -> AccountDeletion {
         let me = try me()
         var removed = 0
         for bucket in [MediaBucket.avatars, .media] {
@@ -527,7 +518,7 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
         }
         try await db.rpc("delete_account").execute()
         try? await client.auth.signOut(scope: .local)
-        return DeletionResult(ok: true, filesRemoved: removed, appleRevoked: false, error: nil)
+        return AccountDeletion(ok: true, filesRemoved: removed, appleRevoked: false, error: nil)
     }
 
     private func allFiles(in bucket: MediaBucket, under folder: String) async throws -> [String] {
