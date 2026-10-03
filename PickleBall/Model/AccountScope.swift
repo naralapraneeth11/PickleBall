@@ -11,10 +11,11 @@
 
 import Foundation
 
-@MainActor
-enum AccountScope {
-    /// The signed-in account, or nil when signed out or built without a server.
-    static var current: UUID?
+nonisolated enum AccountScope {
+    /// The signed-in account, or nil when signed out or built without a
+    /// server. Written on the main actor only (sign-in and sign-out); read
+    /// from model initialisers, which SwiftData may run anywhere.
+    nonisolated(unsafe) static var current: UUID?
 
     static func owns(_ owner: UUID?) -> Bool { owner == current }
 }
