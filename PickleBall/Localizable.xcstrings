@@ -553,6 +553,52 @@
         }
       }
     },
+    "Add %lld matches to your account?": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Añadir %lld partidos a tu cuenta?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar %lld partidas à sua conta?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungere %lld partite al tuo account?"
+          }
+        }
+      }
+    },
+    "Add 1 match to your account?": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Añadir 1 partido a tu cuenta?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar 1 partida à sua conta?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungere 1 partita al tuo account?"
+          }
+        }
+      }
+    },
     "Add Apple Watch insights?": {
       "extractionState": "manual",
       "localizations": {
@@ -733,6 +779,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aggiungi il widget della cintura alla Home o alla schermata di blocco per vedere chi ce l’ha."
+          }
+        }
+      }
+    },
+    "Add to my account": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a mi cuenta"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar à minha conta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi al mio account"
           }
         }
       }
@@ -2370,6 +2439,29 @@
         }
       }
     },
+    "Couldn’t save on this iPhone. Free up some storage so your matches aren’t lost.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar en este iPhone. Libera espacio para no perder tus partidos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar neste iPhone. Libere espaço para não perder suas partidas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare su questo iPhone. Libera spazio per non perdere le partite."
+          }
+        }
+      }
+    },
     "Counter": {
       "extractionState": "manual",
       "localizations": {
@@ -2987,6 +3079,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "ESEMPIO"
+          }
+        }
+      }
+    },
+    "Earlier messages": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensajes anteriores"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensagens anteriores"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaggi precedenti"
           }
         }
       }
@@ -4785,6 +4900,29 @@
         }
       }
     },
+    "Loading…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carregando…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caricamento…"
+          }
+        }
+      }
+    },
     "Longest reign": {
       "extractionState": "manual",
       "localizations": {
@@ -5103,6 +5241,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partite"
+          }
+        }
+      }
+    },
+    "Matches can’t be saved on this iPhone right now and will be lost when the app closes. Free up some storage, then restart PickleBall.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora mismo no se pueden guardar partidos en este iPhone y se perderán al cerrar la app. Libera espacio y vuelve a abrir PickleBall."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No momento não é possível salvar partidas neste iPhone e elas serão perdidas ao fechar o app. Libere espaço e reabra o PickleBall."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento le partite non possono essere salvate su questo iPhone e andranno perse alla chiusura dell’app. Libera spazio e riapri PickleBall."
           }
         }
       }
@@ -7131,6 +7292,29 @@
         }
       }
     },
+    "Point-by-point stats (serve, return, runs, big points) appear for matches scored live on the iPhone or Apple Watch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las estadísticas punto a punto (saque, resto, rachas, puntos clave) aparecen en los partidos anotados en directo en el iPhone o el Apple Watch."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As estatísticas ponto a ponto (saque, devolução, sequências, pontos decisivos) aparecem nas partidas marcadas ao vivo no iPhone ou no Apple Watch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le statistiche punto per punto (servizio, risposta, serie, punti decisivi) compaiono per le partite segnate dal vivo su iPhone o Apple Watch."
+          }
+        }
+      }
+    },
     "Points Won": {
       "extractionState": "manual",
       "localizations": {
@@ -7541,6 +7725,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Casuali"
+          }
+        }
+      }
+    },
+    "Reconnecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconectando…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconectando…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riconnessione…"
           }
         }
       }
@@ -10466,6 +10673,52 @@
         }
       }
     },
+    "They were scored on this iPhone before you signed in. Only add them if you played them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se anotaron en este iPhone antes de que iniciaras sesión. Añádelos solo si los jugaste tú."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foram marcadas neste iPhone antes de você entrar. Adicione só se você jogou."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sono state segnate su questo iPhone prima che accedessi. Aggiungile solo se le hai giocate tu."
+          }
+        }
+      }
+    },
+    "They won’t be able to message you, see your Serves or call you out, and in squads you share you won’t see each other’s messages. Squad results stay visible to the squad. They aren’t told.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No podrá escribirte, ver tus publicaciones ni retarte, y en los grupos que compartís no veréis los mensajes del otro. Los resultados del grupo siguen visibles para el grupo. No se le avisa."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pessoa não poderá mandar mensagens, ver seus posts nem desafiar você, e nos grupos em comum vocês não verão as mensagens um do outro. Os resultados do grupo continuam visíveis para o grupo. Ela não é avisada."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non potrà scriverti, vedere i tuoi post né sfidarti, e nei gruppi in comune non vedrete i messaggi l’uno dell’altro. I risultati del gruppo restano visibili al gruppo. Non viene avvisata."
+          }
+        }
+      }
+    },
     "They won’t be able to message you, see your Serves or call you out. They aren’t told.": {
       "extractionState": "manual",
       "localizations": {
@@ -10485,6 +10738,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non potrà scriverti, vedere i tuoi post o sfidarti. Non viene avvisato."
+          }
+        }
+      }
+    },
+    "They’re not mine": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No son míos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não são minhas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non sono mie"
           }
         }
       }
@@ -10554,6 +10830,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Questo elimina per sempre profilo, amici, chat, post, Replay e trofei. Le partite restano nello storico degli avversari come “Ex giocatore”."
+          }
+        }
+      }
+    },
+    "This permanently deletes your profile, friends, chats, Serves, Replays, trophies and the matches stored on this iPhone for this account. Matches stay in your opponents’ history under “Former player”. You’ll confirm with Apple once more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto elimina para siempre tu perfil, amigos, chats, publicaciones, Replays, trofeos y los partidos de esta cuenta guardados en este iPhone. Los partidos siguen en el historial de tus rivales como «Exjugador». Confirmarás con Apple una vez más."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso apaga para sempre seu perfil, amigos, conversas, posts, Replays, troféus e as partidas desta conta guardadas neste iPhone. As partidas continuam no histórico dos adversários como “Ex-jogador”. Você confirmará com a Apple mais uma vez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina per sempre profilo, amici, chat, post, Replay, trofei e le partite di questo account salvate su questo iPhone. Le partite restano nello storico degli avversari come “Ex giocatore”. Confermerai con Apple ancora una volta."
           }
         }
       }
@@ -11777,6 +12076,29 @@
         }
       }
     },
+    "Your confirmation is on its way. It counts once the server has it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu confirmación está en camino. Cuenta en cuanto llegue al servidor."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua confirmação está a caminho. Ela conta assim que chegar ao servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua conferma è in arrivo. Conta appena arriva al server."
+          }
+        }
+      }
+    },
     "Your court.\nYour crew.\nYour belt.": {
       "extractionState": "manual",
       "localizations": {
@@ -11796,6 +12118,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Il tuo campo.\nIl tuo gruppo.\nLa tua cintura."
+          }
+        }
+      }
+    },
+    "Your dispute is on its way.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu reclamación está en camino."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua contestação está a caminho."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua contestazione è in arrivo."
           }
         }
       }
