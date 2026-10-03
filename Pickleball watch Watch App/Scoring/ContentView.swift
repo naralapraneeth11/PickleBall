@@ -85,9 +85,17 @@ struct WatchIdleView: View {
             }
             .buttonStyle(.press)
 
-            Text("Turn the crown to switch sport")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
-                .foregroundStyle(DS.Palette.nightMuted)
+            if session.unsentCount > 0 {
+                Label(session.unsentCount == 1 ? LocalizedStringKey("1 match waiting for iPhone")
+                                               : LocalizedStringKey("\(session.unsentCount) matches waiting for iPhone"),
+                      systemImage: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(DS.Palette.nightText)
+            } else {
+                Text("Turn the crown to switch sport")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(DS.Palette.nightMuted)
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)

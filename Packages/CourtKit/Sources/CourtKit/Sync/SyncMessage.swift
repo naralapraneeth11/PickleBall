@@ -68,6 +68,27 @@ public struct RallyIntent: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+/// Orders the host's changes. `epoch` is when this host session started
+/// (a resumed or restarted match gets a later one); `counter` goes up on
+/// every rally, undo and end. Rally count alone can't order messages,
+/// because undo makes it go down.
+public struct Revision: Codable, Hashable, Sendable, Comparable {
+    public var epoch: Double
+    public var counter: Int
+
+    public init(epoch: Double, counter: Int = 0) {
+        self.epoch = epoch
+        self.counter = counter
+    }
+
+    public static func < (lhs: Revision, rhs: Revision) -> Bool {
+        (lhs.epoch, lhs.counter) < (rhs.epoch, rhs.counter)
+    }
+
+    /// The next change in the same session.
+    public var next: Revision { Revision(epoch: epoch, counter: counter + 1) }
+}
+
 public struct RallyEvent: Codable, Hashable, Sendable {
     public enum Kind: Hashable, Sendable {
         /// Rally number `sequence` was won by the team.
@@ -81,11 +102,14 @@ public struct RallyEvent: Codable, Hashable, Sendable {
     public var kind: Kind
     /// Echo of the client intent this event applies, if any.
     public var intentID: UUID?
+    /// The host's revision after this change. Nil from older builds.
+    public var revision: Revision?
 
-    public init(sequence: Int, kind: Kind, intentID: UUID? = nil) {
+    public init(sequence: Int, kind: Kind, intentID: UUID? = nil, revision: Revision? = nil) {
         self.sequence = sequence
         self.kind = kind
         self.intentID = intentID
+        self.revision = revision
     }
 }
 
@@ -106,12 +130,16 @@ public struct LogSnapshot: Hashable, Sendable {
     /// Recently applied intent IDs, so clients can retire acknowledged taps.
     public var appliedIntentIDs: [UUID]
     public var ended: EndReason?
+    /// The host's revision when the snapshot was taken. Nil from older builds.
+    public var revision: Revision?
 
-    public init(setup: MatchSetup, rallies: [Rally], appliedIntentIDs: [UUID] = [], ended: EndReason? = nil) {
+    public init(setup: MatchSetup, rallies: [Rally], appliedIntentIDs: [UUID] = [], ended: EndReason? = nil,
+                revision: Revision? = nil) {
         self.setup = setup
         self.rallies = rallies
         self.appliedIntentIDs = appliedIntentIDs
         self.ended = ended
+        self.revision = revision
     }
 }
 
@@ -123,6 +151,10 @@ public enum SyncMessage: Hashable, Sendable {
     case log(LogSnapshot)
     case logRequest(matchID: UUID)
     case matchEnded(matchID: UUID, EndReason)
+    /// Client → host: end the match, after applying these taps the host
+    /// may not have yet. Carrying them means a finish can never overtake
+    /// the rallies it depends on, whatever order messages arrive in.
+    case endRequest(matchID: UUID, EndReason, closing: [RallyIntent])
     /// Phone → Watch: sport mode, identity and recent players.
     case preferences(WatchPreferences)
     /// Watch → phone: the workout recorded alongside a match.
@@ -135,7 +167,7 @@ public enum SyncMessage: Hashable, Sendable {
         switch self {
         case .matchStarted(let snapshot), .log(let snapshot): return snapshot.setup.matchID
         case .intent(let id, _), .intentRejected(let id, _), .event(let id, _),
-             .logRequest(let id), .matchEnded(let id, _):
+             .logRequest(let id), .matchEnded(let id, _), .endRequest(let id, _, _):
             return id
         case .workout(let id, _, _): return id
         case .crowd(let tap, _): return tap.matchID
@@ -212,11 +244,11 @@ extension JSONDecoder {
 
 extension SyncMessage: Codable {
     private enum CodingKeys: String, CodingKey {
-        case type, matchID, snapshot, intent, intentID, event, reason, preferences, date, workout, tap, chant
+        case type, matchID, snapshot, intent, intentID, event, reason, preferences, date, workout, tap, chant, closing
     }
 
     private enum MessageType: String, Codable {
-        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, preferences, workout, crowd
+        case matchStarted, intent, intentRejected, event, log, logRequest, matchEnded, endRequest, preferences, workout, crowd
     }
 
     public init(from decoder: Decoder) throws {
@@ -238,6 +270,10 @@ extension SyncMessage: Codable {
         case .matchEnded:
             self = .matchEnded(matchID: try c.decode(UUID.self, forKey: .matchID),
                                try c.decode(EndReason.self, forKey: .reason))
+        case .endRequest:
+            self = .endRequest(matchID: try c.decode(UUID.self, forKey: .matchID),
+                               try c.decode(EndReason.self, forKey: .reason),
+                               closing: try c.decodeIfPresent([RallyIntent].self, forKey: .closing) ?? [])
         case .preferences:
             self = .preferences(try c.decode(WatchPreferences.self, forKey: .preferences))
         case .workout:
@@ -277,6 +313,11 @@ extension SyncMessage: Codable {
             try c.encode(MessageType.matchEnded, forKey: .type)
             try c.encode(matchID, forKey: .matchID)
             try c.encode(reason, forKey: .reason)
+        case .endRequest(let matchID, let reason, let closing):
+            try c.encode(MessageType.endRequest, forKey: .type)
+            try c.encode(matchID, forKey: .matchID)
+            try c.encode(reason, forKey: .reason)
+            try c.encode(closing, forKey: .closing)
         case .preferences(let preferences):
             try c.encode(MessageType.preferences, forKey: .type)
             try c.encode(preferences, forKey: .preferences)
@@ -347,7 +388,7 @@ extension RallyEvent.Kind: Codable {
 extension LogSnapshot: Codable {
     // Rallies are packed as a winner string ("ABBA…") plus offsets from the
     // match start, which keeps a 300-rally log to a couple of kilobytes.
-    private enum CodingKeys: String, CodingKey { case setup, winners, offsets, intents, ended }
+    private enum CodingKeys: String, CodingKey { case setup, winners, offsets, intents, ended, revision }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -370,6 +411,7 @@ extension LogSnapshot: Codable {
         self.rallies = rallies
         appliedIntentIDs = try c.decodeIfPresent([UUID].self, forKey: .intents) ?? []
         ended = try c.decodeIfPresent(EndReason.self, forKey: .ended)
+        revision = try c.decodeIfPresent(Revision.self, forKey: .revision)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -379,5 +421,6 @@ extension LogSnapshot: Codable {
         try c.encode(rallies.map { $0.at.timeIntervalSince(setup.startedAt) }, forKey: .offsets)
         if !appliedIntentIDs.isEmpty { try c.encode(appliedIntentIDs, forKey: .intents) }
         try c.encodeIfPresent(ended, forKey: .ended)
+        try c.encodeIfPresent(revision, forKey: .revision)
     }
 }

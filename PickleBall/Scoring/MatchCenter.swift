@@ -42,9 +42,10 @@ final class LiveMatch: Identifiable {
     var photoPromptVisible = false
     @ObservationIgnored fileprivate var photoPrompter = PhotoPrompter()
 
-    fileprivate init(setup: MatchSetup, role: MatchReplica.Role, log: [Rally] = [], context: MatchContext = MatchContext()) {
+    fileprivate init(setup: MatchSetup, role: MatchReplica.Role, log: [Rally] = [], context: MatchContext = MatchContext(),
+                     revision: Revision? = nil) {
         self.setup = setup
-        self.replica = MatchReplica(setup: setup, role: role, log: log)
+        self.replica = MatchReplica(setup: setup, role: role, log: log, revision: revision)
         self.context = context
     }
 
@@ -255,10 +256,10 @@ final class MatchCenter {
         case .workout(let matchID, let date, let report):
             WorkoutStore.shared.add(report, matchID: matchID, date: date)
             if let matchID, let record = MatchStore.shared.record(id: matchID) {
+                // Health data stays on this phone. It's shared only when
+                // the player posts a Replay that mentions it.
                 record.workout = report
                 AppDatabase.save()
-                // Re-send with the Watch extras if the server hasn't settled it.
-                Task { await Social.shared.upload(record) }
             }
             MatchStore.shared.reload()
             return
@@ -280,6 +281,16 @@ final class MatchCenter {
         case .matchEnded(let matchID, let reason):
             guard let record = MatchStore.shared.record(id: matchID) else { return }
             apply(reason, to: record)
+        case .endRequest(let matchID, _, _):
+            // The Watch finished a match this phone hosted but is no longer
+            // showing (the app was closed): apply its last taps, then end.
+            guard let record = MatchStore.shared.record(id: matchID), let stored = record.setup else { return }
+            var replica = MatchReplica(setup: stored, role: .host, log: record.rallyLog)
+            let outcome = replica.receive(message)
+            record.apply(log: replica.log, in: context)
+            AppDatabase.save()
+            connectivity.send(outcome.outgoing)
+            if let reason = replica.ended { apply(reason, to: record) }
         default:
             break
         }
@@ -308,7 +319,8 @@ final class MatchCenter {
         matchContext.squadID = Social.shared.sharedSquad(for: setup.lineup.allPlayers.map(\.id))?.id
         record.matchContext = matchContext
         AppDatabase.save()
-        let match = LiveMatch(setup: setup, role: .client, log: snapshot.rallies, context: matchContext)
+        let match = LiveMatch(setup: setup, role: .client, log: snapshot.rallies, context: matchContext,
+                              revision: snapshot.revision)
         live = match
         activities.start(for: match)
         Social.shared.goLive(match)
@@ -353,7 +365,10 @@ final class MatchCenter {
 
         guard let record = MatchStore.shared.record(id: match.id) else { return }
         if outcome.changed {
-            record.apply(log: match.replica.log, in: context)
+            // Finished here as the client: save the score the player saw;
+            // the host's final log replaces it when it arrives.
+            let rallies = match.replica.isAwaitingEndAck ? match.replica.scorer.rallies : match.replica.log
+            record.apply(log: rallies, in: context)
             AppDatabase.save()
             if match.role == .host, !match.isEnded {
                 connectivity.send(.log(match.replica.snapshot))
