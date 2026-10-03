@@ -108,6 +108,12 @@ final class MatchRecord {
     var courtData: Data?
     /// Server `updated_at` of the copy we last saw.
     var remoteUpdatedAt: Date?
+    /// The account whose history this is on this phone; nil for matches
+    /// scored signed out. See `AccountScope`.
+    var ownerAccountID: UUID?
+    /// My confirm or dispute, sent but not yet answered by the server
+    /// ("agree" or "dispute"). Until then the result isn't final.
+    var myAnswerRaw: String?
 
     @Relationship(deleteRule: .cascade, inverse: \RallyRecord.match)
     var rallies: [RallyRecord] = []
@@ -127,6 +133,7 @@ final class MatchRecord {
         self.pointsB = 0
         self.tournamentFixtureID = setup.tournamentMatchID
         self.sourceRaw = (setup.host == .watch ? MatchSource.watch : MatchSource.phone).rawValue
+        self.ownerAccountID = AccountScope.current
     }
 
     /// A match typed in after it was played.
@@ -300,12 +307,15 @@ final class WorkoutSessionRecord {
     var matchID: UUID?
     var date: Date
     var summaryData: Data
+    /// The account signed in when it was recorded; nil when signed out.
+    var ownerAccountID: UUID?
 
     init(id: UUID = UUID(), matchID: UUID?, date: Date, summary: WorkoutSummary) {
         self.id = id
         self.matchID = matchID
         self.date = date
         self.summaryData = (try? JSONEncoder().encode(summary)) ?? Data()
+        self.ownerAccountID = AccountScope.current
     }
 
     var summary: WorkoutSummary? {

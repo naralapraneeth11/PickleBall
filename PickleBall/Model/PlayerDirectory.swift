@@ -80,33 +80,113 @@ final class PlayerDirectory: ObservableObject {
 
     // MARK: Account
 
-    /// Makes the device owner's player ID the account ID, rewriting any
-    /// matches recorded before sign-in, and takes the profile name.
-    func adoptAccount(userID: UUID, displayName: String) {
-        let record = ensureLocalUser()
-        let oldID = record.id
-        if oldID != userID {
-            let account = PlayerRef(id: PlayerID(rawValue: userID), kind: .user, displayName: displayName)
-            for match in (try? context.fetch(FetchDescriptor<MatchRecord>())) ?? [] where match.playerIDs.contains(oldID) {
-                guard var lineup = match.lineup else { continue }
-                lineup.teams = lineup.teams.map { roster in roster.map { $0.id.rawValue == oldID ? account : $0 } }
-                match.lineupData = (try? JSONEncoder().encode(lineup)) ?? match.lineupData
-                match.playerIDs = lineup.allPlayers.map(\.id.rawValue)
-            }
-            if let existing = fetch(userID) {
-                existing.isLocalUser = true
-                existing.kindRaw = PlayerKind.user.rawValue
-                context.delete(record)
-            } else {
-                record.id = userID
+    private enum Keys {
+        /// The phone's own (signed-out) player.
+        static let anonymousID = "directory.anonymousPlayerID"
+        /// Accounts that have answered "add this phone's matches?".
+        static let adoptionAnswered = "directory.adoptionAnswered"
+        static let legacyStamped = "directory.legacyOwnerStamped"
+    }
+
+    /// The signed-out player for this phone, created once.
+    private var anonymousID: UUID {
+        if let raw = UserDefaults.standard.string(forKey: Keys.anonymousID), let id = UUID(uuidString: raw) { return id }
+        // First run after the update: the local player so far is anonymous
+        // unless it already carries an account id (adopted by an older build).
+        let local = ensureLocalUser()
+        let id = local.kind == .user && Social.shared.userID == local.id ? UUID() : local.id
+        UserDefaults.standard.set(id.uuidString, forKey: Keys.anonymousID)
+        return id
+    }
+
+    /// Makes `id` the device owner. Every other record stops being local.
+    private func activate(_ id: UUID, kind: PlayerKind, displayName: String) {
+        let descriptor = FetchDescriptor<PlayerRecord>(predicate: #Predicate { $0.isLocalUser })
+        for record in (try? context.fetch(descriptor)) ?? [] where record.id != id {
+            record.isLocalUser = false
+        }
+        if let existing = fetch(id) {
+            existing.isLocalUser = true
+            existing.kindRaw = kind.rawValue
+            existing.displayName = displayName
+        } else {
+            context.insert(PlayerRecord(id: id, kind: kind, displayName: displayName, isLocalUser: true))
+        }
+        AppDatabase.save()
+    }
+
+    /// Signing in. The account becomes the device owner; matches scored
+    /// signed out are never relabelled automatically (on a shared phone
+    /// they may be someone else's). Returns how many of them could be
+    /// added to this account, so the app can ask.
+    @discardableResult
+    func adoptAccount(userID: UUID, displayName: String) -> Int {
+        let anonymous = anonymousID
+        AccountScope.current = userID
+        activate(userID, kind: .user, displayName: displayName)
+        stampLegacyRecords(for: userID)
+        reload()
+        MatchStore.shared.reload()
+        WorkoutStore.shared.reload()
+        let answered = Set(UserDefaults.standard.stringArray(forKey: Keys.adoptionAnswered) ?? [])
+        guard !answered.contains(userID.uuidString) else { return 0 }
+        return anonymousMatches(of: anonymous).count
+    }
+
+    /// Signing out: back to the phone's own player and history.
+    func signOut() {
+        AccountScope.current = nil
+        activate(anonymousID, kind: .user, displayName: Self.profileDisplayName())
+        reload()
+        MatchStore.shared.reload()
+        WorkoutStore.shared.reload()
+    }
+
+    /// The person said the signed-out matches are theirs: move them (and
+    /// their workouts) to the account. Done once, by choice.
+    func addAnonymousMatches(to userID: UUID, displayName: String) {
+        let anonymous = anonymousID
+        let account = PlayerRef(id: PlayerID(rawValue: userID), kind: .user, displayName: displayName)
+        for match in anonymousMatches(of: anonymous) {
+            guard var lineup = match.lineup else { continue }
+            lineup.teams = lineup.teams.map { roster in roster.map { $0.id.rawValue == anonymous ? account : $0 } }
+            match.lineupData = (try? JSONEncoder().encode(lineup)) ?? match.lineupData
+            match.playerIDs = lineup.allPlayers.map(\.id.rawValue)
+            match.ownerAccountID = userID
+            let matchID: UUID? = match.id
+            let workouts = FetchDescriptor<WorkoutSessionRecord>(predicate: #Predicate { $0.matchID == matchID })
+            for workout in (try? context.fetch(workouts)) ?? [] where workout.ownerAccountID == nil {
+                workout.ownerAccountID = userID
             }
         }
-        let current = ensureLocalUser()
-        current.displayName = displayName
-        current.kindRaw = PlayerKind.user.rawValue
+        answeredAdoption(for: userID)
         AppDatabase.save()
-        reload()
-        if oldID != userID { MatchStore.shared.reload() }
+        MatchStore.shared.reload()
+        WorkoutStore.shared.reload()
+    }
+
+    func answeredAdoption(for userID: UUID) {
+        var answered = UserDefaults.standard.stringArray(forKey: Keys.adoptionAnswered) ?? []
+        if !answered.contains(userID.uuidString) { answered.append(userID.uuidString) }
+        UserDefaults.standard.set(answered, forKey: Keys.adoptionAnswered)
+    }
+
+    private func anonymousMatches(of anonymous: UUID) -> [MatchRecord] {
+        let all = (try? context.fetch(FetchDescriptor<MatchRecord>())) ?? []
+        return all.filter { $0.ownerAccountID == nil && $0.playerIDs.contains(anonymous) && $0.statusRaw != MatchStatus.live.rawValue }
+    }
+
+    /// Builds before account scoping relabelled matches to the account on
+    /// sign-in and left them unowned. Those (and synced copies) belong to
+    /// that account. Runs once.
+    private func stampLegacyRecords(for userID: UUID) {
+        guard !UserDefaults.standard.bool(forKey: Keys.legacyStamped) else { return }
+        let all = (try? context.fetch(FetchDescriptor<MatchRecord>())) ?? []
+        for match in all where match.ownerAccountID == nil && (match.playerIDs.contains(userID) || match.createdByID != nil) {
+            match.ownerAccountID = userID
+        }
+        UserDefaults.standard.set(true, forKey: Keys.legacyStamped)
+        AppDatabase.save()
     }
 
     /// Friends are players you can pick for a match.

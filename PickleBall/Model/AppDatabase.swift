@@ -18,6 +18,10 @@ enum AppDatabase {
         WorkoutSessionRecord.self
     ])
 
+    /// True when the on-disk store couldn't be opened and matches are only
+    /// kept in memory. The app tells the player instead of pretending.
+    nonisolated(unsafe) private(set) static var isTemporary = false
+
     /// The app's container. Falls back to an in-memory store (and says so)
     /// rather than crashing if the on-disk store cannot be opened.
     static let container: ModelContainer = {
@@ -27,6 +31,7 @@ enum AppDatabase {
             return try ModelContainer(for: schema, configurations: configuration)
         } catch {
             print("AppDatabase: persistent store failed (\(error)); using in-memory store")
+            isTemporary = !isPreview
             do {
                 return try ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, isStoredInMemoryOnly: true))
             } catch {
@@ -42,6 +47,12 @@ enum AppDatabase {
             try context.save()
         } catch {
             print("AppDatabase: save failed: \(error)")
+            Social.shared.notice = String(localized: "Couldn’t save on this iPhone. Free up some storage so your matches aren’t lost.")
         }
+    }
+
+    /// Said once at launch when matches can't be kept.
+    static var storageWarning: String? {
+        isTemporary ? String(localized: "Matches can’t be saved on this iPhone right now and will be lost when the app closes. Free up some storage, then restart PickleBall.") : nil
     }
 }

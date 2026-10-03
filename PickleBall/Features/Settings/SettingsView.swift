@@ -112,12 +112,15 @@ struct SettingsView: View {
             Button("Delete account", role: .destructive) {
                 isDeleting = true
                 Task {
-                    if await social.deleteAccount() { dismiss() }
+                    // One more Sign in with Apple so the server can revoke
+                    // PickleBall's access to your Apple ID.
+                    let code = await AppleReauth().authorizationCode()
+                    if await social.deleteAccount(appleAuthorizationCode: code) { dismiss() }
                     isDeleting = false
                 }
             }
         } message: {
-            Text("This permanently deletes your profile, friends, chats, Serves, Replays and trophies. Matches stay in your opponents’ history under “Former player”.")
+            Text("This permanently deletes your profile, friends, chats, Serves, Replays, trophies and the matches stored on this iPhone for this account. Matches stay in your opponents’ history under “Former player”. You’ll confirm with Apple once more.")
         }
     }
 

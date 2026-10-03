@@ -59,9 +59,14 @@ begin
   raise exception 'FAIL: % (did not throw)', label;
 end $$;
 
+-- CourtKit's MatchRules for side-out singles to 11, as the apps encode it.
+create function test.singles_rules() returns jsonb language sql as $$
+  select '{"kind":"pickleballSideOut","pickleball":{"pointsToWin":11,"winBy":2,"gamesToWin":1,"isDoubles":false,"firstServer":0,"startingRightCourt":{"a":0,"b":0}}}'::jsonb
+$$;
+
 create function test.match(mid uuid, extra jsonb default '{}') returns jsonb language sql as $$
   select jsonb_build_object(
-    'id', mid, 'sport', 'pickleball', 'rules', jsonb_build_object('sport', 'pickleball'),
+    'id', mid, 'sport', 'pickleball', 'rules', test.singles_rules(),
     'source', 'entered', 'started_at', now() - interval '1 hour', 'ended_at', now(),
     'winner_team', 0, 'match_score', jsonb_build_array(1, 0), 'points', jsonb_build_array(11, 7),
     'units', '[]'::jsonb
@@ -292,7 +297,8 @@ select test.eq((select count(*) from public.matches where id = '10000000-0000-00
   'withdrawn result is gone');
 
 -- Doubles: one confirmation per side.
-select test.eq(public.save_match(test.match('10000000-0000-0000-0000-000000000006'),
+select test.eq(public.save_match(test.match('10000000-0000-0000-0000-000000000006',
+    jsonb_build_object('rules', jsonb_set(test.singles_rules(), '{pickleball,isDoubles}', 'true'))),
   jsonb_build_array(test.p(:'alice', 0, 0), test.p(:'carol', 0, 1), test.p(:'bob', 1, 0), test.p(:'dave', 1, 1))),
   'pending', 'doubles result waits for the other pair');
 :as_carol

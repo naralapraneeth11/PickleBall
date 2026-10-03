@@ -87,7 +87,8 @@ public struct MatchPayload: Codable, Hashable, Sendable {
         try c.encodeIfPresent(tournamentID, forKey: .tournamentID)
         try c.encodeIfPresent(fixtureID, forKey: .fixtureID)
         try c.encodeIfPresent(calloutID, forKey: .calloutID)
-        try c.encodeIfPresent(workout, forKey: .workout)
+        // Workout and heart-rate data never leave the device with a match
+        // (the server refuses it too). A Replay shares only what the player picks.
     }
 }
 

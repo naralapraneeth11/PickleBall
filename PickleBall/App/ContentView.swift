@@ -96,6 +96,25 @@ struct ContentView: View {
                                               set: { if !$0 { firstStepsDone = true } })) {
             FirstStepsView { firstStepsDone = true }
         }
+        .alert(addMatchesTitle, isPresented: Binding(get: { social.anonymousMatchesToAdd > 0 },
+                                                     set: { if !$0 { social.anonymousMatchesToAdd = 0 } })) {
+            Button("Add to my account") {
+                if let id = social.userID {
+                    PlayerDirectory.shared.addAnonymousMatches(to: id, displayName: social.profile?.displayName ?? "")
+                    Task { await social.uploadUnsentMatches() }
+                }
+                social.anonymousMatchesToAdd = 0
+            }
+            Button("They’re not mine", role: .cancel) {
+                if let id = social.userID { PlayerDirectory.shared.answeredAdoption(for: id) }
+                social.anonymousMatchesToAdd = 0
+            }
+        } message: {
+            Text("They were scored on this iPhone before you signed in. Only add them if you played them.")
+        }
+        .task {
+            if let warning = AppDatabase.storageWarning { social.notice = warning }
+        }
         .onOpenURL { url in
             // The belt widget opens the player card.
             if url.scheme == "pickleball", url.host == "belts" { selectedTab = .me }
@@ -110,6 +129,12 @@ struct ContentView: View {
         ) { _ in
             withAnimation(.easeOut(duration: 0.18)) { isKeyboardVisible = false }
         }
+    }
+
+    private var addMatchesTitle: Text {
+        social.anonymousMatchesToAdd == 1
+            ? Text("Add 1 match to your account?")
+            : Text("Add \(social.anonymousMatchesToAdd) matches to your account?")
     }
 
     /// Chats, Tournaments and the Feed need the server.

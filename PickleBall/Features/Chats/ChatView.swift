@@ -23,6 +23,8 @@ struct ChatView: View {
     @State private var openedReplay: ReplayRow?
     @State private var openedMatch: MatchRecord?
     @State private var confirmBlock = false
+    @State private var hasOlder = true
+    @State private var loadingOlder = false
     @FocusState private var composerFocused: Bool
 
     private var conversation: ConversationRow? { social.conversations.first { $0.id == conversationID } }
@@ -36,6 +38,26 @@ struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 6) {
+                        if hasOlder, messages.count >= 50 {
+                            Button {
+                                guard !loadingOlder else { return }
+                                loadingOlder = true
+                                Task {
+                                    hasOlder = await social.loadOlderMessages(in: conversationID)
+                                    loadingOlder = false
+                                }
+                            } label: {
+                                Text(loadingOlder ? "Loading…" : "Earlier messages")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Court.muted)
+                                    .padding(.vertical, 8)
+                            }
+                        }
+                        if !social.isLiveConnected {
+                            Label("Reconnecting…", systemImage: "wifi.exclamationmark")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(Court.muted)
+                        }
                         ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
                             let previous = index > 0 ? messages[index - 1] : nil
                             if previous.map({ !Calendar.current.isDate($0.createdAt, inSameDayAs: message.createdAt) }) ?? true {
@@ -108,7 +130,7 @@ struct ChatView: View {
                 if let friendID { Task { await social.block(friendID) } }
             }
         } message: {
-            Text("They won’t be able to message you, see your Serves or call you out. They aren’t told.")
+            Text("They won’t be able to message you, see your Serves or call you out, and in squads you share you won’t see each other’s messages. Squad results stay visible to the squad. They aren’t told.")
         }
         .onChange(of: photoItem) { _, item in
             Task {

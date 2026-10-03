@@ -70,7 +70,8 @@ public protocol OutboxTransport: Sendable {
 /// Where the queue lives between launches.
 public protocol OutboxStorage: Sendable {
     func load() -> OutboxState
-    func save(_ state: OutboxState)
+    /// False when the state couldn't be written (disk full, no access).
+    @discardableResult func save(_ state: OutboxState) -> Bool
 }
 
 public struct OutboxState: Codable, Hashable, Sendable {
@@ -91,6 +92,9 @@ public actor Outbox {
     private var state: OutboxState
     private let storage: OutboxStorage
     private var draining = false
+    /// False once a write to disk has failed: queued work may not survive
+    /// a restart, and the app should say so.
+    public private(set) var isStorageHealthy = true
 
     public init(storage: OutboxStorage) {
         self.storage = storage
@@ -100,6 +104,9 @@ public actor Outbox {
     public var pending: [OutboxOperation] { state.pending }
     public var rejected: [OutboxOperation] { state.rejected }
     public var isEmpty: Bool { state.pending.isEmpty }
+    /// When the operation at the head of the queue may be retried, if it's
+    /// waiting. The app schedules a wake-up for then.
+    public var nextRetryAt: Date? { state.pending.first?.notBefore }
 
     /// Queues an operation. One already queued with the same key is
     /// replaced in place, keeping its position.
@@ -109,7 +116,7 @@ public actor Outbox {
         } else {
             state.pending.append(operation)
         }
-        storage.save(state)
+        persist()
     }
 
     public func isPending(key: String) -> Bool {
@@ -141,7 +148,7 @@ public actor Outbox {
                 op.lastError = message
                 op.notBefore = now().addingTimeInterval(Self.backoff(afterAttempts: op.attempts))
                 state.pending[index] = op
-                storage.save(state)
+                persist()
                 return sent
             case .rejected(let message):
                 var op = state.pending.remove(at: index)
@@ -150,7 +157,7 @@ public actor Outbox {
                 state.rejected.append(op)
                 state.rejected = Array(state.rejected.suffix(Self.keepRejected))
             }
-            storage.save(state)
+            persist()
         }
         return sent
     }
@@ -159,18 +166,22 @@ public actor Outbox {
     /// came back).
     public func resetBackoff() {
         for i in state.pending.indices { state.pending[i].notBefore = nil }
-        storage.save(state)
+        persist()
     }
 
     public func clearRejected() {
         state.rejected.removeAll()
-        storage.save(state)
+        persist()
     }
 
     /// Signing out: nothing queued belongs to the next account.
     public func removeAll() {
         state = OutboxState()
-        storage.save(state)
+        persist()
+    }
+
+    private func persist() {
+        isStorageHealthy = storage.save(state)
     }
 
     /// 2, 4, 8… seconds, capped at five minutes.
@@ -193,10 +204,16 @@ public struct FileOutboxStorage: OutboxStorage {
         return state
     }
 
-    public func save(_ state: OutboxState) {
-        guard let data = try? WireCoding.encoder.encode(state) else { return }
-        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? data.write(to: url, options: [.atomic])
+    @discardableResult
+    public func save(_ state: OutboxState) -> Bool {
+        do {
+            let data = try WireCoding.encoder.encode(state)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: url, options: [.atomic])
+            return true
+        } catch {
+            return false
+        }
     }
 }
 
@@ -210,5 +227,6 @@ public final class MemoryOutboxStorage: OutboxStorage, @unchecked Sendable {
     }
 
     public func load() -> OutboxState { lock.withLock { state } }
-    public func save(_ state: OutboxState) { lock.withLock { self.state = state } }
+    @discardableResult
+    public func save(_ state: OutboxState) -> Bool { lock.withLock { self.state = state }; return true }
 }

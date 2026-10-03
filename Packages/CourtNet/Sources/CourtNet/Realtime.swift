@@ -19,7 +19,12 @@ import Supabase
 
 public enum LiveChange: Sendable, Equatable {
     case message(MessageRow)
+    /// A message was deleted (by its sender or a moderator).
+    case messageDeleted(UUID)
     case table(String)
+    /// Whether live updates are flowing. When they come back after a drop,
+    /// re-read everything: changes made meanwhile weren't heard.
+    case connection(isLive: Bool)
 }
 
 public final class LiveUpdates: @unchecked Sendable {
@@ -40,7 +45,11 @@ public final class LiveUpdates: @unchecked Sendable {
     public func start(userID: UUID) async -> AsyncStream<LiveChange> {
         await stop()
         let (stream, continuation) = AsyncStream<LiveChange>.makeStream(bufferingPolicy: .bufferingNewest(200))
-        let channel = client.channel("user-\(userID.uuidString.lowercased())")
+        // Private: only this user may join (Realtime Authorization policy in
+        // migration 3), so it works with "Private channels only" turned on.
+        let channel = client.channel("user-\(userID.uuidString.lowercased())") {
+            $0.isPrivate = true
+        }
 
         let inserts = channel.postgresChange(InsertAction.self, schema: "public", table: "messages")
         tasks.append(Task {
@@ -52,13 +61,49 @@ public final class LiveUpdates: @unchecked Sendable {
                 }
             }
         })
+        let deletes = channel.postgresChange(DeleteAction.self, schema: "public", table: "messages")
+        tasks.append(Task {
+            for await delete in deletes {
+                if let raw = delete.oldRecord["id"]?.stringValue, let id = UUID(uuidString: raw) {
+                    continuation.yield(.messageDeleted(id))
+                } else {
+                    continuation.yield(.table("messages"))
+                }
+            }
+        })
+        let updates = channel.postgresChange(UpdateAction.self, schema: "public", table: "messages")
+        tasks.append(Task {
+            for await _ in updates { continuation.yield(.table("messages")) }
+        })
         for table in Self.tables {
             let changes = channel.postgresChange(AnyAction.self, schema: "public", table: table)
             tasks.append(Task {
                 for await _ in changes { continuation.yield(.table(table)) }
             })
         }
-        try? await channel.subscribeWithError()
+        let statuses = channel.statusChange
+        tasks.append(Task {
+            var last: Bool?
+            for await status in statuses {
+                let live = status == .subscribed
+                if live != last { continuation.yield(.connection(isLive: live)) }
+                last = live
+            }
+        })
+        // Joining can fail (no signal, a policy problem): say so and retry
+        // with growing gaps instead of failing silently.
+        tasks.append(Task {
+            for delay in [0, 2, 5, 15, 30, 60] {
+                if delay > 0 { try? await Task.sleep(nanoseconds: UInt64(delay) * 1_000_000_000) }
+                if Task.isCancelled { return }
+                do {
+                    try await channel.subscribeWithError()
+                    return
+                } catch {
+                    continuation.yield(.connection(isLive: false))
+                }
+            }
+        })
         self.channel = channel
         continuation.onTermination = { [weak self] _ in
             Task { await self?.stop() }

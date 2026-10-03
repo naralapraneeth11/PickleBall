@@ -79,7 +79,9 @@ final class MatchStore: ObservableObject {
             predicate: #Predicate { $0.statusRaw == completed },
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
-        let records = ((try? context.fetch(descriptor)) ?? []).filter { $0.confirmation != .disputed }
+        // Only the signed-in account's history (or the phone's own, signed out).
+        let records = ((try? context.fetch(descriptor)) ?? [])
+            .filter { $0.confirmation != .disputed && AccountScope.owns($0.ownerAccountID) }
         results = records.compactMap(\.result)
         confirmedResults = records.filter { $0.confirmation == .confirmed }.compactMap(\.result)
         belts = BeltLedger.compute(confirmedResults)
@@ -94,7 +96,9 @@ final class MatchStore: ObservableObject {
             predicate: #Predicate { $0.statusRaw == parkedRaw },
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
-        parked = ((try? context.fetch(parkedDescriptor)) ?? []).compactMap(\.setup)
+        parked = ((try? context.fetch(parkedDescriptor)) ?? [])
+            .filter { AccountScope.owns($0.ownerAccountID) }
+            .compactMap(\.setup)
     }
 
     func record(id: UUID) -> MatchRecord? {
