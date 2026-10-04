@@ -85,6 +85,25 @@ struct WatchIdleView: View {
             }
             .buttonStyle(.press)
 
+            if let draft = session.pendingDraft {
+                VStack(spacing: 4) {
+                    Text("Ready from iPhone")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(DS.Palette.nightMuted)
+                    Text(draft.setup.lineup.shortName(of: .a) + " v " + draft.setup.lineup.shortName(of: .b))
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Button("Start on Watch") { session.startPendingDraft() }
+                        .tint(theme.accent)
+                }
+            }
+            if session.needsUpdate {
+                Text("Update PickleBall on your iPhone and Watch")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(DS.Palette.loss)
+                    .multilineTextAlignment(.center)
+            }
             if session.unsentCount > 0 {
                 Label(session.unsentCount == 1 ? LocalizedStringKey("1 match waiting for iPhone")
                                                : LocalizedStringKey("\(session.unsentCount) matches waiting for iPhone"),
@@ -121,7 +140,9 @@ struct WatchResultView: View {
     var body: some View {
         let display = replica.display
         let winner = display.winner ?? .a
-        let won = winner == .a
+        // Victory is the wearer's side winning, whichever side that is.
+        let wearer = session.ownedJournal?.manifest.wearerTeam ?? session.wearerTeam(in: replica.setup.lineup) ?? .a
+        let won = winner == wearer
         let theme = replica.setup.rules.sport.theme
 
         ScrollView {
@@ -140,6 +161,13 @@ struct WatchResultView: View {
                     .foregroundStyle(DS.Palette.nightMuted)
                     .multilineTextAlignment(.center)
 
+                if let note = session.ownedSyncNote, replica.isEnded {
+                    Text(session.ownedJournal?.status == .finished && session.ownedJournal?.unacknowledged.isEmpty == false
+                         ? String(localized: "Match saved on Watch · sync pending") : note)
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .foregroundStyle(DS.Palette.nightMuted)
+                        .multilineTextAlignment(.center)
+                }
                 if replica.isEnded {
                     Button("Done") { session.dismissEnded() }
                         .tint(theme.accent)
@@ -169,7 +197,9 @@ struct WatchResultView: View {
             .padding(.horizontal, 8)
         }
         .onChange(of: replica.isEnded) { _, ended in
-            if ended { session.dismissEnded() }
+            // A phone-owned match ended elsewhere closes; a Watch-owned one
+            // stays up with its sync status until "Done".
+            if ended, session.ownedJournal == nil { session.dismissEnded() }
         }
     }
 }

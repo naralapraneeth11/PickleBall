@@ -152,6 +152,7 @@ final class Social {
             AccountScope.current = id
             MatchStore.shared.reload()
             WorkoutStore.shared.reload()
+            MatchCenter.shared.importAllJournals()
             restoreCache(for: id)
             outbox = Outbox(storage: FileOutboxStorage(url: Self.directory(for: id).appendingPathComponent("outbox.json")))
             await updateOutboxState()
@@ -247,6 +248,7 @@ final class Social {
         // Back to the phone's own player and history; the Watch and the
         // belt widget follow.
         PlayerDirectory.shared.signOut()
+        MatchCenter.shared.importAllJournals()
         MatchCenter.shared.publishPreferences(sport: Sport(rawValue: UserDefaults.standard.string(forKey: "sportMode.active") ?? "") ?? .pickleball)
     }
 

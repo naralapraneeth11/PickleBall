@@ -13,6 +13,10 @@
 //    arrives by both routes is harmless.
 //  • Match logs and preferences: application context, one slot each, so the
 //    Watch can always bootstrap from the latest state.
+//  • Watch-owned matches (journal schema 2): batches of operations,
+//    receipts, drafts and grants. Sent immediately when reachable, else as
+//    one queued batch that replaces the previous one. Receivers save before
+//    they acknowledge, so retries are always safe.
 //
 
 import Foundation
@@ -31,6 +35,29 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
 
     /// Receives every decoded message on the main actor.
     var onMessage: ((SyncMessage) -> Void)?
+    /// Receives journal (schema 2) messages on the main actor.
+    var onJournal: (([JournalMessage]) -> Void)?
+    /// The Watch became reachable (or the session activated): resend.
+    var onBecameAvailable: (() -> Void)?
+
+    /// What the app can honestly say about the Watch right now.
+    enum Availability: Equatable {
+        case checking
+        case unsupported
+        case notPaired
+        case appNotInstalled
+        /// Installed, but messages can't be delivered immediately.
+        case notReachable
+        case reachable
+    }
+
+    var availability: Availability {
+        guard let session else { return .unsupported }
+        guard session.activationState == .activated else { return .checking }
+        if !isWatchPaired { return .notPaired }
+        if !isWatchAppInstalled { return .appNotInstalled }
+        return isWatchReachable ? .reachable : .notReachable
+    }
 
     private let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
     private var contextSlots: [String: Data] = [:]
@@ -91,6 +118,25 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         session?.transferUserInfo(message.wcPayload)
     }
 
+    /// Sends journal messages as one batch.
+    func sendJournal(_ messages: [JournalMessage]) {
+        guard !messages.isEmpty, let session, session.activationState == .activated,
+              session.isPaired, session.isWatchAppInstalled else { return }
+        let payload = JournalMessage.batchPayload(messages)
+        if session.isReachable {
+            session.sendMessage(payload, replyHandler: nil) { [weak self] _ in
+                Task { @MainActor in self?.queueJournal(payload) }
+            }
+        } else {
+            queueJournal(payload)
+        }
+    }
+
+    private func queueJournal(_ payload: [String: Any]) {
+        guard let session else { return }
+        session.transferUserInfo(payload)
+    }
+
     // MARK: - Health
 
     /// Asks for Health read access (workouts, heart rate, energy).
@@ -129,6 +175,11 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         for message in messages { onMessage?(message) }
     }
 
+    fileprivate func deliver(journal messages: [JournalMessage]) {
+        guard !messages.isEmpty else { return }
+        onJournal?(messages)
+    }
+
     /// Pushes everything that was sent before activation completed.
     fileprivate func flushPending() {
         guard let session, session.activationState == .activated else { return }
@@ -142,9 +193,11 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
 
     fileprivate func refreshState() {
         guard let session else { return }
+        let wasReachable = isWatchReachable
         isWatchPaired = session.isPaired
         isWatchAppInstalled = session.isWatchAppInstalled
         isWatchReachable = session.isReachable
+        if isWatchReachable, !wasReachable { onBecameAvailable?() }
     }
 }
 
@@ -160,6 +213,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
             self.refreshState()
             self.flushPending()
             self.deliver(pending)
+            self.onBecameAvailable?()
         }
     }
 
@@ -179,7 +233,11 @@ extension WatchConnectivityManager: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         let messages = SyncMessage.messages(in: message)
-        Task { @MainActor in self.deliver(messages) }
+        let journal = JournalMessage.messages(in: message)
+        Task { @MainActor in
+            self.deliver(messages)
+            self.deliver(journal: journal)
+        }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
@@ -189,6 +247,10 @@ extension WatchConnectivityManager: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         let messages = SyncMessage.messages(in: userInfo)
-        Task { @MainActor in self.deliver(messages) }
+        let journal = JournalMessage.messages(in: userInfo)
+        Task { @MainActor in
+            self.deliver(messages)
+            self.deliver(journal: journal)
+        }
     }
 }

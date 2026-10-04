@@ -60,6 +60,9 @@ final class LiveMatch: Identifiable {
     var isEnded: Bool { replica.isEnded }
     var canUndo: Bool { replica.scorer.canUndo && !replica.isEnded }
     var isWatchHosted: Bool { setup.host == .watch }
+    /// Scored on the Watch from its durable journal: the phone shows it and
+    /// never adds to it.
+    fileprivate(set) var isWatchOwned = false
 
     /// The most important pressure on the next rally, if any.
     var topPressure: (pressure: Pressure, team: Team)? {
@@ -92,6 +95,14 @@ final class MatchCenter {
     private var context: ModelContext { AppDatabase.context }
     @ObservationIgnored private var didBoot = false
 
+    /// The phone's copy of Watch-owned matches (CourtKit journal), saved
+    /// before anything is acknowledged to the Watch.
+    @ObservationIgnored private var journal: MatchCoordinator?
+    /// A match set up here and handed to the Watch.
+    private(set) var handoff: WatchHandoff?
+    /// The Watch runs a newer protocol than this app.
+    private(set) var watchNeedsUpdate = false
+
     private init() {}
 
     /// Wires connectivity and recovers matches interrupted by a crash or
@@ -102,6 +113,13 @@ final class MatchCenter {
         connectivity.onMessage = { [weak self] message in
             self?.handle(message)
         }
+        connectivity.onJournal = { [weak self] messages in
+            self?.handleJournal(messages)
+        }
+        connectivity.onBecameAvailable = { [weak self] in
+            self?.resendHandoff()
+        }
+        openJournal()
         recoverInterruptedMatches()
         activities.endStaleActivities()
     }
@@ -166,12 +184,14 @@ final class MatchCenter {
 
     func record(_ team: Team) {
         guard let match = live else { return }
+        guard !match.isWatchOwned else { return scoringIsOnWatch() }
         let outcome = match.replica.recordRally(wonBy: team)
         process(outcome, for: match, isLocal: true)
     }
 
     func undo() {
         guard let match = live, match.canUndo else { return }
+        guard !match.isWatchOwned else { return scoringIsOnWatch() }
         let outcome = match.replica.undo()
         process(outcome, for: match, isLocal: true)
         Haptics.soft()
@@ -180,6 +200,7 @@ final class MatchCenter {
     /// Confirms a finished match and saves it to history.
     func finish() {
         guard let match = live else { return }
+        guard !match.isWatchOwned else { return scoringIsOnWatch() }
         let outcome = match.replica.end(.completed)
         process(outcome, for: match, isLocal: true)
     }
@@ -187,6 +208,8 @@ final class MatchCenter {
     /// Pauses the match so it can be resumed later.
     func park() {
         guard let match = live else { return }
+        // A Watch-owned match keeps going on the wrist; just close it here.
+        if match.isWatchOwned { live = nil; return }
         let outcome = match.replica.end(.parked)
         process(outcome, for: match, isLocal: true)
     }
@@ -194,13 +217,19 @@ final class MatchCenter {
     /// Stops without saving.
     func abandon() {
         guard let match = live else { return }
+        guard !match.isWatchOwned else { return scoringIsOnWatch() }
         let outcome = match.replica.end(.abandoned)
         process(outcome, for: match, isLocal: true)
     }
 
     /// Closes the scoreboard for a match that already ended elsewhere.
     func dismissEnded() {
-        if live?.isEnded == true { live = nil }
+        if live?.isEnded == true || live?.isWatchOwned == true { live = nil }
+    }
+
+    private func scoringIsOnWatch() {
+        Haptics.warning()
+        Social.shared.notice = String(localized: "This match is scored on your Apple Watch.")
     }
 
     // MARK: - Crowd and photos
@@ -244,7 +273,8 @@ final class MatchCenter {
             sport: sport,
             me: directory.me,
             recentPlayers: Array(directory.others.prefix(12)),
-            age: age
+            age: age,
+            accountScopeID: AccountScope.current
         )
         connectivity.send(.preferences(preferences))
     }
@@ -430,5 +460,229 @@ final class MatchCenter {
         }
         AppDatabase.save()
         MatchStore.shared.reload()
+    }
+
+    // MARK: - Watch-owned matches (journal)
+
+    private static var journalDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MatchJournal", isDirectory: true)
+    }
+
+    private static var phoneDeviceID: UUID {
+        let key = "phone.deviceID"
+        if let raw = UserDefaults.standard.string(forKey: key), let id = UUID(uuidString: raw) { return id }
+        let id = UUID()
+        UserDefaults.standard.set(id.uuidString, forKey: key)
+        return id
+    }
+
+    private func openJournal() {
+        do {
+            journal = try MatchCoordinator(store: FileMatchEventStore(root: Self.journalDirectory), deviceID: Self.phoneDeviceID)
+        } catch {
+            Social.shared.notice = String(localized: "Matches from your Apple Watch can’t be saved on this iPhone right now.")
+            return
+        }
+        handoff = WatchHandoff.load(from: Self.journalDirectory)
+        importAllJournals()
+        resendHandoff()
+    }
+
+    /// Re-files every Watch match for the account now signed in (after a
+    /// launch or an account switch).
+    func importAllJournals() {
+        guard let journal else { return }
+        Task {
+            for entry in await journal.allJournals() where entry.role == .mirror {
+                importJournal(entry)
+            }
+        }
+    }
+
+    private func handleJournal(_ messages: [JournalMessage]) {
+        guard let journal else { return }
+        Task {
+            for message in messages {
+                handleHandoffSignal(message)
+                do {
+                    let replies = try await journal.receive(message)
+                    connectivity.sendJournal(replies)
+                } catch {
+                    // Nothing was acknowledged; the Watch will resend.
+                    Social.shared.notice = String(localized: "Couldn’t save a match from your Apple Watch. Free up some storage.")
+                    continue
+                }
+                if let matchID = message.matchID, let entry = await journal.journal(matchID), entry.role == .mirror {
+                    importJournal(entry)
+                }
+            }
+        }
+    }
+
+    /// Mirrors a Watch match into history: live while it's being played
+    /// (read-only here), completed once every operation up to the finish is
+    /// saved. Matches for another account wait until that account signs in.
+    private func importJournal(_ entry: MatchJournal) {
+        let scope = entry.manifest.accountScopeID
+        guard scope == nil || scope == AccountScope.current else { return }
+        var setup = normalized(entry.manifest.setup)
+        setup.host = .watch
+        PlayerDirectory.shared.adopt(setup.lineup)
+        let record = MatchStore.shared.record(id: entry.matchID) ?? {
+            let record = MatchRecord(setup: setup, status: .live)
+            record.ownerAccountID = scope
+            context.insert(record)
+            return record
+        }()
+        // A result the phone already completed and uploaded stays as it is.
+        guard record.status != .completed else { return }
+        record.hostRaw = DeviceRole.watch.rawValue
+        record.sourceRaw = MatchSource.watch.rawValue
+        record.apply(log: entry.rallies, in: context)
+        AppDatabase.save()
+
+        if entry.isComplete {
+            if handoff?.matchID == entry.matchID { setHandoff(nil) }
+            let mirror = live?.id == entry.matchID ? live : nil
+            if let mirror {
+                mirror.replica = MatchReplica(setup: setup, role: .client, log: entry.rallies,
+                                              ended: entry.status == .finished ? .completed : .abandoned)
+                mirror.revision += 1
+            }
+            if let finished = entry.finishOperation { record.endedAt = finished.occurredAt }
+            apply(entry.status == .finished ? .completed : .abandoned, to: record, match: mirror)
+            return
+        }
+
+        record.status = .live
+        AppDatabase.save()
+        MatchStore.shared.reload()
+        if handoff?.matchID == entry.matchID, handoff?.state != .scoringOnWatch {
+            var updated = handoff
+            updated?.state = .scoringOnWatch
+            setHandoff(updated)
+        }
+        // Show it here too, read-only, if the phone isn't busy.
+        if let match = live, match.id == entry.matchID {
+            match.replica = MatchReplica(setup: setup, role: .client, log: entry.rallies)
+            match.revision += 1
+            Social.shared.updateLive(match)
+            activities.update(for: match)
+        } else if live == nil || live?.isEnded == true {
+            var matchContext = record.matchContext
+            if matchContext.squadID == nil {
+                matchContext.squadID = Social.shared.sharedSquad(for: setup.lineup.allPlayers.map(\.id))?.id
+            }
+            let match = LiveMatch(setup: setup, role: .client, log: entry.rallies, context: matchContext)
+            match.isWatchOwned = true
+            live = match
+            activities.start(for: match)
+            Social.shared.goLive(match)
+        }
+    }
+
+    // MARK: - Handing a match to the Watch
+
+    /// Saves a draft for a match set up here and asks the Watch to get
+    /// ready. Phone scoring stays possible until Start.
+    func prepareWatchMatch(rules: MatchRules, lineup: Lineup, context matchContext: MatchContext = MatchContext()) {
+        let setup = MatchSetup(rules: rules, lineup: lineup, host: .watch, tournamentMatchID: matchContext.fixtureID)
+        let me = PlayerDirectory.shared.me.id
+        let wearer = Team.allCases.first { team in lineup.teams[team].contains { $0.id == me } }
+        let draft = MatchDraft(setup: setup, accountScopeID: AccountScope.current, wearerTeam: wearer)
+        setHandoff(WatchHandoff(draft: draft, grantID: nil, state: .preparing))
+        connectivity.sendJournal([.draft(draft)])
+        connectivity.wakeWatchForMatch(sport: rules.sport)
+    }
+
+    /// The player's Start: the Watch becomes the scoring owner. From here a
+    /// timeout never quietly gives scoring back to the phone; only an
+    /// accepted cancel does.
+    func startOnWatch() {
+        guard var current = handoff, current.grantID == nil else { return resendHandoff() }
+        current.grantID = UUID()
+        current.state = .starting
+        setHandoff(current)
+        resendHandoff()
+    }
+
+    /// Takes the match back. Before Start it's simply dropped; after Start
+    /// the Watch must agree (it refuses once a rally has been scored).
+    func cancelWatchHandoff() {
+        guard var current = handoff else { return }
+        if let grantID = current.grantID {
+            current.state = .cancelling
+            setHandoff(current)
+            connectivity.sendJournal([.grantCancel(grantID: grantID, matchID: current.matchID)])
+        } else {
+            connectivity.sendJournal([.grantCancel(grantID: UUID(), matchID: current.matchID)])
+            setHandoff(nil)
+        }
+    }
+
+    /// Sends the draft or grant again (the Watch answers repeats the same way).
+    private func resendHandoff() {
+        guard let current = handoff else { return }
+        switch current.state {
+        case .preparing, .ready:
+            connectivity.sendJournal([.draft(current.draft)])
+        case .starting:
+            if let grantID = current.grantID {
+                connectivity.sendJournal([.grant(ScoringGrant(grantID: grantID, draft: current.draft, issuedAt: current.updatedAt))])
+            }
+        case .cancelling:
+            if let grantID = current.grantID {
+                connectivity.sendJournal([.grantCancel(grantID: grantID, matchID: current.matchID)])
+            }
+        case .scoringOnWatch:
+            break
+        }
+    }
+
+    private func handleHandoffSignal(_ message: JournalMessage) {
+        switch message {
+        case .unsupportedVersion:
+            watchNeedsUpdate = true
+        case .draftReady(let matchID, let version):
+            guard var current = handoff, current.matchID == matchID, current.state == .preparing,
+                  version >= current.draft.draftVersion else { return }
+            current.state = .ready
+            setHandoff(current)
+        case .grantAccepted(let grantID, let matchID, _):
+            guard var current = handoff, current.matchID == matchID else { return }
+            // Accepted under this grant or the Watch already started it itself.
+            current.grantID = current.grantID ?? grantID
+            current.state = .scoringOnWatch
+            setHandoff(current)
+        case .grantCancelled(_, let matchID, let accepted):
+            guard let current = handoff, current.matchID == matchID else { return }
+            if accepted {
+                // The Watch confirmed it holds nothing: the phone may score.
+                setHandoff(nil)
+            } else if current.state == .cancelling {
+                // Too late to take back: the Watch keeps scoring it.
+                var updated = current
+                updated.state = .scoringOnWatch
+                setHandoff(updated)
+                Social.shared.notice = String(localized: "Your Watch has already started scoring this match.")
+            } else if current.state == .starting {
+                // The Watch refused the grant, so it never became the owner.
+                setHandoff(nil)
+                Social.shared.notice = String(localized: "Your Watch is busy with another match.")
+            }
+        case .manifest(let manifest):
+            if var current = handoff, current.matchID == manifest.matchID, current.state != .scoringOnWatch {
+                current.state = .scoringOnWatch
+                setHandoff(current)
+            }
+        default:
+            break
+        }
+    }
+
+    private func setHandoff(_ value: WatchHandoff?) {
+        handoff = value.map { var copy = $0; copy.updatedAt = Date(); return copy }
+        WatchHandoff.save(handoff, to: Self.journalDirectory)
     }
 }

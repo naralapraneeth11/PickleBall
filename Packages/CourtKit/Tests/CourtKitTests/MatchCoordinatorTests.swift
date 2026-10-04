@@ -244,7 +244,7 @@ final class MatchCoordinatorTests: XCTestCase {
         let phone = try MatchCoordinator(store: phoneStore, deviceID: phoneID)
         var ids: [UUID] = []
         for n in 0..<2 {
-            var s = setup(rally(to: 1, doubles: false))
+            var s = setup(rally(to: 1, doubles: false, cap: 1))
             s.matchID = UUID()
             _ = try await watch.startMatch(setup: s, accountScopeID: nil, wearerTeam: .a, role: .watch, at: t0)
             try await watch.perform(.rallyWon(.a), in: s.matchID)

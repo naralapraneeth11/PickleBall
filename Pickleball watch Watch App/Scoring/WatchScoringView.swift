@@ -4,7 +4,9 @@
 //
 //  Wrist scoring for both sports. Two big tap targets — "they won the
 //  rally" on top, "we won the rally" below — and the engine does the rest.
-//  Turn the Digital Crown back to undo. Game, set and match points buzz.
+//  Undo is a visible button (never the Digital Crown, which is too easy to
+//  turn by accident mid-rally). Pause and End sit behind the × button.
+//  Game, set and match points buzz.
 //
 
 import SwiftUI
@@ -16,13 +18,7 @@ struct WatchScoringView: View {
     @Environment(WorkoutManager.self) private var workout
     let replica: MatchReplica
 
-    @State private var crown: Double = 0
-    @State private var crownAnchor: Double = 0
     @State private var showEndConfirm = false
-    @FocusState private var focused: Bool
-
-    /// Crown detents backwards needed for one undo.
-    private let undoThreshold: Double = 2
 
     private var display: ScoreDisplay { replica.display }
     private var sport: Sport { replica.setup.rules.sport }
@@ -34,8 +30,22 @@ struct WatchScoringView: View {
             header
             teamButton(.b)
             teamButton(.a)
+            footer
         }
         .padding(.horizontal, 4)
+        .overlay {
+            if session.isPaused {
+                VStack(spacing: 8) {
+                    Text("Paused")
+                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                    Button("Resume") { session.pauseOrResume() }
+                        .tint(theme.accent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(DS.Palette.night.opacity(0.92))
+            }
+        }
         .overlay(alignment: .top) {
             if let cheer = session.cheer {
                 Label(cheer, systemImage: "hands.clap.fill")
@@ -50,12 +60,10 @@ struct WatchScoringView: View {
             }
         }
         .animation(.snappy, value: session.cheer)
-        .focusable()
-        .focused($focused)
-        .digitalCrownRotation($crown, from: -1_000, through: 1_000, by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-        .onChange(of: crown) { _, newValue in handleCrown(newValue) }
-        .onAppear { focused = true }
-        .confirmationDialog("End match?", isPresented: $showEndConfirm, titleVisibility: .visible) {
+        .confirmationDialog("Match", isPresented: $showEndConfirm, titleVisibility: .visible) {
+            if session.ownedJournal != nil {
+                Button("Pause") { session.pauseOrResume() }
+            }
             Button("End without saving", role: .destructive) { session.abandon() }
             Button("Keep playing", role: .cancel) {}
         }
@@ -86,6 +94,19 @@ struct WatchScoringView: View {
                 .accessibilityLabel(display.spokenCall)
 
             Spacer(minLength: 2)
+
+            Button {
+                session.undo()
+            } label: {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(session.canUndo ? Color.white : Color.white.opacity(0.3))
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(DS.Palette.nightRaised))
+            }
+            .buttonStyle(.plain)
+            .disabled(!session.canUndo)
+            .accessibilityLabel("Undo last rally")
 
             VStack(alignment: .trailing, spacing: 0) {
                 Text(statusText)
@@ -123,9 +144,8 @@ struct WatchScoringView: View {
 
     private func teamButton(_ team: Team) -> some View {
         let serving = display.servingTeam == team
-        let name = team == .a && lineup.teams.a.contains(where: { $0.id == session.me.id })
-            ? "US"
-            : lineup.shortName(of: team).uppercased()
+        let wearer = session.ownedJournal?.manifest.wearerTeam ?? session.wearerTeam(in: lineup)
+        let name = team == wearer ? String(localized: "US") : lineup.shortName(of: team).uppercased()
 
         return Button {
             session.record(team)
@@ -173,19 +193,22 @@ struct WatchScoringView: View {
         .accessibilityValue(display.points[team])
     }
 
-    // MARK: Crown undo
+    // MARK: Footer
 
-    private func handleCrown(_ value: Double) {
-        if value > crownAnchor {
-            // Turning forward just moves the anchor.
-            crownAnchor = value
-        } else if crownAnchor - value >= undoThreshold {
-            crownAnchor = value
-            if session.canUndo {
-                session.undo()
-            } else {
-                Haptics.warning()
-            }
+    /// Where the score is saved: always on the Watch first.
+    @ViewBuilder
+    private var footer: some View {
+        if let error = session.saveError {
+            Text(error)
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .foregroundStyle(DS.Palette.loss)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+        } else if let note = session.ownedSyncNote {
+            Text(note)
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .foregroundStyle(DS.Palette.nightMuted)
+                .lineLimit(1)
         }
     }
 }
