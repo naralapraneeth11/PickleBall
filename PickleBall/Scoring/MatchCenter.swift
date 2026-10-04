@@ -540,6 +540,10 @@ final class MatchCenter {
         record.hostRaw = DeviceRole.watch.rawValue
         record.sourceRaw = MatchSource.watch.rawValue
         record.apply(log: entry.rallies, in: context)
+        // The workout summary can arrive before the match does.
+        if record.workout == nil, let summary = WorkoutStore.shared.summary(for: entry.matchID) {
+            record.workout = summary
+        }
         AppDatabase.save()
 
         if entry.isComplete {

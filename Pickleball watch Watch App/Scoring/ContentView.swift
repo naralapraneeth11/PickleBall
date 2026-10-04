@@ -53,9 +53,11 @@ struct ContentView: View {
 
 struct WatchIdleView: View {
     @Environment(WatchMatchSession.self) private var session
+    @Environment(WorkoutManager.self) private var workout
     let onStart: () -> Void
 
     @State private var crown: Double = 0
+    @State private var showWorkoutSettings = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -84,6 +86,15 @@ struct WatchIdleView: View {
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.accent))
             }
             .buttonStyle(.press)
+
+            Button { showWorkoutSettings = true } label: {
+                Label(LocalizedStringKey(workout.recordsWorkouts ? (workout.isIndoor ? "Workout · Indoor" : "Workout · Outdoor") : "Score only"),
+                      systemImage: workout.recordsWorkouts ? "heart.fill" : "heart.slash")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(DS.Palette.nightText)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Workout settings")
 
             if let draft = session.pendingDraft {
                 VStack(spacing: 4) {
@@ -128,6 +139,33 @@ struct WatchIdleView: View {
             Haptics.selection()
         }
         .onAppear { focused = true }
+        .sheet(isPresented: $showWorkoutSettings) { WatchWorkoutSettings() }
+    }
+}
+
+/// Workout recording is optional: scoring works the same without it.
+struct WatchWorkoutSettings: View {
+    @Environment(WorkoutManager.self) private var workout
+
+    var body: some View {
+        @Bindable var workout = workout
+        List {
+            Toggle("Record workout", isOn: $workout.recordsWorkouts)
+            if workout.recordsWorkouts {
+                Toggle("Indoor court", isOn: $workout.isIndoor)
+                Toggle("Shot estimates (beta)", isOn: $workout.estimatesShots)
+            }
+            if workout.authorizationDenied {
+                Text("Health access is off. Turn it on in Settings › Health to record workouts. Scoring works without it.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(DS.Palette.nightMuted)
+            } else {
+                Text("Changes apply to the next match.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(DS.Palette.nightMuted)
+            }
+        }
+        .navigationTitle("Workout")
     }
 }
 
@@ -135,6 +173,7 @@ struct WatchIdleView: View {
 
 struct WatchResultView: View {
     @Environment(WatchMatchSession.self) private var session
+    @Environment(WorkoutManager.self) private var workout
     let replica: MatchReplica
 
     var body: some View {
@@ -164,6 +203,13 @@ struct WatchResultView: View {
                 if let note = session.ownedSyncNote, replica.isEnded {
                     Text(session.ownedJournal?.status == .finished && session.ownedJournal?.unacknowledged.isEmpty == false
                          ? String(localized: "Match saved on Watch · sync pending") : note)
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .foregroundStyle(DS.Palette.nightMuted)
+                        .multilineTextAlignment(.center)
+                }
+                if replica.isEnded, workout.state(for: replica.matchID) == .finishing {
+                    // The score is complete; HealthKit is still saving.
+                    Text("Match saved · workout details finishing.")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .foregroundStyle(DS.Palette.nightMuted)
                         .multilineTextAlignment(.center)

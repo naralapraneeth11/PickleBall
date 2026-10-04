@@ -81,6 +81,9 @@ final class WatchMatchSession: NSObject {
         super.init()
         restoreUnsentEnds()
         openJournal()
+        WorkoutManager.shared.onReport = { [weak self] matchID, date, report in
+            self?.queue(workout: .workout(matchID: matchID, date: date, report)) ?? false
+        }
         session?.delegate = self
         session?.activate()
     }
@@ -191,10 +194,7 @@ final class WatchMatchSession: NSObject {
         trackUnsentEnd(replica)
 
         if let reason = replica.ended {
-            let report = WorkoutManager.shared.stop()
-            if reason != .abandoned, let report {
-                send(.workout(matchID: replica.matchID, date: replica.setup.startedAt, report))
-            }
+            WorkoutManager.shared.finish(matchID: replica.matchID, sendsReport: reason != .abandoned)
             if reason != .completed {
                 // Parked or abandoned elsewhere: nothing to show.
                 dismissEnded()
@@ -317,6 +317,7 @@ final class WatchMatchSession: NSObject {
         for message in queued { send(message) }
         resendUnsentEnds()
         flushJournal()
+        WorkoutManager.shared.sendPendingReports()
     }
 
     fileprivate func refreshReachability() {

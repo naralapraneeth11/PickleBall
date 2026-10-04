@@ -88,9 +88,24 @@ unexpected.
 | F2 | Watch storage nearly full. | If a save fails, the Watch shows "Couldn’t save on this Watch…" and the score doesn't change. It never shows a score that wasn't saved. |
 | F3 | Low Power Mode on both devices for A2 and C1. | Same results, delivery may be slower. |
 
+## G. Workout (HealthKit)
+
+| # | Steps | Expected |
+|---|-------|----------|
+| G1 | Deny Health access on the Watch, then play a match. | Scoring works normally. Workout settings say Health access is off. No workout in Health. |
+| G2 | Workout settings → Record workout off ("Score only"). Play a match. | No HealthKit session (no green workout icon). The match syncs as usual. |
+| G3 | Indoor court on, play a pickleball match. | Health → Workouts shows one Pickleball workout, marked Indoor. |
+| G4 | Play with the iPhone nearby and the scoreboard open on it. | The iPhone shows heart rate and calories under the score with a "… ago" time that stays within about 10 s. |
+| G5 | Pause the match on the Watch for 2 minutes, resume, finish. | The workout's duration in Health leaves out the pause. The iPhone line shows Paused while paused. |
+| G6 | Mid-match, force quit the Watch app (the workout keeps running), relaunch. | The same workout continues (one workout in Health, not two). The score is the same. |
+| G7 | Finish a match and force quit the Watch app while "workout details finishing" shows. | On relaunch the iPhone still gets the summary. There's at most one workout in Health for the match. |
+| G8 | Start Apple's Workout app during a PickleBall match. | The Watch says "Workout recording stopped; scoring continues." Scoring carries on and the match syncs. Whatever was recorded is saved. |
+| G9 | Restart the Watch mid-match. | The match reopens at the same score. A new workout starts; nothing is counted twice in the match. |
+| G10 | Play 3 matches in a row. | Exactly 3 workouts in Health, one per match, each with its summary on the iPhone. |
+
 ## Sign-off
 
-Rollout needs **all of A–E passing on at least two Watch models** (one
+Rollout needs **all of A–E and G passing on at least two Watch models** (one
 older, e.g. Series 6/SE, and one current), plus F1 and F2. Open an issue
 for any failure with the device logs (Settings → Privacy → Analytics Data)
 and the steps.

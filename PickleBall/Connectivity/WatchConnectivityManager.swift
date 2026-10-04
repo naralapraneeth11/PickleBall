@@ -139,7 +139,7 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
 
     // MARK: - Health
 
-    /// Asks for Health read access (workouts, heart rate, energy).
+    /// Asks for Health access: reads workouts, heart rate and energy.
     func requestHealthAuthorization(completion: @escaping (Bool) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
             completion(false)
@@ -150,7 +150,9 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             HKQuantityType(.heartRate),
             HKQuantityType(.activeEnergyBurned)
         ]
-        healthStore.requestAuthorization(toShare: [], read: types) { success, _ in
+        // Workout sharing lets the iPhone receive the Watch's mirrored
+        // workout (as in Apple's multidevice workout sample).
+        healthStore.requestAuthorization(toShare: [HKObjectType.workoutType()], read: types) { success, _ in
             Task { @MainActor in completion(success) }
         }
     }

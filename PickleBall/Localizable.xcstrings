@@ -70,6 +70,29 @@
         }
       }
     },
+    "%lld kcal": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        }
+      }
+    },
     "%lld matches": {
       "extractionState": "manual",
       "localizations": {
@@ -7058,6 +7081,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le partite in pausa restano nella Home. Terminare elimina questa partita."
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
           }
         }
       }

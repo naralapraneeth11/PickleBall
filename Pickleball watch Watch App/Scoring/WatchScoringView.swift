@@ -204,6 +204,12 @@ struct WatchScoringView: View {
                 .foregroundStyle(DS.Palette.loss)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
+        } else if workout.recordingStopped {
+            Text("Workout recording stopped; scoring continues.")
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .foregroundStyle(DS.Palette.nightMuted)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
         } else if let note = session.ownedSyncNote {
             Text(note)
                 .font(.system(size: 9, weight: .semibold, design: .rounded))

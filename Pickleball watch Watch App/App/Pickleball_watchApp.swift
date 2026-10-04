@@ -43,4 +43,12 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
     func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
         _ = WatchMatchSession.shared
     }
+
+    /// Relaunched after a crash with a workout still running: pick it up
+    /// and line it up with the match journal (HealthKit doesn't bring back
+    /// the score; the journal does).
+    func handleActiveWorkoutRecovery() {
+        _ = WatchMatchSession.shared
+        WorkoutManager.shared.recoverAfterCrash()
+    }
 }

@@ -136,7 +136,14 @@ extension WatchMatchSession {
                 case .undo:
                     Haptics.soft()
                 case .finished, .abandoned:
-                    finishWorkout(for: journal)
+                    // The workout saves on its own time; the score is done.
+                    WorkoutManager.shared.finish(matchID: journal.matchID, sendsReport: journal.status == .finished)
+                case .paused:
+                    WorkoutManager.shared.pause()
+                    Haptics.selection()
+                case .resumed:
+                    WorkoutManager.shared.resume()
+                    Haptics.selection()
                 default:
                     Haptics.selection()
                 }
@@ -166,17 +173,12 @@ extension WatchMatchSession {
         }
     }
 
-    private func finishWorkout(for journal: MatchJournal) {
-        let report = WorkoutManager.shared.stop()
-        // Workout details go separately and never hold up the match.
-        if journal.status == .finished, let report {
-            send(workout: .workout(matchID: journal.matchID, date: journal.manifest.setup.startedAt, report))
-        }
-    }
-
-    private func send(workout message: SyncMessage) {
-        guard let session, session.activationState == .activated else { return }
+    /// Queues a workout summary for the iPhone. WatchConnectivity keeps
+    /// queued transfers across relaunches until they're delivered.
+    func queue(workout message: SyncMessage) -> Bool {
+        guard let session, session.activationState == .activated else { return false }
         session.transferUserInfo(message.wcPayload)
+        return true
     }
 
     private func report(_ error: Error) {

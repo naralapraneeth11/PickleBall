@@ -1841,6 +1841,29 @@
         }
       }
     },
+    "Changes apply to the next match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios se aplican al próximo partido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As mudanças valem para a próxima partida."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le modifiche valgono dalla prossima partita."
+          }
+        }
+      }
+    },
     "Changes save automatically": {
       "extractionState": "manual",
       "localizations": {
@@ -3842,6 +3865,29 @@
         }
       }
     },
+    "Health access is off. Turn it on in Settings › Health to record workouts. Scoring works without it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El acceso a Salud está desactivado. Actívalo en Ajustes › Salud para grabar entrenos. El marcador funciona sin él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O acesso ao Saúde está desativado. Ative em Ajustes › Saúde para gravar treinos. A marcação funciona sem ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso a Salute è disattivato. Attivalo in Impostazioni › Salute per registrare gli allenamenti. Il punteggio funziona anche senza."
+          }
+        }
+      }
+    },
     "Heart": {
       "extractionState": "manual",
       "localizations": {
@@ -3930,6 +3976,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ignora"
+          }
+        }
+      }
+    },
+    "Indoor court": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pista cubierta"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quadra coberta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campo al chiuso"
           }
         }
       }
@@ -4620,6 +4689,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partita salvata sul Watch · sincronizzazione in attesa"
+          }
+        }
+      }
+    },
+    "Match saved · workout details finishing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partido guardado · terminando los datos del entreno."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida salva · finalizando os dados do treino."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partita salvata · completamento dei dati dell'allenamento."
           }
         }
       }
@@ -6970,6 +7062,29 @@
         }
       }
     },
+    "Record workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravar treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra allenamento"
+          }
+        }
+      }
+    },
     "Recorded by": {
       "extractionState": "manual",
       "localizations": {
@@ -7959,6 +8074,29 @@
         }
       }
     },
+    "Score only": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo marcador"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Só placar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo punteggio"
+          }
+        }
+      }
+    },
     "Scored": {
       "extractionState": "manual",
       "localizations": {
@@ -8760,6 +8898,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Condividi il punteggio in diretta"
+          }
+        }
+      }
+    },
+    "Shot estimates (beta)": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimación de golpes (beta)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimativa de golpes (beta)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stima dei colpi (beta)"
           }
         }
       }
@@ -10600,6 +10761,121 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ritirare questo risultato?"
+          }
+        }
+      }
+    },
+    "Workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento"
+          }
+        }
+      }
+    },
+    "Workout recording stopped; scoring continues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La grabación del entreno se detuvo; el marcador sigue."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gravação do treino parou; a marcação continua."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La registrazione dell'allenamento si è fermata; il punteggio continua."
+          }
+        }
+      }
+    },
+    "Workout settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes del entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes do treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni allenamento"
+          }
+        }
+      }
+    },
+    "Workout · Indoor": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno · Interior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino · Interno"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento · Al chiuso"
+          }
+        }
+      }
+    },
+    "Workout · Outdoor": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno · Exterior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino · Externo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento · All'aperto"
           }
         }
       }

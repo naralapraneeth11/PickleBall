@@ -78,6 +78,9 @@ struct LiveScoreboardView: View {
                 centerStrip
                 teamPanel(topTeam.opponent, isTop: false)
                 historyBar
+                if match.isWatchOwned || match.isWatchHosted {
+                    WatchMetricsLine(matchID: match.id)
+                }
             }
 
             if sweepVisible {
