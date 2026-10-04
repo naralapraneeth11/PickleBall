@@ -7,6 +7,7 @@
 #   APP_STORE_URL       App Store or TestFlight public link
 #   ANDROID_URL         optional
 #   SUPPORT_EMAIL       where support mail goes
+#   APPLE_TEAM_ID       for universal links (default: the app's team)
 set -euo pipefail
 cd "$(dirname "$0")"
 json() { python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1"; }
@@ -21,3 +22,24 @@ window.PICKLEBALL = {
 };
 JS
 echo "wrote web/assets/config.js"
+
+# Universal links: invite links open the app directly when it's installed.
+mkdir -p .well-known
+cat > .well-known/apple-app-site-association <<JSON
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["${APPLE_TEAM_ID:-3A8H924A89}.ME.PickleBall"],
+        "components": [
+          { "/": "/invite/*", "comment": "friend, squad and claim links" },
+          { "/": "/invite", "?": { "t": "*" } },
+          { "/": "/invite/", "?": { "t": "*" } }
+        ]
+      }
+    ]
+  }
+}
+JSON
+echo "wrote web/.well-known/apple-app-site-association"
+

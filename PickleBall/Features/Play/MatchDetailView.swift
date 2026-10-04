@@ -40,6 +40,14 @@ struct MatchDetailView: View {
                     .listRowBackground(Color.clear)
             }
 
+            if record.rallies.isEmpty {
+                Section {
+                    EmptyView()
+                } footer: {
+                    Text("Point-by-point stats (serve, return, runs, big points) appear for matches scored live on the iPhone or Apple Watch.")
+                }
+            }
+
             if let rules = record.rules, !record.rallies.isEmpty {
                 let insights = MatchInsights.compute(scorer: MatchScorer(rules: rules, rallies: record.rallyLog))
                 if !insights.isEmpty {
@@ -192,7 +200,10 @@ struct MatchDetailView: View {
     private var statusExplanation: String {
         switch record.confirmation {
         case .local: return social.phase == .ready ? "Sends as soon as there’s signal." : "Saved on this phone."
-        case .pending: return needsMyAnswer ? "Your side hasn’t confirmed yet." : "Waiting for the other side to confirm."
+        case .pending:
+            if record.myAnswerRaw == "agree" { return "Your confirmation is on its way. It counts once the server has it." }
+            if record.myAnswerRaw == "dispute" { return "Your dispute is on its way." }
+            return needsMyAnswer ? "Your side hasn’t confirmed yet." : "Waiting for the other side to confirm."
         case .confirmed: return "Both sides agreed. It counts."
         case .disputed: return "Someone disputed this score. It doesn’t count until it’s fixed."
         }

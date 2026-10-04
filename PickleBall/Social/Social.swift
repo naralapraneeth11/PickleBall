@@ -16,6 +16,7 @@ import Foundation
 import Network
 import Observation
 import SwiftUI
+import SwiftData
 import CourtKit
 import CourtNet
 
@@ -82,6 +83,11 @@ final class Social {
     var sharePrompt: SharePrompt?
     /// An invite opened before the account was ready.
     var pendingInvite: InviteLink?
+    /// Matches scored on this phone while signed out that could be added
+    /// to this account. Non-zero: ask (they may be someone else's).
+    var anonymousMatchesToAdd = 0
+    /// False while live updates aren't arriving (no signal, reconnecting).
+    private(set) var isLiveConnected = true
 
     // Live matches and crowd taps (Social+Live.swift).
     @ObservationIgnored var hostCrowd: CrowdChannel?
@@ -100,7 +106,11 @@ final class Social {
     @ObservationIgnored private var pendingRefresh: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private let pathMonitor = NWPathMonitor()
     @ObservationIgnored private var cacheSave: Task<Void, Never>?
+    @ObservationIgnored var retryWake: Task<Void, Never>?
     @ObservationIgnored var matchCursor: Date?
+    /// Friends and squads last seen, to notice when more (or fewer)
+    /// matches become visible.
+    @ObservationIgnored var visibilityKey: Set<String>?
 
     var invitePage: URL? { backend?.config.invitePage }
 
@@ -138,6 +148,10 @@ final class Social {
         case .signedIn(let id):
             guard userID != id else { return }
             userID = id
+            // Show this account's history only, from the first frame.
+            AccountScope.current = id
+            MatchStore.shared.reload()
+            WorkoutStore.shared.reload()
             restoreCache(for: id)
             outbox = Outbox(storage: FileOutboxStorage(url: Self.directory(for: id).appendingPathComponent("outbox.json")))
             await updateOutboxState()
@@ -167,7 +181,8 @@ final class Social {
         profiles[row.id] = row
         let wasReady = phase == .ready
         phase = .ready
-        PlayerDirectory.shared.adoptAccount(userID: row.id, displayName: row.displayName)
+        let adoptable = PlayerDirectory.shared.adoptAccount(userID: row.id, displayName: row.displayName)
+        if adoptable > 0 { anonymousMatchesToAdd = adoptable }
         guard !wasReady else { return }
         startRealtime()
         Task {
@@ -191,6 +206,14 @@ final class Social {
 
     private func tearDown() async {
         QRCode.forget()
+        // Stop everything still running for the old account.
+        pendingRefresh.values.forEach { $0.cancel() }
+        pendingRefresh = [:]
+        cacheSave?.cancel()
+        retryWake?.cancel()
+        hostCrowdTask?.cancel()
+        liveUpdateTask?.cancel()
+        anonymousMatchesToAdd = 0
         liveTask?.cancel()
         await live?.stop()
         live = nil
@@ -219,7 +242,12 @@ final class Social {
         players = [:]
         lastRead = [:]
         matchCursor = nil
+        visibilityKey = nil
         outboxCount = 0
+        // Back to the phone's own player and history; the Watch and the
+        // belt widget follow.
+        PlayerDirectory.shared.signOut()
+        MatchCenter.shared.publishPreferences(sport: Sport(rawValue: UserDefaults.standard.string(forKey: "sportMode.active") ?? "") ?? .pickleball)
     }
 
     private func networkChanged(online: Bool) {
@@ -248,16 +276,42 @@ final class Social {
         await backend?.signOut()
     }
 
-    func deleteAccount() async -> Bool {
-        guard let backend else { return false }
+    /// Deletes the account everywhere: server data, files, the Sign in
+    /// with Apple link, and what this phone kept for it.
+    func deleteAccount(appleAuthorizationCode: String?) async -> Bool {
+        // Capture who's being deleted before signing out changes it.
+        guard let backend, let accountID = userID else { return false }
         do {
-            try await backend.deleteAccount()
-            if let userID { try? FileManager.default.removeItem(at: Self.directory(for: userID)) }
+            let result = try await backend.deleteAccount(appleAuthorizationCode: appleAuthorizationCode)
+            removeLocalData(for: accountID)
+            if result.appleRevoked != true {
+                notice = "Account deleted. To finish, remove PickleBall in Settings → your name → Sign-In & Security → Sign in with Apple."
+            }
             return true
         } catch {
             notice = "Couldn’t delete your account. \(error.localizedDescription)"
             return false
         }
+    }
+
+    /// Everything this phone kept for an account: cache, outbox, matches,
+    /// workouts and its player record.
+    private func removeLocalData(for accountID: UUID) {
+        try? FileManager.default.removeItem(at: Self.directory(for: accountID))
+        let context = AppDatabase.context
+        for record in (try? context.fetch(FetchDescriptor<MatchRecord>())) ?? [] where record.ownerAccountID == accountID {
+            context.delete(record)
+        }
+        for workout in (try? context.fetch(FetchDescriptor<WorkoutSessionRecord>())) ?? [] where workout.ownerAccountID == accountID {
+            context.delete(workout)
+        }
+        let id = accountID
+        var player = FetchDescriptor<PlayerRecord>(predicate: #Predicate { $0.id == id })
+        player.fetchLimit = 1
+        if let record = try? context.fetch(player).first, !record.isLocalUser { context.delete(record) }
+        AppDatabase.save()
+        MatchStore.shared.reload()
+        WorkoutStore.shared.reload()
     }
 
     func saveProfile(username: String, displayName: String, sports: [Sport], homeCourts: [CourtTag], avatar: Data?) async -> Bool {
@@ -317,6 +371,7 @@ final class Social {
             let me = userID
             await loadProfiles(friendships.compactMap { row in me.map { row.other(than: $0) } })
             syncFriendsIntoDirectory()
+            noteVisibilityChange()
         } catch {
             report(error)
         }
@@ -333,6 +388,7 @@ final class Social {
             conversations = try await chatRows
             let me = userID
             await loadProfiles(squadMembers.map(\.userID) + conversations.compactMap { row in me.flatMap { row.friend(of: $0) } })
+            noteVisibilityChange()
         } catch {
             report(error)
         }
@@ -410,10 +466,40 @@ final class Social {
         do {
             let known = messages[conversationID] ?? []
             let after = known.last(where: { !pendingMessageIDs.contains($0.id) })?.createdAt
+            // Everything since the last message we have, however much.
             let rows = try await backend.messages(in: conversationID, after: after, limit: 200)
             merge(rows, into: conversationID)
+            // Drop messages that were deleted, moderated or hidden by a
+            // block while we weren't looking.
+            if let oldest = messages[conversationID]?.first(where: { !pendingMessageIDs.contains($0.id) })?.createdAt {
+                let visible = try await backend.messageIDs(in: conversationID, since: oldest)
+                let list = messages[conversationID] ?? []
+                let kept = list.filter { visible.contains($0.id) || pendingMessageIDs.contains($0.id) || $0.createdAt < oldest }
+                if kept.count != list.count {
+                    messages[conversationID] = kept
+                    scheduleCacheSave()
+                }
+            }
         } catch {
             report(error)
+        }
+    }
+
+    /// Older history, for scrolling up. Returns false when there's no more.
+    @discardableResult
+    func loadOlderMessages(in conversationID: UUID) async -> Bool {
+        guard let backend, let oldest = messages[conversationID]?.first?.createdAt else { return false }
+        do {
+            let rows = try await backend.messages(in: conversationID, before: oldest, limit: 100)
+            guard !rows.isEmpty else { return false }
+            var list = messages[conversationID] ?? []
+            let known = Set(list.map(\.id))
+            list = rows.filter { !known.contains($0.id) && !blocked.contains($0.senderID ?? UUID()) } + list
+            messages[conversationID] = list
+            return rows.count == 100
+        } catch {
+            report(error)
+            return false
         }
     }
 
@@ -459,11 +545,22 @@ final class Social {
                 conversations.sort { ($0.lastMessageAt ?? .distantPast) > ($1.lastMessageAt ?? .distantPast) }
             }
             if case .result? = message.payload { debounce("matches") { await $0.refreshMatches() } }
+        case .messageDeleted(let id):
+            for (conversationID, list) in messages where list.contains(where: { $0.id == id }) {
+                messages[conversationID] = list.filter { $0.id != id }
+            }
+            scheduleCacheSave()
+        case .connection(let isLive):
+            let cameBack = isLive && !isLiveConnected
+            isLiveConnected = isLive
+            // Changes made while we weren't listening weren't heard.
+            if cameBack { debounce("all") { await $0.refreshAll() } }
         case .table(let table):
             switch table {
             case "friendships": debounce(table) { await $0.refreshFriends() }
             case "squad_members", "conversations": debounce("chats") { await $0.refreshSquadsAndChats() }
             case "matches", "match_participants": debounce("matches") { await $0.refreshMatches() }
+            case "messages": debounce("chats") { await $0.refreshSquadsAndChats() }
             case "callouts": debounce(table) { await $0.refreshCallOuts() }
             case "tournaments", "tournament_fixtures": debounce("tournaments") { await $0.refreshTournaments() }
             case "serves", "returns": debounce("feed") { await $0.refreshFeed() }
@@ -502,6 +599,21 @@ final class Social {
         let sent = await outbox.drain(using: backend)
         await updateOutboxState()
         if sent > 0 { debounce("matches") { await $0.refreshMatches() } }
+        await scheduleRetry()
+    }
+
+    /// A send that failed waits for its backoff; wake up then and try
+    /// again, instead of waiting for some other event to come along.
+    private func scheduleRetry() async {
+        retryWake?.cancel()
+        guard let outbox, let retryAt = await outbox.nextRetryAt else { return }
+        // A little jitter so many phones don't retry in lockstep.
+        let delay = max(1, retryAt.timeIntervalSinceNow) + Double.random(in: 0...1.5)
+        retryWake = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            await self?.drainOutbox()
+        }
     }
 
     private func updateOutboxState() async {
@@ -511,7 +623,12 @@ final class Social {
         if refused.count > refusedWrites.count, let latest = refused.last?.lastError {
             notice = "Something couldn’t be sent: \(latest)"
         }
+        let newlyRefused = Array(refused.dropFirst(min(refusedWrites.count, refused.count)))
         refusedWrites = refused
+        if !newlyRefused.isEmpty { clearRefusedAnswers(newlyRefused) }
+        if !(await outbox.isStorageHealthy) {
+            notice = "This iPhone couldn’t save your unsent changes. Free up some storage so nothing is lost."
+        }
     }
 
     // MARK: Chat writes

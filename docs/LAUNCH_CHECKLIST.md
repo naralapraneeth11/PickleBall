@@ -21,14 +21,17 @@ as you go.
       `supabase db push`):
   1. `supabase/migrations/20260927000000_social_core.sql`
   2. `supabase/migrations/20261001000000_launch.sql`
+  3. `supabase/migrations/20261003000000_hardening.sql` (release-audit fixes;
+     safe to run later on a project that already has 1 and 2)
 - [ ] Never run anything from `supabase/ci-tests/` against the real project:
       it replaces `auth.uid()` for testing.
 - [ ] **Authentication → Providers → Apple**: turn it on. For a native iOS app
       only the bundle ID `ME.PickleBall` is needed under "Client IDs". (The
       Services ID and secret key are only needed for web sign-in, which we don't use.)
 - [ ] **Authentication → Rate Limits**: leave the defaults.
-- [ ] **Realtime → Settings**: turn on **"Private channels only"** (crowd taps
-      use a private channel now).
+- [ ] **Realtime → Settings**: turn on **"Private channels only"**, but only
+      after migration 3 has run (it adds the policy the app's own channel
+      needs). Every channel the app opens is private.
 - [ ] **Storage**: check that the `avatars` (public) and `media` (private) buckets
       exist. The migration creates them.
 - [ ] Make yourself an admin. Sign in to the app once, then run:
@@ -40,6 +43,21 @@ as you go.
       Moderation then shows up in the app under Me → Settings.
 - [ ] **Advisors → Security Advisor**: run it. It should report nothing
       critical.
+- [ ] **Delete-account function** (Apple requires full deletion and revoking
+      Sign in with Apple). With the Supabase CLI (`brew install supabase/tap/supabase`):
+      ```sh
+      supabase login
+      supabase link --project-ref <your project ref>
+      supabase functions deploy delete-account
+      ```
+      Then, in Apple Developer → **Keys**, create a key with **Sign in with
+      Apple** enabled (download the `.p8` once) and set the secrets:
+      ```sh
+      supabase secrets set APPLE_TEAM_ID=3A8H924A89 APPLE_KEY_ID=<key id> \
+        APPLE_CLIENT_ID=ME.PickleBall APPLE_PRIVATE_KEY="$(cat AuthKey_<key id>.p8)"
+      ```
+      Without the function the app still deletes the account from the phone,
+      but can't revoke the Apple ID link; it tells the person how to do it.
 
 ## 2. Secrets for the app (5 minutes)
 
@@ -82,6 +100,10 @@ Returns can't be made. That's what you see in the simulator today.
 - [ ] Put that address in `SITE_URL` in `Secrets.plist` (step 2). Share links,
       invite links and the in-app privacy and terms links all use it.
 - [ ] Optional: a custom domain (Pages → Custom domains).
+- [ ] **Invite links that open the app** (universal links): the build writes
+      `/.well-known/apple-app-site-association` for you. In Xcode, PickleBall
+      target → **Signing & Capabilities → + Associated Domains** → add
+      `applinks:<your site domain>` (e.g. `applinks:pickleball.pages.dev`).
 
 ## 5. App Store Connect (about an hour)
 

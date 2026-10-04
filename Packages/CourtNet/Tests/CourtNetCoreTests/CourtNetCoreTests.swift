@@ -204,6 +204,22 @@ final class OutboxTests: XCTestCase {
         XCTAssertEqual(later, 2)
     }
 
+    func testWaitingHeadReportsWhenToRetry() async {
+        let outbox = Outbox(storage: MemoryOutboxStorage())
+        await outbox.enqueue(op("a"))
+        let now = Date(timeIntervalSince1970: 1_000)
+        await outbox.drain(using: ScriptedTransport([.retry("offline")]), now: { now })
+        let retryAt = await outbox.nextRetryAt
+        XCTAssertEqual(retryAt, now.addingTimeInterval(2), "the app can wake up exactly then")
+    }
+
+    func testStorageFailureIsReported() async {
+        let outbox = Outbox(storage: FileOutboxStorage(url: URL(fileURLWithPath: "/dev/null/outbox.json")))
+        await outbox.enqueue(op("a"))
+        let healthy = await outbox.isStorageHealthy
+        XCTAssertFalse(healthy, "a failed write is surfaced, not swallowed")
+    }
+
     func testRejectedOperationsDoNotBlockTheQueue() async {
         let outbox = Outbox(storage: MemoryOutboxStorage())
         await outbox.enqueue(op("bad"))

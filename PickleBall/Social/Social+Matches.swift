@@ -26,6 +26,9 @@ extension Social {
     /// version replaces a queued one).
     func upload(_ record: MatchRecord) async {
         guard phase == .ready, let userID else { return }
+        // Only this account's own history goes up: never a match scored by
+        // someone else on a shared phone.
+        guard record.ownerAccountID == userID else { return }
         guard record.status == .completed, record.confirmation != .confirmed else { return }
         guard record.createdByID == nil || record.createdByID == userID else { return }
         guard let lineup = record.lineup, lineup.team(of: PlayerID(rawValue: userID)) != nil || record.tournamentID != nil else { return }
@@ -47,7 +50,8 @@ extension Social {
         let descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate {
             $0.statusRaw == completed && $0.confirmationRaw == local
         })
-        for record in (try? AppDatabase.context.fetch(descriptor)) ?? [] where record.createdByID == nil || record.createdByID == userID {
+        for record in (try? AppDatabase.context.fetch(descriptor)) ?? []
+        where record.ownerAccountID == userID && (record.createdByID == nil || record.createdByID == userID) {
             await upload(record)
         }
     }
@@ -58,7 +62,13 @@ extension Social {
         guard let backend, phase == .ready else { return }
         var newlyConfirmed: [UUID] = []
         do {
-            let rows = try await backend.matches(updatedAfter: matchCursor)
+            // A full read (first sync, or after becoming friends or joining
+            // a squad) also catches older matches and drops ones no longer visible.
+            let isFullSync = matchCursor == nil
+            // A second of overlap, so a row written as the last page was read
+            // isn't skipped; merging is idempotent.
+            let rows = try await backend.matches(updatedSince: matchCursor?.addingTimeInterval(-1))
+            if isFullSync { removeMatchesNoLongerVisible(keeping: Set(rows.map(\.id))) }
             if !rows.isEmpty {
                 let participantRows = try await backend.participants(matchIDs: rows.map(\.id))
                 let playerIDs = Set(participantRows.map(\.playerID))
@@ -68,8 +78,11 @@ extension Social {
                 for row in rows {
                     let before = MatchStore.shared.record(id: row.id)?.confirmation
                     merge(row, participants: byMatch[row.id] ?? [])
-                    // The other side just agreed to one of my results.
-                    if row.status == .confirmed, before == .pending || before == .local, row.createdBy == userID {
+                    // Final now, by the server's word: a result I recorded or
+                    // played in. Rewards wait for this, never for a tap.
+                    let playedIn = byMatch[row.id]?.contains { playerUser($0.playerID) == userID } ?? false
+                    if row.status == .confirmed, before == .pending || before == .local,
+                       row.createdBy == userID || playedIn {
                         newlyConfirmed.append(row.id)
                     }
                 }
@@ -104,7 +117,35 @@ extension Social {
     private func pendingMatchIDs() -> [UUID] {
         let pending = MatchConfirmation.pending.rawValue
         let descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate { $0.confirmationRaw == pending })
-        return ((try? AppDatabase.context.fetch(descriptor)) ?? []).map(\.id)
+        return ((try? AppDatabase.context.fetch(descriptor)) ?? []).filter { $0.ownerAccountID == userID }.map(\.id)
+    }
+
+    /// After a full read: synced matches the server no longer shows me
+    /// (withdrawn, deleted, or from someone I'm no longer connected to)
+    /// leave this phone. My own unsent matches stay.
+    private func removeMatchesNoLongerVisible(keeping visible: Set<UUID>) {
+        guard let userID else { return }
+        let all = (try? AppDatabase.context.fetch(FetchDescriptor<MatchRecord>())) ?? []
+        var removed = false
+        for record in all where record.ownerAccountID == userID && record.remoteUpdatedAt != nil
+            && record.confirmation != .local && !visible.contains(record.id) && record.status == .completed {
+            AppDatabase.context.delete(record)
+            removed = true
+        }
+        if removed { AppDatabase.save() }
+    }
+
+    /// Becoming friends or joining a squad can reveal older matches the
+    /// incremental read would skip; losing a connection hides some. Either
+    /// way, read everything again.
+    func noteVisibilityChange() {
+        let me = userID
+        let friends = friendships.filter { $0.status == .accepted }.compactMap { row in me.map { row.other(than: $0) } }
+        let key = Set(friends.map { "f:\($0)" } + squads.map { "s:\($0.id)" })
+        defer { visibilityKey = key }
+        guard let previous = visibilityKey, previous != key else { return }
+        matchCursor = nil
+        Task { await refreshMatches() }
     }
 
     /// Creates or updates the local copy of a server match.
@@ -129,7 +170,10 @@ extension Social {
 
         record.status = .completed
         record.source = row.source
+        record.ownerAccountID = userID
         record.confirmation = MatchConfirmation(row.status)
+        // The server has answered; anything I sent is settled.
+        if row.status != .pending { record.myAnswerRaw = nil }
         record.createdByID = row.createdBy
         record.endedAt = row.endedAt ?? row.startedAt
         record.remoteUpdatedAt = row.updatedAt
@@ -144,7 +188,6 @@ extension Social {
             record.pointsB = row.points.dropFirst().first ?? 0
             record.unitsData = try? JSONEncoder().encode(row.units)
         }
-        if record.workout == nil, let workout = row.workout { record.workout = workout }
     }
 
     // MARK: Confirming
@@ -158,7 +201,8 @@ extension Social {
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
         return ((try? AppDatabase.context.fetch(descriptor)) ?? []).filter { record in
-            guard record.createdByID != userID, let parts = pendingParticipants[record.id],
+            guard record.ownerAccountID == userID, record.myAnswerRaw == nil,
+                  record.createdByID != userID, let parts = pendingParticipants[record.id],
                   let mine = parts.first(where: { playerUser($0.playerID) == userID }) else { return false }
             return parts.filter { $0.team == mine.team }.allSatisfy { $0.confirmedAt == nil }
         }
@@ -169,7 +213,15 @@ extension Social {
         guard let userID else { return [] }
         let pending = MatchConfirmation.pending.rawValue
         let descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate { $0.confirmationRaw == pending })
-        return ((try? AppDatabase.context.fetch(descriptor)) ?? []).filter { $0.createdByID == userID }
+        return ((try? AppDatabase.context.fetch(descriptor)) ?? []).filter { $0.createdByID == userID && $0.ownerAccountID == userID }
+    }
+
+    /// Answers I've sent that the server hasn't settled yet.
+    var answersOnTheirWay: [MatchRecord] {
+        guard let userID else { return [] }
+        let pending = MatchConfirmation.pending.rawValue
+        let descriptor = FetchDescriptor<MatchRecord>(predicate: #Predicate { $0.confirmationRaw == pending })
+        return ((try? AppDatabase.context.fetch(descriptor)) ?? []).filter { $0.myAnswerRaw != nil && $0.ownerAccountID == userID }
     }
 
     /// The account behind a player row (claimed guests count as their owner).
@@ -178,25 +230,44 @@ extension Social {
         return profiles[playerID] != nil || playerID == userID ? playerID : nil
     }
 
+    /// Sends my confirm or dispute. The result is final only when the
+    /// server says so (the other side may still be pending, or it may
+    /// refuse): until then the match shows "your answer is on its way", and
+    /// belts and share cards wait.
     func confirm(_ record: MatchRecord, agree: Bool) async {
         var events: [ChatEvent] = []
         if agree, let result = record.result {
-            // What this result does to the belts, from everything confirmed so far.
+            // What this result does to the belts, from everything confirmed so
+            // far. The server posts these only if the match becomes final.
             var ledger = BeltLedger.compute(MatchStore.shared.confirmedResults.filter { $0.id != record.id })
             events = ledger.record(result).map(ChatEvent.belt)
         }
         do {
             await enqueue(try Operations.confirmMatch(record.id, agree: agree, events: events))
-            record.confirmation = agree ? .confirmed : .disputed
+            record.myAnswerRaw = agree ? "agree" : "dispute"
             AppDatabase.save()
             MatchStore.shared.reload()
-            if agree, let result = record.result {
-                offerShareCard(for: result, beltEvents: events.compactMap {
-                    if case .belt(let event) = $0 { return event } else { return nil }
-                }, drama: nil)
-            }
+            // Online, the answer is already sent: read back what it did.
+            await refreshMatches()
         } catch {
             report(error)
+        }
+    }
+
+    /// A confirm or dispute the server refused: let the player answer again.
+    func clearRefusedAnswers(_ refused: [OutboxOperation]) {
+        var changed = false
+        for operation in refused {
+            guard case .rpc(let name, let params) = operation.action, name == "confirm_match",
+                  case .object(let fields) = params, case .string(let raw)? = fields["mid"],
+                  let id = UUID(uuidString: raw),
+                  let record = MatchStore.shared.record(id: id), record.myAnswerRaw != nil else { continue }
+            record.myAnswerRaw = nil
+            changed = true
+        }
+        if changed {
+            AppDatabase.save()
+            MatchStore.shared.reload()
         }
     }
 

@@ -70,7 +70,9 @@ final class WorkoutStore: ObservableObject {
 
     func reload() {
         let descriptor = FetchDescriptor<WorkoutSessionRecord>(sortBy: [SortDescriptor(\.date)])
-        sessions = ((try? context.fetch(descriptor)) ?? []).map(GameSession.init(record:))
+        sessions = ((try? context.fetch(descriptor)) ?? [])
+            .filter { AccountScope.owns($0.ownerAccountID) }
+            .map(GameSession.init(record:))
     }
 
     /// Stores a report from the Watch and attaches it to its match.

@@ -96,8 +96,19 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
         }
     }
 
+    /// Profile ids are read-only on the server, so this updates without the
+    /// id and inserts only when there's no row yet (an upsert would try to
+    /// write the id and be refused).
     public func saveProfile(_ draft: ProfileDraft) async throws -> ProfileRow {
-        try await db.from("profiles").upsert(draft, onConflict: "id").select().single().execute().value
+        struct Patch: Encodable {
+            let username: String, display_name: String, avatar_path: String?, sports: [Sport], home_courts: [CourtTag]
+        }
+        let patch = Patch(username: draft.username, display_name: draft.displayName, avatar_path: draft.avatarPath,
+                          sports: draft.sports, home_courts: draft.homeCourts)
+        let updated: [ProfileRow] = try await db.from("profiles").update(patch).eq("id", value: draft.id)
+            .select().execute().value
+        if let row = updated.first { return row }
+        return try await db.from("profiles").insert(draft).select().single().execute().value
     }
 
     public func isUsernameAvailable(_ username: String) async throws -> Bool {
@@ -201,11 +212,49 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
         try await db.from("conversations").select().order("last_message_at", ascending: false, nullsFirst: false).execute().value
     }
 
+    /// Without `after`: the newest `limit` messages. With `after`: every
+    /// message since then, oldest first, page by page, so a long time away
+    /// never leaves a gap.
     public func messages(in conversationID: UUID, after: Date?, limit: Int) async throws -> [MessageRow] {
-        var query = db.from("messages").select().eq("conversation_id", value: conversationID)
-        if let after { query = query.gt("created_at", value: WireCoding.format(after)) }
-        let newestFirst: [MessageRow] = try await query.order("created_at", ascending: false).limit(limit).execute().value
-        return newestFirst.reversed()
+        guard let after else {
+            let newestFirst: [Lossy<MessageRow>] = try await db.from("messages").select()
+                .eq("conversation_id", value: conversationID)
+                .order("created_at", ascending: false).order("id", ascending: false)
+                .limit(limit).execute().value
+            return newestFirst.compactMap(\.value).reversed()
+        }
+        return try await drain(page: max(limit, 100)) { from, to in
+            try await self.db.from("messages").select()
+                .eq("conversation_id", value: conversationID)
+                .gt("created_at", value: WireCoding.format(after))
+                .order("created_at").order("id")
+                .range(from: from, to: to).execute().value
+        }
+    }
+
+    /// Older history: the `limit` messages before `before`, oldest first.
+    public func messages(in conversationID: UUID, before: Date, limit: Int) async throws -> [MessageRow] {
+        let newestFirst: [Lossy<MessageRow>] = try await db.from("messages").select()
+            .eq("conversation_id", value: conversationID)
+            .lt("created_at", value: WireCoding.format(before))
+            .order("created_at", ascending: false).order("id", ascending: false)
+            .limit(limit).execute().value
+        return newestFirst.compactMap(\.value).reversed()
+    }
+
+    /// Ids of messages in a conversation still visible to me, to drop ones
+    /// that were deleted, moderated or hidden by a block.
+    public func messageIDs(in conversationID: UUID, since: Date) async throws -> Set<UUID> {
+        struct IDRow: Decodable { let id: UUID }
+        let rows: [IDRow] = try await drain(page: 1000) { from, to in
+            let page: [Lossy<IDRow>] = try await self.db.from("messages").select("id")
+                .eq("conversation_id", value: conversationID)
+                .gte("created_at", value: WireCoding.format(since))
+                .order("created_at").order("id")
+                .range(from: from, to: to).execute().value
+            return page
+        }
+        return Set(rows.map(\.id))
     }
 
     public func deleteMessage(_ id: UUID) async throws {
@@ -214,10 +263,15 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
 
     // MARK: Matches
 
-    public func matches(updatedAfter: Date?) async throws -> [MatchRow] {
-        var query = db.from("matches").select()
-        if let updatedAfter { query = query.gt("updated_at", value: WireCoding.format(updatedAfter)) }
-        return try await query.order("updated_at").limit(1000).execute().value
+    /// Every visible match changed since `updatedSince` (all of them when
+    /// nil), page by page. A row the app can't read is skipped rather than
+    /// failing the rest.
+    public func matches(updatedSince: Date?) async throws -> [MatchRow] {
+        try await drain(page: 500) { from, to in
+            var query = self.db.from("matches").select()
+            if let updatedSince { query = query.gte("updated_at", value: WireCoding.format(updatedSince)) }
+            return try await query.order("updated_at").order("id").range(from: from, to: to).execute().value
+        }
     }
 
     public func participants(matchIDs: [UUID]) async throws -> [ParticipantRow] {
@@ -233,7 +287,9 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     // MARK: Call outs
 
     public func callOuts() async throws -> [CallOutRow] {
-        try await db.from("callouts").select().order("created_at", ascending: false).limit(200).execute().value
+        let rows: [Lossy<CallOutRow>] = try await db.from("callouts").select()
+            .order("created_at", ascending: false).limit(200).execute().value
+        return rows.compactMap(\.value)
     }
 
     public func createCallOut(_ draft: CallOutDraft) async throws -> UUID {
@@ -258,7 +314,9 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     // MARK: Tournaments
 
     public func tournaments() async throws -> [TournamentRow] {
-        try await db.from("tournaments").select().order("created_at", ascending: false).execute().value
+        let rows: [Lossy<TournamentRow>] = try await db.from("tournaments").select()
+            .order("created_at", ascending: false).execute().value
+        return rows.compactMap(\.value)
     }
 
     public func entrants(tournamentIDs: [UUID]) async throws -> [EntrantRow] {
@@ -308,7 +366,9 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     // MARK: Replays
 
     public func replays() async throws -> [ReplayRow] {
-        try await db.from("replays").select().order("created_at", ascending: false).limit(200).execute().value
+        let rows: [Lossy<ReplayRow>] = try await db.from("replays").select()
+            .order("created_at", ascending: false).limit(200).execute().value
+        return rows.compactMap(\.value)
     }
 
     public func createReplay(_ replay: ReplayRow) async throws {
@@ -333,7 +393,9 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     // MARK: Feed
 
     public func feed() async throws -> [ServeRow] {
-        try await db.from("feed_serves").select().order("created_at", ascending: false).limit(300).execute().value
+        let rows: [Lossy<ServeRow>] = try await db.from("feed_serves").select()
+            .order("created_at", ascending: false).limit(300).execute().value
+        return rows.compactMap(\.value)
     }
 
     public func serves(by authorID: UUID) async throws -> [ServeRow] {
@@ -361,16 +423,29 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     // MARK: Live matches
 
     public func liveMatches() async throws -> [LiveMatchRow] {
-        try await db.from("live_matches").select().order("started_at", ascending: false).execute().value
+        let rows: [Lossy<LiveMatchRow>] = try await db.from("live_matches").select()
+            .order("started_at", ascending: false).execute().value
+        return rows.compactMap(\.value)
     }
 
     public func publishLive(_ live: LiveMatchRow) async throws {
         struct Row: Encodable {
             let match_id: UUID, host_id: UUID, sport: Sport, player_ids: [UUID], lineup: Lineup, score: LiveScoreSnapshot, squad_id: UUID?
         }
+        // The match and host ids are read-only once published: update the
+        // rest, and insert only the first time.
+        struct Patch: Encodable {
+            let sport: Sport, player_ids: [UUID], lineup: Lineup, score: LiveScoreSnapshot, squad_id: UUID?
+        }
+        struct IDRow: Decodable { let match_id: UUID }
+        let patch = Patch(sport: live.sport, player_ids: live.playerIDs, lineup: live.lineup, score: live.score,
+                          squad_id: live.squadID)
+        let updated: [IDRow] = try await db.from("live_matches").update(patch).eq("match_id", value: live.matchID)
+            .select("match_id").execute().value
+        guard updated.isEmpty else { return }
         let row = Row(match_id: live.matchID, host_id: live.hostID, sport: live.sport, player_ids: live.playerIDs,
                       lineup: live.lineup, score: live.score, squad_id: live.squadID)
-        try await db.from("live_matches").upsert(row, onConflict: "match_id", returning: .minimal).execute()
+        try await db.from("live_matches").insert(row, returning: .minimal).execute()
     }
 
     public func endLive(_ matchID: UUID) async throws {
@@ -408,22 +483,57 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
 
     // MARK: Account
 
-    public func deleteAccount() async throws {
+    /// Deletes the signed-in account. Prefers the delete-account Edge
+    /// Function (files removed with full rights, Sign in with Apple
+    /// revoked); falls back to doing what the app can itself when the
+    /// function isn't deployed.
+    public func deleteAccount(appleAuthorizationCode: String?) async throws -> AccountDeletion {
+        _ = try me()
+        struct Body: Encodable { let appleAuthorizationCode: String? }
+        do {
+            let result: AccountDeletion = try await client.functions.invoke(
+                "delete-account",
+                options: FunctionInvokeOptions(body: Body(appleAuthorizationCode: appleAuthorizationCode))
+            )
+            guard result.ok else { throw BackendError.unexpected(result.error ?? "deletion failed") }
+            try? await client.auth.signOut(scope: .local)
+            return result
+        } catch FunctionsError.httpError(let code, _) where code == 404 {
+            return try await deleteAccountFromDevice()
+        } catch FunctionsError.relayError {
+            return try await deleteAccountFromDevice()
+        }
+    }
+
+    /// Fallback: the app removes its own files (page by page), then the data.
+    private func deleteAccountFromDevice() async throws -> AccountDeletion {
         let me = try me()
-        // Storage first: the database can't delete files.
+        var removed = 0
         for bucket in [MediaBucket.avatars, .media] {
             let paths = try await allFiles(in: bucket, under: me.uuidString.lowercased())
-            try await removeMedia(paths, from: bucket)
+            for start in stride(from: 0, to: paths.count, by: 100) {
+                try await removeMedia(Array(paths[start..<min(start + 100, paths.count)]), from: bucket)
+            }
+            removed += paths.count
         }
         try await db.rpc("delete_account").execute()
         try? await client.auth.signOut(scope: .local)
+        return AccountDeletion(ok: true, filesRemoved: removed, appleRevoked: false, error: nil)
     }
 
     private func allFiles(in bucket: MediaBucket, under folder: String) async throws -> [String] {
         var paths: [String] = []
         var queue = [folder]
         while let current = queue.popLast() {
-            let entries = try await client.storage.from(bucket.rawValue).list(path: current)
+            var entries: [FileObject] = []
+            var offset = 0
+            while true {
+                let page = try await client.storage.from(bucket.rawValue)
+                    .list(path: current, options: SearchOptions(limit: 100, offset: offset))
+                entries += page
+                if page.count < 100 { break }
+                offset += 100
+            }
             for entry in entries {
                 let path = "\(current)/\(entry.name)"
                 // Folders come back without an id.
@@ -475,6 +585,20 @@ public final class SupabaseBackend: SocialAPI, @unchecked Sendable {
     }
 
     /// `in.(…)` filters live in the URL; keep each request comfortably short.
+    /// Fetches page after page until a short one, skipping rows that
+    /// don't decode.
+    private func drain<T: Sendable>(page: Int, _ fetch: @Sendable (Int, Int) async throws -> [Lossy<T>]) async throws -> [T] {
+        var result: [T] = []
+        var from = 0
+        while true {
+            let rows = try await fetch(from, from + page - 1)
+            result += rows.compactMap(\.value)
+            if rows.count < page || from >= 50_000 { break }
+            from += page
+        }
+        return result
+    }
+
     private func chunked<T: Sendable>(_ ids: [UUID], _ fetch: @Sendable ([UUID]) async throws -> [T]) async throws -> [T] {
         let unique = Array(Set(ids))
         guard !unique.isEmpty else { return [] }

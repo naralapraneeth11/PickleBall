@@ -137,7 +137,7 @@ struct ProfileView: View {
         .confirmationDialog("Block \(me.shortName)?", isPresented: $confirmBlock, titleVisibility: .visible) {
             Button("Block", role: .destructive) { Task { await social.block(me.id.rawValue) } }
         } message: {
-            Text("They won’t be able to message you, see your Serves or call you out. They aren’t told.")
+            Text("They won’t be able to message you, see your Serves or call you out, and in squads you share you won’t see each other’s messages. Squad results stay visible to the squad. They aren’t told.")
         }
         .onChange(of: filter) { _, _ in selection = nil }
         .onChange(of: window) { _, _ in selection = nil }

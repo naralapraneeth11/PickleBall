@@ -31,3 +31,31 @@ account link.
 channels only",
 set Auth rate limits to defaults, and run the Security Advisor (it should
 report nothing).
+
+## Release audit fixes (migration 3 and app)
+
+An outside release-readiness audit (October 2026) found the problems
+below. Each is fixed and has a regression test: SQL ones in
+`supabase/ci-tests/30_hardening_test.sql`, sync ones in
+`Packages/CourtKit/Tests/CourtKitTests/MatchReplicaOrderingTests.swift`.
+
+| # | Problem | Fix |
+|---|---|---|
+| A1 | Profile save and live publishing used upserts that write read-only id columns, so a new user couldn't create a profile | Update without ids, insert only when there's no row (profiles, live matches) |
+| A2 | Finishing on the Watch while the phone couldn't hear it threw away the queued rallies | End requests carry unacknowledged taps; the host applies them before ending; the Watch keeps and resends unconfirmed finishes |
+| A3 | An older score snapshot could overwrite a newer one | Host revisions (session epoch + counter); clients ignore anything older and re-request on gaps |
+| A4 | Signing in as someone else relabelled the previous player's matches | Matches and workouts belong to an account on the phone; signed-out matches move to an account only when the person says they're theirs |
+| A5 | Workout and heart-rate data uploaded automatically onto a row friends and squads can read, and kept after deletion | Never uploaded with a match; a check constraint keeps `matches.workout` empty; existing values wiped |
+| A6 | A guest could be created already claimed by someone else | Insert policy requires `claimed_by is null` |
+| A7 | Blocking didn't hide messages and chat photos in a shared squad | Message and chat-photo reads exclude anyone blocked either way; squad results stay visible to the squad (said in the block dialog) |
+| A8 | The server accepted malformed matches, and one bad row stopped everyone's match list loading | `validate_match` checks rules, sport, sides, players, scores, dates and size; the app skips unreadable rows instead of failing |
+| A9 | The app's own Realtime channel was public, so "Private channels only" would silently stop live updates | The channel is private with a policy; join failures are retried and shown; squad members and Replays are published |
+| A10 | Account deletion couldn't list avatars, didn't page, didn't revoke Sign in with Apple, and left data on the phone | `delete-account` Edge Function (service role, paginated Storage cleanup, Apple revocation); app fallback pages too; the phone removes that account's matches, workouts and cache |
+| A11 | "Confirm" showed as final before the server agreed | The match shows "your answer is on its way" until the server's status arrives; share cards and belts wait for it |
+
+Reliability fixes from the same audit: matches and chat history are read
+page by page with no cap; becoming friends or joining a squad triggers a
+full re-read that also drops matches no longer visible; deleted or
+moderated messages disappear from open chats; failed sends wake up on
+their own at the retry time; failed disk writes are reported instead of
+swallowed.

@@ -37,10 +37,17 @@ final class WatchMatchSession: NSObject {
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private var contextSlots: [String: Data] = [:]
     @ObservationIgnored private var pendingMessages: [SyncMessage] = []
+    /// Matches finished here as the client that the phone hasn't confirmed
+    /// yet. Kept across relaunches and resent until the phone answers.
+    private var unsentEnds: [UUID: MatchReplica] = [:]
+
+    /// Finished matches still on their way to the iPhone.
+    var unsentCount: Int { unsentEnds.count }
 
     private enum Keys {
         static let preferences = "watch.preferences"
         static let hostedMatch = "watch.hostedMatch"
+        static let unsentEnds = "watch.unsentEnds"
         static let localPlayerID = "watch.localPlayerID"
         static let anonymousIDs = "watch.anonymousPlayerIDs"
     }
@@ -53,6 +60,7 @@ final class WatchMatchSession: NSObject {
         self.sport = preferences.sport
         super.init()
         restoreHostedMatch()
+        restoreUnsentEnds()
         session?.delegate = self
         session?.activate()
     }
@@ -162,6 +170,8 @@ final class WatchMatchSession: NSObject {
         }
         persistHostedMatch()
 
+        trackUnsentEnd(replica)
+
         if let reason = replica.ended {
             let report = WorkoutManager.shared.stop()
             if reason != .abandoned, let report {
@@ -200,12 +210,20 @@ final class WatchMatchSession: NSObject {
             return
         }
 
+        // The phone answering a match finished here earlier.
+        if let matchID = message.matchID, var stored = unsentEnds[matchID] {
+            let outcome = stored.receive(message)
+            for reply in outcome.outgoing { send(reply) }
+            trackUnsentEnd(stored)
+            return
+        }
+
         // A phone-started match the Watch isn't showing yet: mirror it.
         switch message {
         case .matchStarted(let snapshot), .log(let snapshot):
             guard snapshot.setup.host == .phone, snapshot.ended == nil else { return }
             if let current = replica, !current.isEnded { return }
-            let mirrored = MatchReplica(setup: snapshot.setup, role: .client, log: snapshot.rallies)
+            let mirrored = MatchReplica(mirroring: snapshot)
             replica = mirrored
             lastEvents = []
             revision += 1
@@ -279,10 +297,48 @@ final class WatchMatchSession: NSObject {
         let queued = pendingMessages
         pendingMessages.removeAll()
         for message in queued { send(message) }
+        resendUnsentEnds()
     }
 
     fileprivate func refreshReachability() {
+        let wasReachable = isPhoneReachable
         isPhoneReachable = session?.isReachable ?? false
+        if isPhoneReachable, !wasReachable { resendUnsentEnds() }
+    }
+
+    // MARK: - Finishes the phone hasn't confirmed
+
+    private func trackUnsentEnd(_ replica: MatchReplica) {
+        let before = unsentEnds[replica.matchID] != nil
+        if replica.isAwaitingEndAck {
+            unsentEnds[replica.matchID] = replica
+        } else {
+            unsentEnds[replica.matchID] = nil
+        }
+        if before || replica.isAwaitingEndAck { persistUnsentEnds() }
+    }
+
+    private func resendUnsentEnds() {
+        for replica in unsentEnds.values {
+            if let request = replica.pendingEndRequest { send(request) }
+        }
+    }
+
+    private func persistUnsentEnds() {
+        if unsentEnds.isEmpty {
+            defaults.removeObject(forKey: Keys.unsentEnds)
+        } else if let data = try? JSONEncoder().encode(Array(unsentEnds.values)) {
+            defaults.set(data, forKey: Keys.unsentEnds)
+        }
+    }
+
+    private func restoreUnsentEnds() {
+        guard let data = defaults.data(forKey: Keys.unsentEnds),
+              let list = try? JSONDecoder().decode([MatchReplica].self, from: data) else { return }
+        // A day is plenty: after that the phone has long since settled it.
+        for replica in list where Date().timeIntervalSince(replica.setup.startedAt) < 24 * 3600 {
+            unsentEnds[replica.matchID] = replica
+        }
     }
 
     // MARK: - Crash recovery for Watch-hosted matches

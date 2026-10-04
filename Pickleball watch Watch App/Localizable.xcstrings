@@ -93,6 +93,29 @@
         }
       }
     },
+    "%lld matches waiting for iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidos esperando al iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidas aguardando o iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partite in attesa dell’iPhone"
+          }
+        }
+      }
+    },
     "%lld min": {
       "extractionState": "manual",
       "localizations": {
@@ -204,6 +227,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 game"
+          }
+        }
+      }
+    },
+    "1 match waiting for iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 partido esperando al iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 partida aguardando o iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 partita in attesa dell’iPhone"
           }
         }
       }

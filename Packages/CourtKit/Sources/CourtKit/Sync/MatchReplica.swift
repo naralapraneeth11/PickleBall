@@ -15,11 +15,20 @@
 //  pending intents applied on top, so taps feel instant even over a slow or
 //  queued link. Rejections and snapshots reconcile back to the host's truth.
 //
+//  Ordering: every host change bumps a revision (session epoch + counter).
+//  Clients ignore events and snapshots older than the newest they've seen,
+//  so a delayed snapshot can never roll the score back.
+//
+//  Finishing on the client: the end request carries every tap the host
+//  hasn't acknowledged, so the host applies them before it ends the match.
+//  Until the host's final snapshot arrives, the client keeps showing the
+//  score the player finished on.
+//
 
 import Foundation
 
 public struct MatchReplica: Equatable, Sendable {
-    public enum Role: String, Hashable, Sendable {
+    public enum Role: String, Codable, Hashable, Sendable {
         case host
         case client
     }
@@ -47,15 +56,24 @@ public struct MatchReplica: Equatable, Sendable {
     public private(set) var ended: EndReason?
     /// The optimistic view: `log` with `pending` applied.
     public private(set) var scorer: MatchScorer
+    /// Host: the current revision. Client: the newest revision seen.
+    public private(set) var revision: Revision?
+    /// Client only: ended here, waiting for the host to confirm the final log.
+    public private(set) var isAwaitingEndAck = false
 
     /// Host only: intents already applied, to drop duplicate deliveries.
     private var appliedIntentIDs: [UUID]
     /// Client only: a log request is outstanding. The host republishes its
     /// log on every change, so one request is enough.
     private var awaitingLog = false
-    private static let appliedIntentMemory = 64
+    private static let appliedIntentMemory = 256
 
-    public init(setup: MatchSetup, role: Role, log: [Rally] = [], ended: EndReason? = nil) {
+    /// - Parameters:
+    ///   - epoch: Host session start (defaults to now). A resumed match
+    ///     gets a later epoch than anything sent before, so clients accept it.
+    ///   - revision: Client only: the revision of the snapshot it starts from.
+    public init(setup: MatchSetup, role: Role, log: [Rally] = [], ended: EndReason? = nil,
+                epoch: Double? = nil, revision: Revision? = nil) {
         self.setup = setup
         self.role = role
         self.log = log
@@ -65,6 +83,16 @@ public struct MatchReplica: Equatable, Sendable {
         self.scorer = MatchScorer(rules: setup.rules, rallies: log)
         // Drop any rallies past the end of the match.
         self.log = scorer.rallies
+        switch role {
+        case .host: self.revision = Revision(epoch: epoch ?? Date().timeIntervalSince1970)
+        case .client: self.revision = revision
+        }
+    }
+
+    /// A client mirroring a host's snapshot.
+    public init(mirroring snapshot: LogSnapshot) {
+        self.init(setup: snapshot.setup, role: .client, log: snapshot.rallies, ended: snapshot.ended,
+                  revision: snapshot.revision)
     }
 
     public var matchID: UUID { setup.matchID }
@@ -73,11 +101,18 @@ public struct MatchReplica: Equatable, Sendable {
     public var isEnded: Bool { ended != nil }
 
     public var snapshot: LogSnapshot {
-        LogSnapshot(setup: setup, rallies: log, appliedIntentIDs: appliedIntentIDs, ended: ended)
+        LogSnapshot(setup: setup, rallies: log, appliedIntentIDs: appliedIntentIDs, ended: ended, revision: revision)
     }
 
     /// Message a host sends when the match begins (or is resumed).
     public var startMessage: SyncMessage { .matchStarted(snapshot) }
+
+    /// Client only: the end request to resend until the host confirms it
+    /// (after a relaunch, or when the other device comes back).
+    public var pendingEndRequest: SyncMessage? {
+        guard role == .client, isAwaitingEndAck, let ended else { return nil }
+        return .endRequest(matchID: matchID, ended, closing: pending)
+    }
 
     // MARK: - Local actions
 
@@ -112,9 +147,16 @@ public struct MatchReplica: Equatable, Sendable {
     public mutating func end(_ reason: EndReason) -> Outcome {
         guard ended == nil else { return Outcome() }
         ended = reason
-        pending.removeAll()
-        rebuild()
-        return Outcome(outgoing: [.matchEnded(matchID: matchID, reason), .log(snapshot)], changed: true)
+        switch role {
+        case .host:
+            revision = revision?.next
+            return Outcome(outgoing: [.matchEnded(matchID: matchID, reason), .log(snapshot)], changed: true)
+        case .client:
+            // Keep the taps and the score on screen; the host applies them
+            // before it ends the match, then sends the final log.
+            isAwaitingEndAck = true
+            return Outcome(outgoing: [.endRequest(matchID: matchID, reason, closing: pending)], changed: true)
+        }
     }
 
     // MARK: - Incoming
@@ -126,22 +168,26 @@ public struct MatchReplica: Equatable, Sendable {
             return hostReceive(intent)
         case (.host, .logRequest):
             return Outcome(outgoing: [.log(snapshot)])
+        case (.host, .endRequest(_, let reason, let closing)):
+            return hostEndRequest(reason, closing: closing)
         case (.client, .event(_, let event)):
             return clientReceive(event)
         case (.client, .intentRejected(_, let intentID)):
-            guard let index = pending.firstIndex(where: { $0.id == intentID }) else { return Outcome() }
+            // After ending here, the host's final snapshot settles it.
+            guard !isAwaitingEndAck,
+                  let index = pending.firstIndex(where: { $0.id == intentID }) else { return Outcome() }
             // Everything after the rejected intent was built on top of it.
             pending.removeSubrange(index...)
             return rebuild()
         case (.client, .log(let snapshot)), (.client, .matchStarted(let snapshot)):
             return clientAdopt(snapshot)
-        case (_, .matchEnded(_, let reason)):
+        case (.client, .matchEnded(_, let reason)):
+            // The final snapshot travels with this; it carries the truth.
             guard ended == nil else { return Outcome() }
             ended = reason
-            pending.removeAll()
-            var outcome = rebuild()
-            outcome.changed = true
-            return outcome
+            return Outcome(changed: true)
+        case (.host, .matchEnded):
+            return Outcome()
         default:
             return Outcome()
         }
@@ -153,7 +199,9 @@ public struct MatchReplica: Equatable, Sendable {
         log.append(rally)
         let events = scorer.recordRally(wonBy: rally.winner, at: rally.at)
         if let intentID { remember(intentID) }
-        let event = RallyEvent(sequence: log.count, kind: .rally(rally.winner, at: rally.at), intentID: intentID)
+        revision = revision?.next
+        let event = RallyEvent(sequence: log.count, kind: .rally(rally.winner, at: rally.at), intentID: intentID,
+                               revision: revision)
         return Outcome(events: events, outgoing: [.event(matchID: matchID, event)], changed: true)
     }
 
@@ -163,7 +211,8 @@ public struct MatchReplica: Equatable, Sendable {
         log.removeLast()
         scorer.undo()
         if let intentID { remember(intentID) }
-        let event = RallyEvent(sequence: sequence, kind: .undo, intentID: intentID)
+        revision = revision?.next
+        let event = RallyEvent(sequence: sequence, kind: .undo, intentID: intentID, revision: revision)
         return Outcome(outgoing: [.event(matchID: matchID, event)], changed: true)
     }
 
@@ -186,6 +235,30 @@ public struct MatchReplica: Equatable, Sendable {
         }
     }
 
+    /// The client finished: apply the taps it sent along (skipping any that
+    /// already arrived), then end and send the final log.
+    private mutating func hostEndRequest(_ reason: EndReason, closing: [RallyIntent]) -> Outcome {
+        guard ended == nil else {
+            // Already over here: the client adopts this log.
+            return Outcome(outgoing: [.log(snapshot)])
+        }
+        var outcome = Outcome()
+        for intent in closing where !appliedIntentIDs.contains(intent.id) {
+            let applied = hostReceive(intent)
+            outcome.events += applied.events
+            outcome.changed = outcome.changed || applied.changed
+            // Rejections are settled by the final snapshot below.
+            outcome.outgoing += applied.outgoing.filter {
+                if case .event = $0 { return true } else { return false }
+            }
+        }
+        ended = reason
+        revision = revision?.next
+        outcome.outgoing += [.matchEnded(matchID: matchID, reason), .log(snapshot)]
+        outcome.changed = true
+        return outcome
+    }
+
     private mutating func remember(_ intentID: UUID) {
         appliedIntentIDs.append(intentID)
         if appliedIntentIDs.count > Self.appliedIntentMemory {
@@ -196,6 +269,12 @@ public struct MatchReplica: Equatable, Sendable {
     // MARK: - Client
 
     private mutating func clientReceive(_ event: RallyEvent) -> Outcome {
+        if let incoming = event.revision, let known = revision {
+            if incoming <= known { return Outcome() }                     // stale or duplicate
+            if incoming.epoch != known.epoch || incoming.counter > known.counter + 1 {
+                return requestLog()                                       // missed something
+            }
+        }
         switch event.kind {
         case .rally(let team, let at):
             if event.sequence <= log.count { return Outcome() }          // duplicate
@@ -209,10 +288,14 @@ public struct MatchReplica: Equatable, Sendable {
             }
             log.removeLast()
         }
+        if let incoming = event.revision { revision = incoming }
 
         let isOwnIntent = event.intentID != nil && pending.first?.id == event.intentID
+        if isOwnIntent { pending.removeFirst() }
+        // Finished here: keep the final score on screen until the host's
+        // final snapshot.
+        if isAwaitingEndAck { return Outcome() }
         if isOwnIntent {
-            pending.removeFirst()
             // Our tap was already on screen; nothing visible changes.
             let previous = scorer
             rebuild()
@@ -228,16 +311,31 @@ public struct MatchReplica: Equatable, Sendable {
     }
 
     private mutating func clientAdopt(_ snapshot: LogSnapshot) -> Outcome {
+        // Never step backwards: a delayed snapshot loses to newer news.
+        if let incoming = snapshot.revision, let known = revision, incoming < known {
+            return Outcome()
+        }
         awaitingLog = false
+        if let incoming = snapshot.revision { revision = incoming }
         let acknowledged = Set(snapshot.appliedIntentIDs)
         log = snapshot.rallies
         pending.removeAll { acknowledged.contains($0.id) }
+
+        if let reason = snapshot.ended {
+            // The host's final log is the result.
+            ended = reason
+            isAwaitingEndAck = false
+            pending.removeAll()
+            var outcome = rebuild()
+            outcome.changed = true
+            return outcome
+        }
+        if isAwaitingEndAck {
+            // Still waiting for the host to apply our end request.
+            return Outcome()
+        }
         // Surviving intents only make sense if they still sit on the host log.
         if let first = pending.first, first.basedOn != log.count {
-            pending.removeAll()
-        }
-        if let reason = snapshot.ended {
-            ended = reason
             pending.removeAll()
         }
         return rebuild()
@@ -261,5 +359,38 @@ public struct MatchReplica: Equatable, Sendable {
             events = MatchScorer.events(from: before.display, to: scorer.display, rallyWinner: team)
         }
         return Outcome(events: events, changed: before != scorer)
+    }
+}
+
+// MARK: - Persistence
+
+extension MatchReplica: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case setup, role, log, pending, ended, revision, awaitingEndAck, applied
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let setup = try c.decode(MatchSetup.self, forKey: .setup)
+        let role = try c.decode(Role.self, forKey: .role)
+        let log = try c.decode([Rally].self, forKey: .log)
+        self.init(setup: setup, role: role, log: log, ended: try c.decodeIfPresent(EndReason.self, forKey: .ended))
+        revision = try c.decodeIfPresent(Revision.self, forKey: .revision) ?? revision
+        pending = try c.decodeIfPresent([RallyIntent].self, forKey: .pending) ?? []
+        isAwaitingEndAck = try c.decodeIfPresent(Bool.self, forKey: .awaitingEndAck) ?? false
+        appliedIntentIDs = try c.decodeIfPresent([UUID].self, forKey: .applied) ?? []
+        rebuild()
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(setup, forKey: .setup)
+        try c.encode(role, forKey: .role)
+        try c.encode(log, forKey: .log)
+        try c.encode(pending, forKey: .pending)
+        try c.encodeIfPresent(ended, forKey: .ended)
+        try c.encodeIfPresent(revision, forKey: .revision)
+        try c.encode(isAwaitingEndAck, forKey: .awaitingEndAck)
+        try c.encode(appliedIntentIDs, forKey: .applied)
     }
 }
