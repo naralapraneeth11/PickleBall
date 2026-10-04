@@ -323,6 +323,29 @@
         }
       }
     },
+    "A match from before the update couldn’t be moved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo trasladar un partido de antes de la actualización."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível mover uma partida de antes da atualização."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile spostare una partita precedente all'aggiornamento."
+          }
+        }
+      }
+    },
     "A random install ID, your region setting, language and app version once a day, and crash reports from iOS. Never linked to your account, never used for ads, never sold.": {
       "extractionState": "manual",
       "localizations": {
@@ -2159,6 +2182,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copia"
+          }
+        }
+      }
+    },
+    "Couldn’t save on this Watch. Free up some storage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar en este Watch. Libera espacio."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar neste Watch. Libere espaço."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare su questo Watch. Libera spazio."
           }
         }
       }
@@ -4555,6 +4601,29 @@
         }
       }
     },
+    "Match saved on Watch · sync pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partido guardado en el Watch · sincronización pendiente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida salva no Watch · sincronização pendente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partita salvata sul Watch · sincronizzazione in attesa"
+          }
+        }
+      }
+    },
     "Match tiebreak instead of a third set": {
       "extractionState": "manual",
       "localizations": {
@@ -4597,6 +4666,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partite"
+          }
+        }
+      }
+    },
+    "Matches can’t be saved on this Watch right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no se pueden guardar partidos en este Watch."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora não é possível salvar partidas neste Watch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento non si possono salvare partite su questo Watch."
           }
         }
       }
@@ -6073,6 +6165,52 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
+          }
+        }
+      }
+    },
     "Peak rally": {
       "extractionState": "manual",
       "localizations": {
@@ -6782,6 +6920,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Punto a %@"
+          }
+        }
+      }
+    },
+    "Ready from iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo desde el iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto do iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronta dall'iPhone"
           }
         }
       }
@@ -7541,6 +7702,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Salva"
+          }
+        }
+      }
+    },
+    "Saved on Watch · sync pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en el Watch · sincronización pendiente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvo no Watch · sincronização pendente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvato sul Watch · sincronizzazione in attesa"
           }
         }
       }
@@ -9040,6 +9224,29 @@
         }
       }
     },
+    "Start on Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar en el Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia sul Watch"
+          }
+        }
+      }
+    },
     "Start the next round": {
       "extractionState": "manual",
       "localizations": {
@@ -9197,6 +9404,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Passa a %@"
+          }
+        }
+      }
+    },
+    "Synced to iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizado con el iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizado com o iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizzato con l'iPhone"
           }
         }
       }
@@ -9753,6 +9983,29 @@
         }
       }
     },
+    "US": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOSOTROS"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NÓS"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOI"
+          }
+        }
+      }
+    },
     "Unban": {
       "extractionState": "manual",
       "localizations": {
@@ -9841,6 +10094,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "In programma"
+          }
+        }
+      }
+    },
+    "Update PickleBall on your iPhone and Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza PickleBall en tu iPhone y tu Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize o PickleBall no iPhone e no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna PickleBall su iPhone e Watch"
           }
         }
       }
