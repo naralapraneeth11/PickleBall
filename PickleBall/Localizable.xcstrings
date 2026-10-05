@@ -70,6 +70,29 @@
         }
       }
     },
+    "%lld kcal": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kcal"
+          }
+        }
+      }
+    },
     "%lld matches": {
       "extractionState": "manual",
       "localizations": {
@@ -2117,6 +2140,29 @@
         }
       }
     },
+    "Checking Apple Watch…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobando el Apple Watch…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificando o Apple Watch…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controllo dell'Apple Watch…"
+          }
+        }
+      }
+    },
     "Cheers buzz the players’ Apple Watch between points.": {
       "extractionState": "manual",
       "localizations": {
@@ -2435,6 +2481,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Impossibile creare il codice. Controlla la connessione."
+          }
+        }
+      }
+    },
+    "Couldn’t save a match from your Apple Watch. Free up some storage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar un partido de tu Apple Watch. Libera espacio."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar uma partida do seu Apple Watch. Libere espaço."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare una partita dall'Apple Watch. Libera spazio."
           }
         }
       }
@@ -3934,6 +4003,29 @@
         }
       }
     },
+    "Getting your Watch ready…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando tu Watch…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando seu Watch…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione del Watch…"
+          }
+        }
+      }
+    },
     "Glass": {
       "extractionState": "manual",
       "localizations": {
@@ -4252,6 +4344,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ignora"
+          }
+        }
+      }
+    },
+    "Install PickleBall on your Apple Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala PickleBall en tu Apple Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instale o PickleBall no seu Apple Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installa PickleBall sull'Apple Watch"
           }
         }
       }
@@ -5268,6 +5383,29 @@
         }
       }
     },
+    "Matches from your Apple Watch can’t be saved on this iPhone right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no se pueden guardar en este iPhone los partidos de tu Apple Watch."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora não é possível salvar neste iPhone as partidas do seu Apple Watch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento le partite dell'Apple Watch non si possono salvare su questo iPhone."
+          }
+        }
+      }
+    },
     "Me": {
       "extractionState": "manual",
       "localizations": {
@@ -5701,6 +5839,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prossima: %@"
+          }
+        }
+      }
+    },
+    "No Apple Watch paired": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún Apple Watch enlazado"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum Apple Watch emparelhado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun Apple Watch abbinato"
           }
         }
       }
@@ -6395,6 +6556,29 @@
         }
       }
     },
+    "Open PickleBall on your Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre PickleBall en tu Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o PickleBall no seu Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri PickleBall sul Watch"
+          }
+        }
+      }
+    },
     "Open Profile": {
       "extractionState": "manual",
       "localizations": {
@@ -6506,6 +6690,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apri impostazioni"
+          }
+        }
+      }
+    },
+    "Open the Watch app on your iPhone to install it, then try again. You can also score on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre la app Watch en tu iPhone para instalarla y vuelve a intentarlo. También puedes anotar en este iPhone."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o app Watch no iPhone para instalá-lo e tente de novo. Você também pode marcar neste iPhone."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri l'app Watch sull'iPhone per installarla, poi riprova. Puoi anche segnare su questo iPhone."
           }
         }
       }
@@ -6874,6 +7081,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le partite in pausa restano nella Home. Terminare elimina questa partita."
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
           }
         }
       }
@@ -7725,6 +7955,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Casuali"
+          }
+        }
+      }
+    },
+    "Ready on Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo en el Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto sul Watch"
           }
         }
       }
@@ -8718,6 +8971,52 @@
         }
       }
     },
+    "Score on Apple Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anotar en el Apple Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar no Apple Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna sull'Apple Watch"
+          }
+        }
+      }
+    },
+    "Score on this iPhone instead": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anotar en este iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar neste iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna su questo iPhone"
+          }
+        }
+      }
+    },
     "Score on your Watch or phone, or type it in after. The other side confirms, so every result counts.": {
       "extractionState": "manual",
       "localizations": {
@@ -8764,6 +9063,29 @@
         }
       }
     },
+    "Score on your wrist. This iPhone follows along and saves the result when it’s done.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota desde la muñeca. Este iPhone lo sigue y guarda el resultado al terminar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marque no pulso. Este iPhone acompanha e salva o resultado no final."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna dal polso. Questo iPhone segue la partita e salva il risultato alla fine."
+          }
+        }
+      }
+    },
     "Scored": {
       "extractionState": "manual",
       "localizations": {
@@ -8783,6 +9105,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Segnato"
+          }
+        }
+      }
+    },
+    "Scoring on Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anotando en el Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcando no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punteggio sul Watch"
           }
         }
       }
@@ -10236,6 +10581,29 @@
         }
       }
     },
+    "Start here or on your Watch. Every rally is saved on the Watch first, so it works with no signal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empieza aquí o en tu Watch. Cada punto se guarda primero en el Watch, así que funciona sin señal."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicie aqui ou no Watch. Cada ponto é salvo primeiro no Watch, então funciona sem sinal."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia qui o sul Watch. Ogni scambio viene salvato prima sul Watch, quindi funziona anche senza segnale."
+          }
+        }
+      }
+    },
     "Start match": {
       "extractionState": "manual",
       "localizations": {
@@ -10259,6 +10627,29 @@
         }
       }
     },
+    "Start on Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar en el Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia sul Watch"
+          }
+        }
+      }
+    },
     "Start the next round": {
       "extractionState": "manual",
       "localizations": {
@@ -10278,6 +10669,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inizia il turno successivo"
+          }
+        }
+      }
+    },
+    "Starting on Watch…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezando en el Watch…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciando no Watch…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvio sul Watch…"
           }
         }
       }
@@ -10512,6 +10926,52 @@
         }
       }
     },
+    "Take the match back": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperar el partido"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperar a partida"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprendi la partita"
+          }
+        }
+      }
+    },
+    "Taking it back…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperándolo…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperando…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripresa in corso…"
+          }
+        }
+      }
+    },
     "Tap the pad to record the squad chant.": {
       "extractionState": "manual",
       "localizations": {
@@ -10650,6 +11110,29 @@
         }
       }
     },
+    "The match is sent to your Watch. It starts only when you tap Start.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El partido se envía a tu Watch. Solo empieza cuando tocas Empezar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A partida é enviada ao seu Watch. Ela só começa quando você toca em Iniciar."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La partita viene inviata al Watch. Inizia solo quando tocchi Inizia."
+          }
+        }
+      }
+    },
     "The strongest player is paired with the weakest, and so on, by level.": {
       "extractionState": "manual",
       "localizations": {
@@ -10784,6 +11267,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Questo post non c’è più"
+          }
+        }
+      }
+    },
+    "This match is scored on your Apple Watch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este partido se anota en tu Apple Watch."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta partida é marcada no seu Apple Watch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa partita si segna sul tuo Apple Watch."
           }
         }
       }
@@ -11290,6 +11796,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "In programma"
+          }
+        }
+      }
+    },
+    "Update PickleBall": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza PickleBall"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize o PickleBall"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna PickleBall"
           }
         }
       }
@@ -12049,6 +12578,121 @@
           "stringUnit": {
             "state": "translated",
             "value": "I tuoi post"
+          }
+        }
+      }
+    },
+    "Your Watch gives the match back if no rally has been scored yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Watch devuelve el partido si aún no se ha anotado ningún punto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu Watch devolve a partida se nenhum ponto tiver sido marcado."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il Watch restituisce la partita se non è ancora stato segnato nessuno scambio."
+          }
+        }
+      }
+    },
+    "Your Watch has a newer version. Update the app on both devices.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Watch tiene una versión más nueva. Actualiza la app en ambos dispositivos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu Watch tem uma versão mais nova. Atualize o app nos dois dispositivos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo Watch ha una versione più recente. Aggiorna l'app su entrambi i dispositivi."
+          }
+        }
+      }
+    },
+    "Your Watch has already started scoring this match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Watch ya empezó a anotar este partido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu Watch já começou a marcar esta partida."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo Watch ha già iniziato a segnare questa partita."
+          }
+        }
+      }
+    },
+    "Your Watch is busy with another match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Watch está ocupado con otro partido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu Watch está ocupado com outra partida."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo Watch è occupato con un'altra partita."
+          }
+        }
+      }
+    },
+    "Your Watch takes over as soon as it gets this. The match stays on the Watch even if it arrives later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu Watch toma el control en cuanto lo recibe. El partido se queda en el Watch aunque llegue más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu Watch assume assim que receber. A partida fica no Watch mesmo se chegar depois."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il Watch prende il controllo appena lo riceve. La partita resta sul Watch anche se arriva più tardi."
           }
         }
       }

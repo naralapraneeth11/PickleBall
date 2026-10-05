@@ -2,11 +2,16 @@
 //  WatchMatchSession.swift
 //  Pickleball watch Watch App
 //
-//  The Watch's side of a match. Watch-started matches are hosted here (the
-//  Watch owns the rally log); phone-started matches are mirrored as a
-//  client. Either way the Watch sends rally events or intents, never
-//  score snapshots, and replays the log through the same CourtKit engine
-//  as the phone.
+//  The Watch's side of a match.
+//
+//  • Watch-owned matches (started here, or handed over by the phone with a
+//    scoring grant) live in a durable journal (WatchJournalLink.swift): each
+//    tap is saved on the Watch before it buzzes, then sent with receipts
+//    and retries. Scoring never needs the phone or the internet.
+//  • Phone-owned matches are mirrored as a schema-1 client: taps go to the
+//    phone as intents.
+//
+//  Both replay the same CourtKit engine.
 //
 
 import Foundation
@@ -20,29 +25,44 @@ import CourtKit
 final class WatchMatchSession: NSObject {
     static let shared = WatchMatchSession()
 
-    private(set) var replica: MatchReplica? = nil
+    var replica: MatchReplica? = nil
     private(set) var preferences: WatchPreferences
     /// The sport shown on the idle screen. Follows the phone, but the crown
     /// switcher can change it locally.
     var sport: Sport
-    private(set) var revision = 0
-    private(set) var lastEvents: [ScoreEvent] = []
-    private(set) var isPhoneReachable = false
+    var revision = 0
+    var lastEvents: [ScoreEvent] = []
+    var isPhoneReachable = false
     /// The latest crowd tap that buzzed the wrist: "Priya · Let's go!".
     private(set) var cheer: String?
     @ObservationIgnored private var chantPlayer = ChantPlayer()
     @ObservationIgnored private var cheerTask: Task<Void, Never>?
 
-    @ObservationIgnored private let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
-    @ObservationIgnored private let defaults = UserDefaults.standard
+    @ObservationIgnored let session: WCSession? = WCSession.isSupported() ? WCSession.default : nil
+    @ObservationIgnored let defaults = UserDefaults.standard
     @ObservationIgnored private var contextSlots: [String: Data] = [:]
     @ObservationIgnored private var pendingMessages: [SyncMessage] = []
     /// Matches finished here as the client that the phone hasn't confirmed
     /// yet. Kept across relaunches and resent until the phone answers.
     private var unsentEnds: [UUID: MatchReplica] = [:]
 
+    // Watch-owned matches (see WatchJournalLink.swift).
+    @ObservationIgnored var coordinator: MatchCoordinator?
+    /// The Watch-owned match on screen, if any.
+    var ownedJournal: MatchJournal?
+    /// Owned matches (open or finished) the phone hasn't confirmed yet.
+    var unsyncedOwnedCount = 0
+    /// A match set up on the phone, saved here and waiting for Start.
+    var pendingDraft: MatchDraft?
+    /// Shown when a tap couldn't be saved (full storage).
+    var saveError: String?
+    /// The phone runs a newer protocol than this Watch app.
+    var needsUpdate = false
+    @ObservationIgnored var retryTask: Task<Void, Never>?
+    @ObservationIgnored var incomingWork: Task<Void, Never>?
+
     /// Finished matches still on their way to the iPhone.
-    var unsentCount: Int { unsentEnds.count }
+    var unsentCount: Int { unsentEnds.count + unsyncedOwnedCount }
 
     private enum Keys {
         static let preferences = "watch.preferences"
@@ -59,8 +79,11 @@ final class WatchMatchSession: NSObject {
         self.preferences = preferences
         self.sport = preferences.sport
         super.init()
-        restoreHostedMatch()
         restoreUnsentEnds()
+        openJournal()
+        WorkoutManager.shared.onReport = { [weak self] matchID, date, report in
+            self?.queue(workout: .workout(matchID: matchID, date: date, report)) ?? false
+        }
         session?.delegate = self
         session?.activate()
     }
@@ -102,19 +125,14 @@ final class WatchMatchSession: NSObject {
 
     // MARK: - Actions
 
-    /// Starts a match hosted by the Watch.
+    /// Starts a match owned by the Watch (saved before it begins).
     func startMatch(rules: MatchRules, lineup: Lineup) {
         let setup = MatchSetup(rules: rules, lineup: lineup, host: .watch)
-        let replica = MatchReplica(setup: setup, role: .host)
-        self.replica = replica
-        lastEvents = []
-        revision += 1
-        send(replica.startMessage)
-        persistHostedMatch()
-        WorkoutManager.shared.start(sport: rules.sport, matchID: setup.matchID)
+        startOwnedMatch(setup)
     }
 
     func record(_ team: Team) {
+        if ownedJournal != nil { return performOwned(.rallyWon(team)) }
         guard var replica, !replica.isEnded else { return }
         let outcome = replica.recordRally(wonBy: team)
         self.replica = replica
@@ -122,6 +140,7 @@ final class WatchMatchSession: NSObject {
     }
 
     func undo() {
+        if ownedJournal != nil { return performOwned(.undo(target: UUID())) }
         guard var replica, canUndo else { return }
         let outcome = replica.undo()
         self.replica = replica
@@ -131,17 +150,21 @@ final class WatchMatchSession: NSObject {
 
     /// Confirms a finished match; the phone saves it to history.
     func finish() {
+        if ownedJournal != nil { return performOwned(.finished(finalSequence: 0, winner: .a, checksum: "")) }
         end(.completed)
     }
 
     func abandon() {
+        if ownedJournal != nil { return performOwned(.abandoned) }
         end(.abandoned)
     }
 
     /// Clears a match that has ended (on either device).
     func dismissEnded() {
         guard replica?.isEnded == true else { return }
+        if let owned = ownedJournal { dismissOwned(owned.matchID) }
         replica = nil
+        ownedJournal = nil
         revision += 1
         defaults.removeObject(forKey: Keys.hostedMatch)
     }
@@ -168,15 +191,10 @@ final class WatchMatchSession: NSObject {
         if replica.role == .host, outcome.changed, !replica.isEnded {
             send(.log(replica.snapshot))
         }
-        persistHostedMatch()
-
         trackUnsentEnd(replica)
 
         if let reason = replica.ended {
-            let report = WorkoutManager.shared.stop()
-            if reason != .abandoned, let report {
-                send(.workout(matchID: replica.matchID, date: replica.setup.startedAt, report))
-            }
+            WorkoutManager.shared.finish(matchID: replica.matchID, sendsReport: reason != .abandoned)
             if reason != .completed {
                 // Parked or abandoned elsewhere: nothing to show.
                 dismissEnded()
@@ -298,12 +316,17 @@ final class WatchMatchSession: NSObject {
         pendingMessages.removeAll()
         for message in queued { send(message) }
         resendUnsentEnds()
+        flushJournal()
+        WorkoutManager.shared.sendPendingReports()
     }
 
     fileprivate func refreshReachability() {
         let wasReachable = isPhoneReachable
         isPhoneReachable = session?.isReachable ?? false
-        if isPhoneReachable, !wasReachable { resendUnsentEnds() }
+        if isPhoneReachable, !wasReachable {
+            resendUnsentEnds()
+            flushJournal()
+        }
     }
 
     // MARK: - Finishes the phone hasn't confirmed
@@ -341,27 +364,16 @@ final class WatchMatchSession: NSObject {
         }
     }
 
-    // MARK: - Crash recovery for Watch-hosted matches
+    // MARK: - Older builds
 
-    private func persistHostedMatch() {
-        guard let replica, replica.role == .host, !replica.isEnded else {
-            defaults.removeObject(forKey: Keys.hostedMatch)
-            return
-        }
-        if let data = try? JSONEncoder().encode(replica.snapshot) {
-            defaults.set(data, forKey: Keys.hostedMatch)
-        }
-    }
-
-    private func restoreHostedMatch() {
+    /// A match an older build was hosting (kept in UserDefaults): moves into
+    /// the journal once, so an update mid-match loses nothing.
+    func legacyHostedMatch() -> LogSnapshot? {
+        defer { defaults.removeObject(forKey: Keys.hostedMatch) }
         guard let data = defaults.data(forKey: Keys.hostedMatch),
               let snapshot = try? JSONDecoder().decode(LogSnapshot.self, from: data),
-              Date().timeIntervalSince(snapshot.setup.startedAt) < 6 * 3600 else {
-            defaults.removeObject(forKey: Keys.hostedMatch)
-            return
-        }
-        replica = MatchReplica(setup: snapshot.setup, role: .host, log: snapshot.rallies)
-        sport = snapshot.setup.rules.sport
+              Date().timeIntervalSince(snapshot.setup.startedAt) < 6 * 3600 else { return nil }
+        return snapshot
     }
 }
 
@@ -370,10 +382,12 @@ final class WatchMatchSession: NSObject {
 extension WatchMatchSession: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let pending = SyncMessage.messages(in: session.receivedApplicationContext)
+        let journal = JournalMessage.messages(in: session.receivedApplicationContext)
         Task { @MainActor in
             self.refreshReachability()
             self.flushPending()
             self.deliver(pending)
+            self.deliverJournal(journal)
         }
     }
 
@@ -383,16 +397,28 @@ extension WatchMatchSession: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         let messages = SyncMessage.messages(in: message)
-        Task { @MainActor in self.deliver(messages) }
+        let journal = JournalMessage.messages(in: message)
+        Task { @MainActor in
+            self.deliver(messages)
+            self.deliverJournal(journal)
+        }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         let messages = SyncMessage.messages(in: applicationContext)
-        Task { @MainActor in self.deliver(messages) }
+        let journal = JournalMessage.messages(in: applicationContext)
+        Task { @MainActor in
+            self.deliver(messages)
+            self.deliverJournal(journal)
+        }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         let messages = SyncMessage.messages(in: userInfo)
-        Task { @MainActor in self.deliver(messages) }
+        let journal = JournalMessage.messages(in: userInfo)
+        Task { @MainActor in
+            self.deliver(messages)
+            self.deliverJournal(journal)
+        }
     }
 }

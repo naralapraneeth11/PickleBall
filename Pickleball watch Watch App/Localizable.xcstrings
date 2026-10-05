@@ -323,6 +323,29 @@
         }
       }
     },
+    "A match from before the update couldn’t be moved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo trasladar un partido de antes de la actualización."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível mover uma partida de antes da atualização."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile spostare una partita precedente all'aggiornamento."
+          }
+        }
+      }
+    },
     "A random install ID, your region setting, language and app version once a day, and crash reports from iOS. Never linked to your account, never used for ads, never sold.": {
       "extractionState": "manual",
       "localizations": {
@@ -1818,6 +1841,29 @@
         }
       }
     },
+    "Changes apply to the next match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios se aplican al próximo partido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As mudanças valem para a próxima partida."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le modifiche valgono dalla prossima partita."
+          }
+        }
+      }
+    },
     "Changes save automatically": {
       "extractionState": "manual",
       "localizations": {
@@ -2159,6 +2205,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copia"
+          }
+        }
+      }
+    },
+    "Couldn’t save on this Watch. Free up some storage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar en este Watch. Libera espacio."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar neste Watch. Libere espaço."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare su questo Watch. Libera spazio."
           }
         }
       }
@@ -3796,6 +3865,29 @@
         }
       }
     },
+    "Health access is off. Turn it on in Settings › Health to record workouts. Scoring works without it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El acceso a Salud está desactivado. Actívalo en Ajustes › Salud para grabar entrenos. El marcador funciona sin él."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O acesso ao Saúde está desativado. Ative em Ajustes › Saúde para gravar treinos. A marcação funciona sem ele."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso a Salute è disattivato. Attivalo in Impostazioni › Salute per registrare gli allenamenti. Il punteggio funziona anche senza."
+          }
+        }
+      }
+    },
     "Heart": {
       "extractionState": "manual",
       "localizations": {
@@ -3884,6 +3976,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ignora"
+          }
+        }
+      }
+    },
+    "Indoor court": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pista cubierta"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quadra coberta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campo al chiuso"
           }
         }
       }
@@ -4555,6 +4670,52 @@
         }
       }
     },
+    "Match saved on Watch · sync pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partido guardado en el Watch · sincronización pendiente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida salva no Watch · sincronização pendente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partita salvata sul Watch · sincronizzazione in attesa"
+          }
+        }
+      }
+    },
+    "Match saved · workout details finishing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partido guardado · terminando los datos del entreno."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida salva · finalizando os dados do treino."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partita salvata · completamento dei dati dell'allenamento."
+          }
+        }
+      }
+    },
     "Match tiebreak instead of a third set": {
       "extractionState": "manual",
       "localizations": {
@@ -4597,6 +4758,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Partite"
+          }
+        }
+      }
+    },
+    "Matches can’t be saved on this Watch right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no se pueden guardar partidos en este Watch."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora não é possível salvar partidas neste Watch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento non si possono salvare partite su questo Watch."
           }
         }
       }
@@ -6073,6 +6257,52 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
+          }
+        }
+      }
+    },
     "Peak rally": {
       "extractionState": "manual",
       "localizations": {
@@ -6786,6 +7016,29 @@
         }
       }
     },
+    "Ready from iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo desde el iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto do iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronta dall'iPhone"
+          }
+        }
+      }
+    },
     "Record": {
       "extractionState": "manual",
       "localizations": {
@@ -6805,6 +7058,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bilancio"
+          }
+        }
+      }
+    },
+    "Record workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravar treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra allenamento"
           }
         }
       }
@@ -7545,6 +7821,29 @@
         }
       }
     },
+    "Saved on Watch · sync pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en el Watch · sincronización pendiente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvo no Watch · sincronização pendente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvato sul Watch · sincronizzazione in attesa"
+          }
+        }
+      }
+    },
     "Scan a QR code": {
       "extractionState": "manual",
       "localizations": {
@@ -7771,6 +8070,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Segna dal Watch o inseriscilo dopo. Gli amici confermano ogni risultato e la cintura va a chi batte chi la detiene."
+          }
+        }
+      }
+    },
+    "Score only": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo marcador"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Só placar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo punteggio"
           }
         }
       }
@@ -8580,6 +8902,29 @@
         }
       }
     },
+    "Shot estimates (beta)": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimación de golpes (beta)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimativa de golpes (beta)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stima dei colpi (beta)"
+          }
+        }
+      }
+    },
     "Show": {
       "extractionState": "manual",
       "localizations": {
@@ -9040,6 +9385,29 @@
         }
       }
     },
+    "Start on Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar en el Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia sul Watch"
+          }
+        }
+      }
+    },
     "Start the next round": {
       "extractionState": "manual",
       "localizations": {
@@ -9197,6 +9565,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Passa a %@"
+          }
+        }
+      }
+    },
+    "Synced to iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizado con el iPhone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizado com o iPhone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizzato con l'iPhone"
           }
         }
       }
@@ -9753,6 +10144,29 @@
         }
       }
     },
+    "US": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOSOTROS"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NÓS"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOI"
+          }
+        }
+      }
+    },
     "Unban": {
       "extractionState": "manual",
       "localizations": {
@@ -9841,6 +10255,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "In programma"
+          }
+        }
+      }
+    },
+    "Update PickleBall on your iPhone and Watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza PickleBall en tu iPhone y tu Watch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize o PickleBall no iPhone e no Watch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna PickleBall su iPhone e Watch"
           }
         }
       }
@@ -10324,6 +10761,121 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ritirare questo risultato?"
+          }
+        }
+      }
+    },
+    "Workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento"
+          }
+        }
+      }
+    },
+    "Workout recording stopped; scoring continues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La grabación del entreno se detuvo; el marcador sigue."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gravação do treino parou; a marcação continua."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La registrazione dell'allenamento si è fermata; il punteggio continua."
+          }
+        }
+      }
+    },
+    "Workout settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes del entreno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes do treino"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni allenamento"
+          }
+        }
+      }
+    },
+    "Workout · Indoor": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno · Interior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino · Interno"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento · Al chiuso"
+          }
+        }
+      }
+    },
+    "Workout · Outdoor": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entreno · Exterior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino · Externo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allenamento · All'aperto"
           }
         }
       }

@@ -86,11 +86,15 @@ public struct WatchPreferences: Codable, Hashable, Sendable {
     public var recentPlayers: [PlayerRef]
     /// For heart-rate zones when Health has no date of birth.
     public var age: Int?
+    /// The signed-in account (nil when signed out). Watch-owned matches are
+    /// stamped with it, so the phone files them under the right account.
+    public var accountScopeID: UUID?
 
-    public init(sport: Sport, me: PlayerRef?, recentPlayers: [PlayerRef] = [], age: Int? = nil) {
+    public init(sport: Sport, me: PlayerRef?, recentPlayers: [PlayerRef] = [], age: Int? = nil, accountScopeID: UUID? = nil) {
         self.sport = sport
         self.me = me
         self.recentPlayers = recentPlayers
         self.age = age
+        self.accountScopeID = accountScopeID
     }
 }

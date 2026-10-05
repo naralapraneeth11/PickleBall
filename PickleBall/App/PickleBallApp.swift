@@ -21,6 +21,9 @@ struct PickleBallApp: App {
         // Order matters: the local player must exist before any match is
         // recorded, and the match centre must be listening before
         // WatchConnectivity delivers anything queued while the phone slept.
+        // Mirrored Watch workouts can launch the app in the background, so
+        // the handler goes in first.
+        PhoneWorkoutMirror.shared.install()
         _ = PlayerDirectory.shared
         MatchStore.shared.reload()
         WorkoutStore.shared.reload()

@@ -26,6 +26,8 @@ struct PlayView: View {
     @State private var slots: [SlotEntry] = [.empty, .empty, .empty, .empty]   // A1, A2, B1, B2
     @State private var firstServer: Team = .a
     @State private var showScoreboard = false
+    @State private var showWatchHandoff = false
+    @ObservedObject private var watchLink = WatchConnectivityManager.shared
 
     // Pickleball
     @State private var pickleballScoring: PickleballScoring = .sideOut
@@ -54,6 +56,9 @@ struct PlayView: View {
                         playersCard
                         formatCard
                         startMatchButton
+                        if watchLink.isWatchPaired {
+                            watchButton
+                        }
 
                         if !matchStore.parked.isEmpty && prefill == nil {
                             parkedSection
@@ -70,6 +75,10 @@ struct PlayView: View {
         .animation(DS.Motion.snappy, value: sport)
         .fullScreenCover(isPresented: $showScoreboard) {
             LiveMatchScreen()
+        }
+        .sheet(isPresented: $showWatchHandoff) {
+            WatchHandoffSheet()
+                .presentationDetents([.medium])
         }
         .onAppear {
             Haptics.warm()
@@ -390,6 +399,28 @@ struct PlayView: View {
         .buttonStyle(.press)
         .padding(.horizontal, 16)
         .accessibilityLabel("Start \(sport.displayName) match")
+    }
+
+    /// Hands scoring to the Watch. Shown only when a Watch is paired.
+    private var watchButton: some View {
+        Button {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            Haptics.light()
+            if watchLink.isWatchAppInstalled {
+                MatchCenter.shared.prepareWatchMatch(rules: currentRules, lineup: buildLineup(),
+                                                     context: prefill?.context ?? MatchContext())
+            }
+            showWatchHandoff = true
+        } label: {
+            Label("Score on Apple Watch", systemImage: "applewatch")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Court.text)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .courtRaised(cornerRadius: Court.Metrics.tileRadius)
+        }
+        .buttonStyle(.press)
+        .padding(.horizontal, 16)
     }
 
     // MARK: Parked matches

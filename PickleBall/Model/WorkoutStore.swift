@@ -76,6 +76,15 @@ final class WorkoutStore: ObservableObject {
     }
 
     /// Stores a report from the Watch and attaches it to its match.
+    /// The summary recorded for a match, if it arrived (possibly before the
+    /// match itself did).
+    func summary(for matchID: UUID) -> WorkoutReport? {
+        let raw: UUID? = matchID
+        var existing = FetchDescriptor<WorkoutSessionRecord>(predicate: #Predicate { $0.matchID == raw })
+        existing.fetchLimit = 1
+        return (try? context.fetch(existing).first)?.summary
+    }
+
     func add(_ report: WorkoutReport, matchID: UUID?, date: Date) {
         if let matchID {
             let raw: UUID? = matchID
